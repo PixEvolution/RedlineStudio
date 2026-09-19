@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RedlineStudio — Play</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="page">
+    <h1 class="page-title" id="game-title">Loading…</h1>
+    <p class="page-sub" id="game-meta"></p>
+
+    <!-- The game player. Each engine version gets its own renderer as the studio evolves. -->
+    <div class="game-frame" id="frame"></div>
+  </main>
+
+  <script type="module">
+    import { renderNav, toast, fmtDate } from "./js/ui.js";
+    import { getGame, countPlay } from "./js/games.js";
+
+    renderNav("");
+
+    const frame = document.getElementById("frame");
+    const titleEl = document.getElementById("game-title");
+    const metaEl = document.getElementById("game-meta");
+
+    // One renderer per engine version — old games always keep working.
+    const renderers = {
+      v0(game, mount) {
+        const wrap = document.createElement("div");
+        const msg = document.createElement("h2");
+        msg.textContent = game.data?.message || "(This game has no content yet.)";
+        const note = document.createElement("p");
+        note.className = "hint";
+        note.textContent = "Engine v0 — real gameplay arrives when the Studio grows.";
+        wrap.append(msg, note);
+        mount.appendChild(wrap);
+      }
+    };
+
+    try {
+      const id = new URLSearchParams(location.search).get("id");
+      if (!id) throw new Error("No game selected.");
+
+      const game = await getGame(id);
+      titleEl.textContent = game.title;
+      metaEl.textContent = `by ${game.owner} · ${game.plays || 0} plays · published ${fmtDate(game.createdAt)}`;
+
+      const render = renderers[game.engine] || renderers.v0;
+      render(game, frame);
+      countPlay(id);
+    } catch (err) {
+      titleEl.textContent = "Whoops";
+      frame.textContent = err.message;
+      toast(err.message, true);
+    }
+  </script>
+</body>
+</html>

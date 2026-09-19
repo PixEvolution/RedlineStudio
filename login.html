@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RedlineStudio — Log in</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="page">
+    <div class="panel auth-box">
+      <div class="tabs">
+        <div class="tab active" id="tab-login">Log in</div>
+        <div class="tab" id="tab-create">Create account</div>
+      </div>
+
+      <form id="auth-form">
+        <label for="username">Username</label>
+        <input type="text" id="username" maxlength="10" autocomplete="off" spellcheck="false">
+        <p class="hint">1–10 characters. Any character allowed. Caps matter.</p>
+
+        <label for="password">Password</label>
+        <input type="password" id="password" maxlength="10" autocomplete="off">
+        <p class="hint">1–10 characters. Any character allowed. Caps matter.</p>
+
+        <br>
+        <button class="btn" id="submit" type="submit" style="width:100%">Log in</button>
+      </form>
+    </div>
+  </main>
+
+  <script type="module">
+    import { renderNav, toast, $ } from "./js/ui.js";
+    import { createAccount, login, currentUser } from "./js/auth.js";
+
+    renderNav("");
+    if (currentUser()) window.location.href = "index.html";
+
+    let mode = "login";
+    const tabLogin = $("#tab-login");
+    const tabCreate = $("#tab-create");
+    const submit = $("#submit");
+
+    function setMode(m) {
+      mode = m;
+      tabLogin.classList.toggle("active", m === "login");
+      tabCreate.classList.toggle("active", m === "create");
+      submit.textContent = m === "login" ? "Log in" : "Create account";
+    }
+    tabLogin.addEventListener("click", () => setMode("login"));
+    tabCreate.addEventListener("click", () => setMode("create"));
+
+    $("#auth-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const username = $("#username").value;
+      const password = $("#password").value;
+      submit.disabled = true;
+      try {
+        if (mode === "create") {
+          await createAccount(username, password);
+          toast("Account created. Welcome, " + username + "!");
+        } else {
+          await login(username, password);
+          toast("Welcome back, " + username + "!");
+        }
+        setTimeout(() => window.location.href = "index.html", 600);
+      } catch (err) {
+        toast(err.message, true);
+        submit.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

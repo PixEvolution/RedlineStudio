@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RedlineStudio — Games</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="page">
+    <h1 class="page-title">Games</h1>
+    <p class="page-sub">Made by players, published in the Studio.</p>
+    <div id="games" class="games-grid">
+      <p class="empty-note">Loading games…</p>
+    </div>
+  </main>
+
+  <script type="module">
+    import { renderNav, fmtDate, toast } from "./js/ui.js";
+    import { listGames } from "./js/games.js";
+
+    renderNav("");
+
+    const grid = document.getElementById("games");
+
+    try {
+      const games = await listGames();
+      grid.innerHTML = "";
+
+      if (games.length === 0) {
+        grid.innerHTML = `<p class="empty-note">No games published yet.<br>Be the first — open the Studio!</p>`;
+      }
+
+      for (const g of games) {
+        const card = document.createElement("a");
+        card.className = "game-card";
+        card.href = "play.html?id=" + encodeURIComponent(g.id);
+
+        const title = document.createElement("div");
+        title.className = "game-title";
+        title.textContent = g.title;
+
+        const meta = document.createElement("div");
+        meta.className = "game-meta";
+        meta.textContent = `by ${g.owner} · ${g.plays || 0} plays · ${fmtDate(g.createdAt)}`;
+
+        card.append(title, meta);
+        grid.appendChild(card);
+      }
+    } catch (err) {
+      grid.innerHTML = "";
+      toast("Couldn't load games: " + err.message, true);
+    }
+  </script>
+</body>
+</html>
