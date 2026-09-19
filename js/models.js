@@ -12,7 +12,7 @@ import {
 const MODELS = "models";
 
 // Save a group of objects (with scripts) as a model in the owner's inventory.
-export async function saveModel({ name, owner, objects }) {
+export async function saveModel({ name, owner, objects, description = "", thumb = "" }) {
   if (!name || !name.trim()) throw new Error("Your model needs a name.");
   if (name.length > 30) throw new Error("Model name must be 30 characters or less.");
   if (!objects || objects.length === 0) throw new Error("Select at least one object to save.");
@@ -22,6 +22,10 @@ export async function saveModel({ name, owner, objects }) {
     owner,
     creator: owner,               // original creator, kept through sales
     objects: JSON.parse(JSON.stringify(objects)),
+    // what the Market shows — buyers see ONLY these (plus votes/comments),
+    // never the objects or scripts, so buying is the only way to the code
+    description: String(description || "").slice(0, 200),
+    thumb: String(thumb || "").slice(0, 250000),   // small JPEG data URL
     listed: false,
     price: 0,
     createdAt: serverTimestamp()
@@ -74,6 +78,8 @@ export async function acquireModel(modelId, buyer) {
     owner: buyer,
     creator: model.creator || model.owner,
     objects: model.objects,
+    description: model.description || "",
+    thumb: model.thumb || "",
     listed: false,
     price: 0,
     boughtFrom: model.owner,

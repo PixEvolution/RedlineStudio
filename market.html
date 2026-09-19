@@ -77,13 +77,34 @@
         for (const m of models) {
           const card = document.createElement("div");
           card.className = "game-card";
+
+          // the model's snapshot — the ONLY look inside a buyer gets.
+          // (no object counts, no scripts: buy it to open the box)
+          const shot = document.createElement("div");
+          shot.className = "model-shot";
+          if (m.thumb) {
+            const img = document.createElement("img");
+            img.src = m.thumb;
+            img.alt = m.name;
+            img.draggable = false;
+            shot.appendChild(img);
+          }
+          card.appendChild(shot);
+
           const title = document.createElement("div");
           title.className = "game-title";
           title.textContent = m.name;
           title.title = m.name;
+          card.appendChild(title);
+          if (m.description) {
+            const desc = document.createElement("div");
+            desc.className = "game-desc";
+            desc.textContent = m.description;
+            card.appendChild(desc);
+          }
           const meta = document.createElement("div");
           meta.className = "game-meta";
-          meta.textContent = `by ${m.owner} · ${m.objects?.length || 0} objects · ${fmtDate(m.createdAt)}`;
+          meta.textContent = `by ${m.owner} · ${fmtDate(m.createdAt)}`;
           const priceRow = document.createElement("div");
           priceRow.style.display = "flex";
           priceRow.style.justifyContent = "space-between";
@@ -129,7 +150,7 @@
             }
           });
 
-          card.append(title, meta, priceRow, social, cpanel);
+          card.append(meta, priceRow, social, cpanel);
           grid.appendChild(card);
         }
       } catch (err) {

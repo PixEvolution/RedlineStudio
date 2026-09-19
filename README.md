@@ -14,7 +14,7 @@ A game platform by Redline Digital — players make accounts, build games in the
 | `js/engine.js` | The game engine — compiles + runs scripts on a CRT-style canvas |
 | `js/redscript.js` | RedScript — the text scripting language (blocks compile to the same thing) |
 | `js/blocks.js` | The block script editor UI |
-| `js/models.js` | Models: save groups, inventory, insert, market buy/sell |
+| `js/models.js` | Models: save (with snapshot + description), inventory, insert, sealed market buy/sell |
 | `js/economy.js` | Coins + daily claim |
 | `js/profiles.js` | Player profiles + saving the custom page |
 | `js/cards.js` | Game cards with live/static arcade screens + like counts |

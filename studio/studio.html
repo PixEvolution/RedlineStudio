@@ -429,8 +429,17 @@
       if (objs.length === 0) { toast("Check some objects in the Explorer first.", true); return; }
       const name = prompt(`Model name for ${objs.length} object(s):`);
       if (name == null) return;
+      const description = prompt("Describe it for the Market (buyers only see the picture + this):") || "";
       try {
-        await saveModel({ name, owner: user, objects: objs });
+        // snapshot the model — this image is all the Market ever shows of it
+        const full = document.createElement("canvas");
+        full.width = CANVAS_W; full.height = CANVAS_H;
+        drawFrame(full.getContext("2d"), objs);
+        const small = document.createElement("canvas");
+        small.width = 240; small.height = 180;
+        small.getContext("2d").drawImage(full, 0, 0, 240, 180);
+        const thumb = small.toDataURL("image/jpeg", 0.75);
+        await saveModel({ name, owner: user, objects: objs, description, thumb });
         toast(`Model "${name}" saved to your inventory.`);
         loadModels();
       } catch (err) { toast(err.message, true); }
