@@ -19,6 +19,7 @@
           <option value="">Load example…</option>
           <option value="crt">CRT Amusement Device (1947)</option>
           <option value="bertie">Bertie the Brain (1950)</option>
+          <option value="nimrod">NIMROD (1951)</option>
         </select>
         <button class="btn btn-ghost" id="btn-new">New</button>
         <button class="btn" id="btn-test">▶ Test</button>
@@ -105,6 +106,7 @@
     import { attachFullscreenButton } from "../js/fullscreen.js";
     import { buildCrtExample } from "./example-crt.js";
     import { buildBertieExample } from "./example-bertie.js";
+    import { buildNimrodExample } from "./example-nimrod.js";
     import { getProfile, savePageScene } from "../js/profiles.js";
 
     renderNav("../");
@@ -380,7 +382,8 @@
 
     const EXAMPLES = {
       crt: { build: buildCrtExample, tip: "Hit ▶ Test. Up/Down aims, Space fires." },
-      bertie: { build: buildBertieExample, tip: "Hit ▶ Test. Click a square — you're X, Bertie is O." }
+      bertie: { build: buildBertieExample, tip: "Hit ▶ Test. Click a square — you're X, Bertie is O." },
+      nimrod: { build: buildNimrodExample, tip: "Hit ▶ Test. Take the last light to win — NIMROD plays perfect Nim." }
     };
     $("#sel-example").addEventListener("change", () => {
       const pick = $("#sel-example").value;
