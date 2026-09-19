@@ -7,6 +7,7 @@ const EVENT_LABELS = {
   start: "⚡ When game starts",
   tick: "🔁 Every frame",
   key: "⌨️ When key pressed",
+  click: "🖱 When clicked",
   code: "📜 Code section"
 };
 

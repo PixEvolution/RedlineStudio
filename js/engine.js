@@ -137,6 +137,11 @@ export class Engine {
       this.mouse.x = (e.clientX - r.left) * (CANVAS_W / r.width);
       this.mouse.y = (e.clientY - r.top) * (CANVAS_H / r.height);
     };
+    this._onMouseDown = (e) => {
+      if (!this.running) return;
+      this._onMouse(e);
+      this.runEvents("click");
+    };
   }
 
   start() {
@@ -144,7 +149,10 @@ export class Engine {
     this.t0 = performance.now();
     window.addEventListener("keydown", this._onKeyDown);
     window.addEventListener("keyup", this._onKeyUp);
-    if (this.canvas) this.canvas.addEventListener("mousemove", this._onMouse);
+    if (this.canvas) {
+      this.canvas.addEventListener("mousemove", this._onMouse);
+      this.canvas.addEventListener("mousedown", this._onMouseDown);
+    }
     this.runEvents("start");
     const loop = () => {
       if (!this.running) return;
@@ -160,7 +168,16 @@ export class Engine {
     cancelAnimationFrame(this._raf);
     window.removeEventListener("keydown", this._onKeyDown);
     window.removeEventListener("keyup", this._onKeyUp);
-    if (this.canvas) this.canvas.removeEventListener("mousemove", this._onMouse);
+    if (this.canvas) {
+      this.canvas.removeEventListener("mousemove", this._onMouse);
+      this.canvas.removeEventListener("mousedown", this._onMouseDown);
+    }
+  }
+
+  // Simulate a click (used by tests; the browser path goes through _onMouseDown)
+  fireClick(x, y) {
+    this.mouse.x = x; this.mouse.y = y;
+    this.runEvents("click");
   }
 
   now() { return (performance.now() - this.t0) / 1000; }

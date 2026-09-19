@@ -174,10 +174,22 @@ export function parseLhs(src) {
 // Statement / program parser (line based)
 // ---------------------------------------------------------------------------
 
+function stripComment(raw) {
+  // Remove # / // comments — but never inside "strings" (colors like "#ff5a55"!)
+  let out = "";
+  let inStr = false;
+  for (let i = 0; i < raw.length; i++) {
+    const c = raw[i];
+    if (c === '"') { inStr = !inStr; out += c; continue; }
+    if (!inStr && (c === "#" || (c === "/" && raw[i + 1] === "/"))) break;
+    out += c;
+  }
+  return out;
+}
+
 function cleanLines(source) {
   return String(source).split("\n").map((raw, idx) => {
-    let line = raw.replace(/#.*$/, "").replace(/\/\/.*$/, "").trim();
-    return { line, num: idx + 1 };
+    return { line: stripComment(raw).trim(), num: idx + 1 };
   }).filter(l => l.line !== "");
 }
 
@@ -260,16 +272,17 @@ export function compileProgram(source) {
     try {
       let r;
       if ((r = line.match(/^when\s+start$/i)) || (r = line.match(/^when\s+tick$/i)) ||
-          (r = line.match(/^when\s+key\s+"(.*)"$/i))) {
+          (r = line.match(/^when\s+click$/i)) || (r = line.match(/^when\s+key\s+"(.*)"$/i))) {
         if (stack && stack.length > 1) throw new Error(`missing "end" before next "when"`);
         current = /start$/i.test(line) ? { event: "start", body: [] }
                 : /tick$/i.test(line) ? { event: "tick", body: [] }
+                : /click$/i.test(line) ? { event: "click", body: [] }
                 : { event: "key", key: r[1], body: [] };
         events.push(current);
         stack = [{ body: current.body }];
         continue;
       }
-      if (!current) throw new Error(`code must start with "when start", "when tick" or "when key \\"...\\""`);
+      if (!current) throw new Error(`code must start with "when start", "when tick", "when click" or "when key \\"...\\""`);
       if (/^end$/i.test(line)) {
         if (stack.length === 1) { current = null; stack = null; continue; } // closing the event itself
         stack.pop(); continue;

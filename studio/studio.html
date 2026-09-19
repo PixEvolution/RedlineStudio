@@ -11,7 +11,11 @@
     <div class="studio-topbar">
       <input type="text" id="g-title" maxlength="40" placeholder="Untitled Game" class="title-input">
       <div class="studio-actions">
-        <button class="btn btn-ghost" id="btn-example">Load example: CRT 1947</button>
+        <select id="sel-example" class="blk-add" style="margin:0">
+          <option value="">Load example…</option>
+          <option value="crt">CRT Amusement Device (1947)</option>
+          <option value="bertie">Bertie the Brain (1950)</option>
+        </select>
         <button class="btn btn-ghost" id="btn-new">New</button>
         <button class="btn" id="btn-test">▶ Test</button>
         <button class="btn" id="btn-publish">Publish</button>
@@ -71,6 +75,7 @@
     import { createBlockEditor } from "../js/blocks.js";
     import { saveModel, listMyModels, instantiateModel } from "../js/models.js";
     import { buildCrtExample } from "./example-crt.js";
+    import { buildBertieExample } from "./example-bertie.js";
 
     renderNav("../");
     const user = requireLogin("../login.html");
@@ -290,14 +295,21 @@
       select(null);
     });
 
-    $("#btn-example").addEventListener("click", () => {
-      if (scene.objects.length > 0 && !confirm("Replace the current workspace with the CRT 1947 example?")) return;
-      const ex = buildCrtExample();
+    const EXAMPLES = {
+      crt: { build: buildCrtExample, tip: "Hit ▶ Test. Up/Down aims, Space fires." },
+      bertie: { build: buildBertieExample, tip: "Hit ▶ Test. Click a square — you're X, Bertie is O." }
+    };
+    $("#sel-example").addEventListener("change", () => {
+      const pick = $("#sel-example").value;
+      $("#sel-example").value = "";
+      if (!pick) return;
+      if (scene.objects.length > 0 && !confirm("Replace the current workspace with this example?")) return;
+      const ex = EXAMPLES[pick].build();
       scene = { objects: ex.objects };
       editingId = null;
       titleInput.value = ex.title;
       select(scene.objects[0].id);
-      toast("CRT Amusement Device loaded — hit ▶ Test. Up/Down aims, Space fires.");
+      toast(`${ex.title} loaded — ${EXAMPLES[pick].tip}`);
     });
 
     // ------------------------------------------------------------ models
