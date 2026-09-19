@@ -13,7 +13,7 @@
 // this example is the platform's flagship coin game. The click that starts a
 // round IS the coin drop.
 
-const ROT = 4.5, THRUST = 0.09, VMAX = 3.5;
+const ROT = 2.6, THRUST = 0.09, VMAX = 3.5;
 const TORP_SPD = 5.2, TORP_LIFE = 95, MISSILE_SPD = 2.6;
 const ROUND_TICKS = 5400;   // ~90 seconds
 const HIT_R = 12, CRASH_R = 15;

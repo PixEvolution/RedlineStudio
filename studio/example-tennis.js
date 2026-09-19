@@ -36,6 +36,8 @@ function scoreBlock(side /* 1 = left scores */, pad) {
     `${pad}  set vx to 0`,
     `${pad}  set vy to 0`,
     `${pad}  set bounces to 0`,
+    `${pad}  set leftlock to 0`,
+    `${pad}  set rightlock to 0`,
     `${pad}  set status.text to "${loser === 1 ? "LEFT SERVES — PRESS D" : "RIGHT SERVES — PRESS ←"}"`,
     `${pad}end`
   ].join("\n");
@@ -56,6 +58,8 @@ function resetLines(pad) {
     `${pad}set vy to 0`,
     `${pad}set bounces to 0`,
     `${pad}set hitcool to 0`,
+    `${pad}set leftlock to 0`,
+    `${pad}set rightlock to 0`,
     `${pad}set status.text to "LEFT SERVES — PRESS D"`
   ].join("\n");
 }
@@ -90,7 +94,7 @@ function ballCode() {
   push("    if serving == 1 and servesider == 1 then");
   push("      set can to 1");
   push("    end");
-  push(`    if serving == 0 and self.x < ${NET_X} then`);
+  push(`    if serving == 0 and self.x < ${NET_X} and leftlock == 0 then`);
   push("      set can to 1");
   push("    end");
   push("    if can == 1 then");
@@ -99,6 +103,7 @@ function ballCode() {
   push("      set serving to 0");
   push("      set bounces to 0");
   push("      set hitcool to 12");
+  push("      set leftlock to 1");      // one hit per possession — no juggling!
   push('      set status.text to ""');
   push("    end");
   push("  end");
@@ -108,7 +113,7 @@ function ballCode() {
   push("    if serving == 1 and servesider == -1 then");
   push("      set can to 1");
   push("    end");
-  push(`    if serving == 0 and self.x >= ${NET_X} then`);
+  push(`    if serving == 0 and self.x >= ${NET_X} and rightlock == 0 then`);
   push("      set can to 1");
   push("    end");
   push("    if can == 1 then");
@@ -117,6 +122,7 @@ function ballCode() {
   push("      set serving to 0");
   push("      set bounces to 0");
   push("      set hitcool to 12");
+  push("      set rightlock to 1");     // one hit per possession — no juggling!
   push('      set status.text to ""');
   push("    end");
   push("  end");
@@ -131,6 +137,8 @@ function ballCode() {
   push(`      set self.y to ${GROUND_Y}`);
   push("      set vy to 0 - vy * 0.72");
   push("      set bounces to bounces + 1");
+  push("      set leftlock to 0");
+  push("      set rightlock to 0");
   push("      if bounces >= 3 then");
   push(`        if self.x < ${NET_X} then`);
   push(scoreBlock(-1, "          "));   // died on the left → right scores
@@ -145,9 +153,13 @@ function ballCode() {
   push(`        if self.y > ${NET_TOP} then`);
   push("          set self.x to px");
   push("          set vx to 0 - vx * 0.55");
+  push("          set leftlock to 0");
+  push("          set rightlock to 0");
   push('          say "NET!" for 0.7');
   push("        else");
   push("          set bounces to 0");
+  push("          set leftlock to 0");
+  push("          set rightlock to 0");
   push("        end");
   push("      end");
   // out the back edges

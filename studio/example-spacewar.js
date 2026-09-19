@@ -15,10 +15,12 @@
 //   WEDGE  (amber):  ←/→ rotate · ↑ thrust · ↓ fire · ENTER hyperspace
 
 const CX = 240, CY = 180;
-const G = 1600, STAR_KILL = 16, SHIP_HIT = 16, TORP_HIT = 12;
-const ROT = 4.5, THRUST = 0.09, VMAX = 3.5, TORP_SPD = 5, TORP_LIFE = 110;
-const NEEDLE_SPAWN = { x: 80, y: 280, a: -45 };
-const WEDGE_SPAWN = { x: 400, y: 80, a: 135 };
+const G = 1200, STAR_KILL = 16, SHIP_HIT = 16, TORP_HIT = 12;
+const ROT = 3.2, THRUST = 0.09, VMAX = 3.5, TORP_SPD = 5, TORP_LIFE = 110;
+// spawn in ORBIT: tangential velocity at circular-orbit speed, so untouched
+// ships circle the star instead of falling straight into it
+const NEEDLE_SPAWN = { x: 110, y: 270, a: 55, vx: 1.57, vy: 2.26 };
+const WEDGE_SPAWN = { x: 370, y: 90, a: 235, vx: -1.57, vy: -2.26 };
 
 // -------------------------------------------------------------- ship script
 function shipCode(p) {
@@ -31,8 +33,8 @@ function shipCode(p) {
   push(`set self.x to ${p.spawn.x}`);
   push(`set self.y to ${p.spawn.y}`);
   push(`set self.angle to ${p.spawn.a}`);
-  push("set self.velx to 0");
-  push("set self.vely to 0");
+  push(`set self.velx to ${p.spawn.vx}`);
+  push(`set self.vely to ${p.spawn.vy}`);
   push("set self.cool to 0");
   push("set self.hcool to 0");
   push(`set ${p.aliveVar} to 1`);
@@ -44,8 +46,8 @@ function shipCode(p) {
   push(`  set self.x to ${p.spawn.x}`);
   push(`  set self.y to ${p.spawn.y}`);
   push(`  set self.angle to ${p.spawn.a}`);
-  push("  set self.velx to 0");
-  push("  set self.vely to 0");
+  push(`  set self.velx to ${p.spawn.vx}`);
+  push(`  set self.vely to ${p.spawn.vy}`);
   push("  set self.cool to 0");
   push("  set self.hcool to 0");
   push(`  set ${p.aliveVar} to 1`);

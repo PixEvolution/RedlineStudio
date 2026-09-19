@@ -113,6 +113,7 @@ export class Engine {
     this.vars = {};
     this.lists = {};   // name -> {index: value} — RedScript lists (board[i])
     this.keys = {};
+    this.gpKeys = {};   // keys held via gamepads (merged with the keyboard)
     this.mouse = { x: CANVAS_W / 2, y: CANVAS_H / 2 };
     this.messages = [];
     this.effects = [];
@@ -162,6 +163,7 @@ export class Engine {
     this.runEvents("start");
     const loop = () => {
       if (!this.running) return;
+      this.pollGamepads();
       this.step();
       this.render();
       this._raf = requestAnimationFrame(loop);
@@ -205,6 +207,43 @@ export class Engine {
   }
 
   fireKey(key) { this.runEvents("key", key); }
+
+  // ---- gamepads ----
+  // One pad connected: it drives BOTH key clusters (any 1-player game just works).
+  // Two pads: pad 1 = the WASD cluster (player 1), pad 2 = the arrows cluster.
+  // Sticks/D-pad -> directions; face buttons A/B/X/Y -> the cluster's action keys.
+  pollGamepads(padsOverride) {
+    let pads = padsOverride;
+    if (!pads) {
+      try { pads = (typeof navigator !== "undefined" && navigator.getGamepads) ? navigator.getGamepads() : null; }
+      catch { return; }
+    }
+    if (!pads) return;
+    const live = [];
+    for (const p of pads) if (p && p.connected !== false) live.push(p);
+    const next = {};
+    const CLUSTERS = {
+      wasd:   { up: "w", down: "s", left: "a", right: "d", a: "s", b: "d", x: "q", y: "w" },
+      arrows: { up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight",
+                a: " ", b: "Enter", x: "ArrowDown", y: "ArrowUp" }
+    };
+    const apply = (pad, c) => {
+      const ax = Number(pad.axes?.[0]) || 0, ay = Number(pad.axes?.[1]) || 0;
+      const btn = (i) => !!pad.buttons?.[i]?.pressed;
+      if (ay < -0.4 || btn(12)) next[c.up] = true;
+      if (ay > 0.4 || btn(13)) next[c.down] = true;
+      if (ax < -0.4 || btn(14)) next[c.left] = true;
+      if (ax > 0.4 || btn(15)) next[c.right] = true;
+      if (btn(0)) next[c.a] = true;
+      if (btn(1)) next[c.b] = true;
+      if (btn(2)) next[c.x] = true;
+      if (btn(3)) next[c.y] = true;
+    };
+    if (live.length === 1) { apply(live[0], CLUSTERS.wasd); apply(live[0], CLUSTERS.arrows); }
+    else if (live.length >= 2) { apply(live[0], CLUSTERS.wasd); apply(live[1], CLUSTERS.arrows); }
+    for (const k in next) if (!this.gpKeys[k]) this.fireKey(k);   // rising edge -> "when key"
+    this.gpKeys = next;
+  }
 
   keyMatches(want, got) {
     if (want === got) return true;
@@ -360,7 +399,13 @@ export class Engine {
             if (!a || !b) return 99999;
             return Math.hypot(a.x - b.x, a.y - b.y);
           }
-          case "keydown": return this.keys[args[0]] || (args[0] === "Space" && this.keys[" "]) ? 1 : 0;
+          case "keydown": {
+            const k = args[0];
+            const held = (m) => m[k] ||
+              ((k === "Space" || k === "space") && m[" "]) ||
+              (k === " " && (m["Space"] || m["space"]));
+            return (held(this.keys) || held(this.gpKeys)) ? 1 : 0;
+          }
           case "abs": return Math.abs(Number(args[0]));
           case "min": return Math.min(...args.map(Number));
           case "max": return Math.max(...args.map(Number));
