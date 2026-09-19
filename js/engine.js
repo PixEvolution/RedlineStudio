@@ -366,6 +366,8 @@ export class Engine {
           case "floor": return Math.floor(Number(args[0]));
           case "round": return Math.round(Number(args[0]));
           case "xor": return (Math.floor(Number(args[0])) ^ Math.floor(Number(args[1] ?? 0)));
+          case "sin": return Math.sin(Number(args[0]) * Math.PI / 180);   // degrees
+          case "cos": return Math.cos(Number(args[0]) * Math.PI / 180);   // degrees
           case "mousex": return this.mouse.x;
           case "mousey": return this.mouse.y;
           case "time": return this.now();

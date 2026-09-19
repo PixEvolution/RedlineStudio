@@ -29,7 +29,7 @@ A game platform by Redline Digital — players make accounts, build games in the
 | `profiles.html` | Players — every account on the platform |
 | `profile.html` | One player: stats, games, and their custom scripted page |
 | `studio/studio.html` | The Studio (game mode + `?mode=page` Page Studio for profiles) |
-|  `studio/example-*.js` | Reference examples: CRT Amusement Device (1947), Bertie the Brain (1950), NIMROD (1951), Draughts (1951), OXO (1952) |
+|  `studio/example-*.js` | Reference examples: CRT Amusement Device (1947), Bertie the Brain (1950), NIMROD (1951), Draughts (1951), OXO (1952), Tennis for Two (1958) |
 
 **Rules of the road:** one file, one job. New features get new files. Every game is saved with a `version` and `engine` field so old games keep working as the Studio evolves — each engine version keeps its renderer forever.
 
@@ -41,7 +41,7 @@ Blocks and text are the **same language** (RedScript):
 - A 📜 Code block holds full RedScript and compiles into the same structure
 - One interpreter (`engine.js`) runs everything
 
-Events: `when start`, `when tick`, `when click`, `when key "..."` · Actions: `set`, `change`, `if/else`, `repeat`, `say`, `explode` · Math: `+ - * / %`, `xor(a,b)`, comparisons, `and or not` · Lists: `board[i]` read/write anywhere · Objects: dot, ring, box, text with x/y/size/color/glow/visible/text.
+Events: `when start`, `when tick`, `when click`, `when key "..."` · Actions: `set`, `change`, `if/else`, `repeat`, `say`, `explode` · Math: `+ - * / %`, `xor(a,b)`, `sin(deg)` `cos(deg)`, comparisons, `and or not` · Lists: `board[i]` read/write anywhere · Objects: dot, ring, box, text with x/y/size/color/glow/visible/text.
 
 ## Models & Market (v1)
 

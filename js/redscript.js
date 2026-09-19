@@ -63,7 +63,7 @@ function tokenize(src) {
 const OBJECT_ARG_FNS = new Set(["dist", "explode"]);
 const KNOWN_FNS = new Set([
   "rand", "dist", "keydown", "abs", "min", "max", "floor", "round",
-  "mousex", "mousey", "time", "xor"
+  "mousex", "mousey", "time", "xor", "sin", "cos"
 ]);
 
 class ExprParser {
