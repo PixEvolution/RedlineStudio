@@ -42,7 +42,10 @@
 
       <!-- WORKSPACE -->
       <div>
-        <canvas id="workspace" width="480" height="360" class="workspace-canvas"></canvas>
+        <div class="stage" id="stage">
+          <canvas id="workspace" width="480" height="360" class="workspace-canvas"></canvas>
+          <div class="stage-bar"><button class="btn btn-small btn-ghost" id="btn-fs"></button></div>
+        </div>
         <p class="hint" id="ws-hint">Click an object to select it · drag to move · ▶ Test to play</p>
       </div>
 
@@ -74,12 +77,19 @@
     import { Engine, drawFrame, makeObject, CANVAS_W, CANVAS_H } from "../js/engine.js";
     import { createBlockEditor } from "../js/blocks.js";
     import { saveModel, listMyModels, instantiateModel } from "../js/models.js";
+    import { createTouchControls, isTouchDevice } from "../js/touch-controls.js";
+    import { attachFullscreenButton } from "../js/fullscreen.js";
     import { buildCrtExample } from "./example-crt.js";
     import { buildBertieExample } from "./example-bertie.js";
+    import { getProfile, savePageScene } from "../js/profiles.js";
 
     renderNav("../");
     const user = requireLogin("../login.html");
     if (!user) throw new Error("redirecting");
+
+    // ---- mode: "game" (default) or "page" (the Page Studio — same editor
+    // and same powers, but it saves to your profile page, not the games list) ----
+    const pageMode = new URLSearchParams(location.search).get("mode") === "page";
 
     // ------------------------------------------------------------ state
     let scene = { objects: [] };
@@ -224,8 +234,9 @@
       const r = canvas.getBoundingClientRect();
       return { x: (e.clientX - r.left) * (CANVAS_W / r.width), y: (e.clientY - r.top) * (CANVAS_H / r.height) };
     }
-    canvas.addEventListener("mousedown", (e) => {
+    canvas.addEventListener("pointerdown", (e) => {
       if (engine) return;
+      e.preventDefault();
       const p = canvasPos(e);
       for (let i = scene.objects.length - 1; i >= 0; i--) {
         const o = scene.objects[i];
@@ -238,20 +249,24 @@
       }
       select(null);
     });
-    window.addEventListener("mousemove", (e) => {
+    window.addEventListener("pointermove", (e) => {
       if (!dragging || engine) return;
       const p = canvasPos(e);
       dragging.obj.x = Math.round(p.x + dragging.dx);
       dragging.obj.y = Math.round(p.y + dragging.dy);
       renderProps(); redraw();
     });
-    window.addEventListener("mouseup", () => dragging = null);
+    window.addEventListener("pointerup", () => dragging = null);
+    window.addEventListener("pointercancel", () => dragging = null);
 
     // ------------------------------------------------------------ test mode
     const testBtn = $("#btn-test");
+    let testControls = null;
+    attachFullscreenButton($("#btn-fs"), $("#stage"));
     testBtn.addEventListener("click", () => {
       if (engine) {
         engine.stop(); engine = null;
+        if (testControls) { testControls.destroy(); testControls = null; }
         testBtn.textContent = "▶ Test";
         $("#ws-hint").textContent = "Click an object to select it · drag to move · ▶ Test to play";
         redraw();
@@ -262,6 +277,7 @@
         toast("Script problems:\n" + engine.errors.slice(0, 4).join("\n"), true);
       }
       engine.start();
+      if (isTouchDevice()) testControls = createTouchControls(engine, $("#stage"));
       testBtn.textContent = "■ Stop";
       $("#ws-hint").textContent = "Testing — your game is live. Click Stop to go back to editing.";
     });
@@ -271,24 +287,32 @@
       const btn = $("#btn-publish");
       btn.disabled = true;
       try {
-        const payload = { title: titleInput.value || "Untitled Game", data: JSON.parse(JSON.stringify(scene)), engine: "v1" };
         // quick compile check so broken scripts get flagged before publishing
         const check = new Engine(null, scene.objects);
-        if (check.errors.length) toast("Published, but check scripts:\n" + check.errors.slice(0, 3).join("\n"), true);
-        if (editingId) {
-          await updateGame(editingId, payload);
-          if (check.errors.length === 0) toast("Game updated!");
+        if (pageMode) {
+          await savePageScene(user, JSON.parse(JSON.stringify(scene)));
+          toast(check.errors.length
+            ? "Page saved, but check scripts:\n" + check.errors.slice(0, 3).join("\n")
+            : "Page saved! It's live on your profile.", check.errors.length > 0);
         } else {
-          editingId = await publishGame({ ...payload, owner: user, engine: "v1" });
-          if (check.errors.length === 0) toast("Published! It's live on the Games page.");
+          const payload = { title: titleInput.value || "Untitled Game", data: JSON.parse(JSON.stringify(scene)), engine: "v1" };
+          if (check.errors.length) toast("Published, but check scripts:\n" + check.errors.slice(0, 3).join("\n"), true);
+          if (editingId) {
+            await updateGame(editingId, payload);
+            if (check.errors.length === 0) toast("Game updated!");
+          } else {
+            editingId = await publishGame({ ...payload, owner: user, engine: "v1" });
+            if (check.errors.length === 0) toast("Published! It's live on the Games page.");
+          }
+          loadMyGames();
         }
-        loadMyGames();
       } catch (err) { toast(err.message, true); }
       btn.disabled = false;
     });
 
     $("#btn-new").addEventListener("click", () => {
-      if (!confirm("Start a new empty game? Unpublished changes are lost.")) return;
+      if (!confirm(pageMode ? "Clear your page and start empty? (Nothing changes until you Save.)"
+                            : "Start a new empty game? Unpublished changes are lost.")) return;
       scene = { objects: [] };
       editingId = null;
       titleInput.value = "";
@@ -429,11 +453,34 @@
     }
 
     // ------------------------------------------------------------ go
+    if (pageMode) {
+      // Page Studio: same editor, different destination
+      titleInput.style.display = "none";
+      const label = document.createElement("strong");
+      label.style.fontSize = "20px";
+      label.textContent = "🎨 My Page";
+      titleInput.parentNode.insertBefore(label, titleInput);
+      $("#btn-publish").textContent = "Save my page";
+      document.querySelector(".my-games").style.display = "none";
+      const view = document.createElement("a");
+      view.className = "btn btn-ghost";
+      view.textContent = "View my page";
+      view.href = "../profile.html?u=" + encodeURIComponent(user);
+      $("#btn-publish").parentNode.appendChild(view);
+      // load the current page for editing
+      try {
+        const p = await getProfile(user);
+        if (p.pageScene?.objects) {
+          scene = JSON.parse(JSON.stringify(p.pageScene));
+          select(scene.objects[0]?.id || null);
+        }
+      } catch {}
+    }
     renderExplorer();
     renderProps();
     renderScriptEditor();
     redraw();
-    loadMyGames();
+    if (!pageMode) loadMyGames();
     loadModels();
   </script>
 </body>

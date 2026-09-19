@@ -20,6 +20,8 @@
     import { renderNav, toast, fmtDate } from "./js/ui.js";
     import { getGame, countPlay } from "./js/games.js";
     import { Engine, CANVAS_W, CANVAS_H } from "./js/engine.js";
+    import { createTouchControls, isTouchDevice } from "./js/touch-controls.js";
+    import { attachFullscreenButton } from "./js/fullscreen.js";
 
     renderNav("");
 
@@ -44,19 +46,38 @@
       v1(game, mount) {
         mount.innerHTML = "";
         mount.style.display = "block";
+
+        const stage = document.createElement("div");
+        stage.className = "stage";
         const canvas = document.createElement("canvas");
         canvas.width = CANVAS_W;
         canvas.height = CANVAS_H;
         canvas.className = "workspace-canvas";
-        mount.appendChild(canvas);
-        const hint = document.createElement("p");
-        hint.className = "hint";
-        hint.style.textAlign = "center";
-        hint.textContent = "Click the screen, then use your keyboard / mouse.";
-        mount.appendChild(hint);
+        stage.appendChild(canvas);
+        mount.appendChild(stage);
+
+        const bar = document.createElement("div");
+        bar.className = "stage-bar";
+        const fsBtn = document.createElement("button");
+        fsBtn.className = "btn btn-small btn-ghost";
+        stage.appendChild(bar);
 
         const engine = new Engine(canvas, game.data?.objects || []);
         if (engine.errors.length) console.warn("Script issues:", engine.errors);
+
+        // touch controls on phones/tablets, generated from the game's own keys
+        if (isTouchDevice()) createTouchControls(engine, stage);
+        bar.appendChild(fsBtn);
+        attachFullscreenButton(fsBtn, stage);
+
+        const hint = document.createElement("p");
+        hint.className = "hint";
+        hint.style.textAlign = "center";
+        hint.textContent = isTouchDevice()
+          ? "Tap the screen and buttons to play."
+          : "Click the screen, then use your keyboard / mouse.";
+        mount.appendChild(hint);
+
         engine.start();
       }
     };
@@ -67,7 +88,14 @@
 
       const game = await getGame(id);
       titleEl.textContent = game.title;
-      metaEl.textContent = `by ${game.owner} · ${game.plays || 0} plays · published ${fmtDate(game.createdAt)}`;
+      metaEl.textContent = "by ";
+      const ownerLink = document.createElement("a");
+      ownerLink.href = "profile.html?u=" + encodeURIComponent(game.owner);
+      ownerLink.textContent = game.owner;
+      ownerLink.style.color = "#ff8f8c";
+      metaEl.appendChild(ownerLink);
+      metaEl.appendChild(document.createTextNode(
+        ` · ${game.plays || 0} plays · published ${fmtDate(game.createdAt)}`));
 
       const render = renderers[game.engine] || renderers.v0;
       render(game, frame);

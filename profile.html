@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RedlineStudio — Player</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="page">
+    <!-- Account header: rendered by the site itself. The player's custom page
+         below can't touch this — stats and games stay honest. -->
+    <div class="panel profile-head">
+      <div>
+        <h1 class="page-title" id="p-name" style="margin:0">Loading…</h1>
+        <p class="page-sub" id="p-meta" style="margin:6px 0 0"></p>
+      </div>
+      <a class="btn" id="btn-edit-page" href="studio/studio.html?mode=page" style="display:none">🎨 Edit my page</a>
+    </div>
+
+    <!-- The player's custom page: a full scripted scene, same engine as games -->
+    <div id="custom-page" style="display:none; margin-top:16px">
+      <div class="stage" id="stage">
+        <canvas id="page-canvas" width="480" height="360" class="workspace-canvas"></canvas>
+        <div class="stage-bar"><button class="btn btn-small btn-ghost" id="btn-fs"></button></div>
+      </div>
+    </div>
+
+    <h2 style="margin-top:28px" id="games-heading">Games</h2>
+    <div id="p-games" class="games-grid"><p class="empty-note">Loading…</p></div>
+  </main>
+
+  <script type="module">
+    import { renderNav, toast, fmtDate } from "./js/ui.js";
+    import { currentUser } from "./js/auth.js";
+    import { getProfile } from "./js/profiles.js";
+    import { listGamesBy } from "./js/games.js";
+    import { Engine } from "./js/engine.js";
+    import { createTouchControls, isTouchDevice } from "./js/touch-controls.js";
+    import { attachFullscreenButton } from "./js/fullscreen.js";
+
+    renderNav("");
+
+    const me = currentUser();
+    const nameEl = document.getElementById("p-name");
+    const metaEl = document.getElementById("p-meta");
+    const gamesGrid = document.getElementById("p-games");
+
+    try {
+      const username = new URLSearchParams(location.search).get("u") || me;
+      if (!username) throw new Error("No player selected.");
+
+      const profile = await getProfile(username);
+      const games = await listGamesBy(username);
+
+      nameEl.textContent = profile.username;
+      document.title = "RedlineStudio — " + profile.username;
+      const totalPlays = games.reduce((n, g) => n + (g.plays || 0), 0);
+      metaEl.textContent =
+        `joined ${fmtDate(profile.createdAt) || "recently"} · ${games.length} game${games.length === 1 ? "" : "s"} · ${totalPlays} total plays`;
+
+      if (me === profile.username) {
+        document.getElementById("btn-edit-page").style.display = "";
+      }
+
+      // their custom page, running live
+      if (profile.pageScene?.objects?.length > 0) {
+        document.getElementById("custom-page").style.display = "";
+        const canvas = document.getElementById("page-canvas");
+        const stage = document.getElementById("stage");
+        const engine = new Engine(canvas, profile.pageScene.objects);
+        if (engine.errors.length) console.warn("Page script issues:", engine.errors);
+        if (isTouchDevice()) createTouchControls(engine, stage);
+        attachFullscreenButton(document.getElementById("btn-fs"), stage);
+        engine.start();
+      }
+
+      // their games
+      gamesGrid.innerHTML = "";
+      if (games.length === 0) {
+        gamesGrid.innerHTML = `<p class="empty-note">No games published yet.</p>`;
+      }
+      for (const g of games) {
+        const card = document.createElement("a");
+        card.className = "game-card";
+        card.href = "play.html?id=" + encodeURIComponent(g.id);
+        const title = document.createElement("div");
+        title.className = "game-title";
+        title.textContent = g.title;
+        const meta = document.createElement("div");
+        meta.className = "game-meta";
+        meta.textContent = `${g.plays || 0} plays · ${fmtDate(g.createdAt)}`;
+        card.append(title, meta);
+        gamesGrid.appendChild(card);
+      }
+    } catch (err) {
+      nameEl.textContent = "Whoops";
+      metaEl.textContent = err.message;
+      gamesGrid.innerHTML = "";
+      toast(err.message, true);
+    }
+  </script>
+</body>
+</html>

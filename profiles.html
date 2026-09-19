@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RedlineStudio — Players</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="page">
+    <h1 class="page-title">Players</h1>
+    <p class="page-sub">Everyone on the platform. Click a name to visit their page.</p>
+    <div id="players" class="games-grid">
+      <p class="empty-note">Loading players…</p>
+    </div>
+  </main>
+
+  <script type="module">
+    import { renderNav, toast, fmtDate } from "./js/ui.js";
+    import { listUsers } from "./js/profiles.js";
+
+    renderNav("");
+    const grid = document.getElementById("players");
+
+    try {
+      const users = await listUsers();
+      grid.innerHTML = "";
+      if (users.length === 0) grid.innerHTML = `<p class="empty-note">No players yet.</p>`;
+      for (const u of users) {
+        const card = document.createElement("a");
+        card.className = "game-card";
+        card.href = "profile.html?u=" + encodeURIComponent(u.username);
+        const name = document.createElement("div");
+        name.className = "game-title";
+        name.textContent = u.username;
+        const meta = document.createElement("div");
+        meta.className = "game-meta";
+        meta.textContent = "joined " + (fmtDate(u.createdAt) || "recently");
+        card.append(name, meta);
+        grid.appendChild(card);
+      }
+    } catch (err) {
+      grid.innerHTML = "";
+      toast("Couldn't load players: " + err.message, true);
+    }
+  </script>
+</body>
+</html>

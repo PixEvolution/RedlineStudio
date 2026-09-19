@@ -16,13 +16,18 @@ A game platform by Redline Digital — players make accounts, build games in the
 | `js/blocks.js` | The block script editor UI |
 | `js/models.js` | Models: save groups, inventory, insert, market buy/sell |
 | `js/economy.js` | Coins + daily claim |
+| `js/profiles.js` | Player profiles + saving the custom page |
+| `js/touch-controls.js` | Auto-generated on-screen buttons for phones (from each game's keys) |
+| `js/fullscreen.js` | Optional fullscreen for testing and playing |
 | `js/ui.js` | Shared nav bar, toasts, helpers |
 | `css/style.css` | All styling |
 | `index.html` | Home — the public games list |
 | `login.html` | Log in / create account |
 | `play.html` | Plays a published game (one renderer per engine version) |
 | `market.html` | Model market + inventory + coins |
-| `studio/studio.html` | The Studio: Explorer, Workspace, Properties, Script editor, Test |
+| `profiles.html` | Players — every account on the platform |
+| `profile.html` | One player: stats, games, and their custom scripted page |
+| `studio/studio.html` | The Studio (game mode + `?mode=page` Page Studio for profiles) |
 |  `studio/example-*.js` | Reference examples: CRT Amusement Device (1947), Bertie the Brain (1950) |
 
 **Rules of the road:** one file, one job. New features get new files. Every game is saved with a `version` and `engine` field so old games keep working as the Studio evolves — each engine version keeps its renderer forever.

@@ -150,8 +150,8 @@ export class Engine {
     window.addEventListener("keydown", this._onKeyDown);
     window.addEventListener("keyup", this._onKeyUp);
     if (this.canvas) {
-      this.canvas.addEventListener("mousemove", this._onMouse);
-      this.canvas.addEventListener("mousedown", this._onMouseDown);
+      this.canvas.addEventListener("pointermove", this._onMouse);
+      this.canvas.addEventListener("pointerdown", this._onMouseDown);
     }
     this.runEvents("start");
     const loop = () => {
@@ -169,8 +169,8 @@ export class Engine {
     window.removeEventListener("keydown", this._onKeyDown);
     window.removeEventListener("keyup", this._onKeyUp);
     if (this.canvas) {
-      this.canvas.removeEventListener("mousemove", this._onMouse);
-      this.canvas.removeEventListener("mousedown", this._onMouseDown);
+      this.canvas.removeEventListener("pointermove", this._onMouse);
+      this.canvas.removeEventListener("pointerdown", this._onMouseDown);
     }
   }
 
@@ -203,7 +203,47 @@ export class Engine {
   keyMatches(want, got) {
     if (want === got) return true;
     if ((want === "Space" || want === "space") && got === " ") return true;
+    if (want === " " && (got === "Space" || got === "space")) return true;
     return false;
+  }
+
+  // ---- virtual keys (on-screen touch controls call these) ----
+
+  pressKey(key) {
+    const k = (key === "Space" || key === "space") ? " " : key;
+    this.keys[k] = true;
+    this.fireKey(k);
+  }
+
+  releaseKey(key) {
+    const k = (key === "Space" || key === "space") ? " " : key;
+    this.keys[k] = false;
+  }
+
+  // Every key this game's scripts care about — "when key" events plus keydown() calls.
+  // Touch controls are generated from this, so on-screen buttons always match the game.
+  usedKeys() {
+    const keys = new Set();
+    const walkExpr = (x) => {
+      if (!x || typeof x !== "object") return;
+      if (x.e === "call" && x.fn === "keydown" && x.args?.[0]?.e === "str") keys.add(x.args[0].v);
+      for (const f of ["a", "b"]) walkExpr(x[f]);
+      (x.args || []).forEach(walkExpr);
+    };
+    const walkStmts = (list) => (list || []).forEach(s => {
+      for (const f of ["value", "by", "cond", "times", "seconds"]) walkExpr(s[f]);
+      walkStmts(s.then); walkStmts(s.else); walkStmts(s.body);
+    });
+    for (const c of this.compiled) {
+      for (const ev of c.events) {
+        if (ev.event === "key" && ev.key) keys.add(ev.key);
+        walkStmts(ev.body);
+      }
+    }
+    // normalize " " → Space for display, dedupe
+    const out = new Set();
+    for (const k of keys) out.add(k === " " ? "Space" : k);
+    return [...out];
   }
 
   resolveObj(name, self) {

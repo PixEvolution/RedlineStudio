@@ -18,15 +18,18 @@ export function renderNav(rootPath = "") {
       <a href="${rootPath}index.html">Games</a>
       <a href="${rootPath}studio/studio.html">Studio</a>
       <a href="${rootPath}market.html">Market</a>
+      <a href="${rootPath}profiles.html">Players</a>
       <span class="nav-user"></span>
     </div>
   `;
 
   const userSlot = nav.querySelector(".nav-user");
   if (user) {
-    const name = document.createElement("span");
+    const name = document.createElement("a");
     name.className = "nav-username";
     name.textContent = user; // textContent = safe for any character
+    name.href = rootPath + "profile.html?u=" + encodeURIComponent(user);
+    name.title = "My profile";
     const out = document.createElement("a");
     out.href = "#";
     out.textContent = "Log out";
