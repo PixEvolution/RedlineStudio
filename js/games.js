@@ -12,7 +12,10 @@ import {
 const GAMES = "games";
 
 // Publish a brand-new game. `data` is the game's content — its shape can evolve.
-export async function publishGame({ title, owner, data, engine = "v1" }) {
+// `price` = coins to insert per play (0 = free, arcade style).
+// `screen` = the attract screen shown on the card and before playing:
+//            { mode: "none"|"static"|"live", objects: [...] }
+export async function publishGame({ title, owner, data, engine = "v1", description = "", price = 0, screen = null }) {
   if (!title || title.trim().length === 0) throw new Error("Your game needs a title.");
   if (title.length > 40) throw new Error("Title must be 40 characters or less.");
 
@@ -22,6 +25,9 @@ export async function publishGame({ title, owner, data, engine = "v1" }) {
     title: title.trim(),
     owner,                // username of the creator
     data,                 // the game itself (open-ended)
+    description: String(description || "").slice(0, 200),
+    price: cleanPrice(price),
+    screen: cleanScreen(screen),
     plays: 0,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
@@ -30,13 +36,25 @@ export async function publishGame({ title, owner, data, engine = "v1" }) {
 }
 
 // Overwrite an existing game with new content (republish/update).
-export async function updateGame(gameId, { title, data, engine }) {
+export async function updateGame(gameId, { title, data, engine, description, price, screen }) {
   await updateDoc(doc(db, GAMES, gameId), {
     ...(title !== undefined ? { title: title.trim() } : {}),
     ...(data !== undefined ? { data } : {}),
     ...(engine !== undefined ? { engine } : {}),
+    ...(description !== undefined ? { description: String(description || "").slice(0, 200) } : {}),
+    ...(price !== undefined ? { price: cleanPrice(price) } : {}),
+    ...(screen !== undefined ? { screen: cleanScreen(screen) } : {}),
     updatedAt: serverTimestamp()
   });
+}
+
+function cleanPrice(p) {
+  return Math.min(100000, Math.max(0, Math.floor(Number(p) || 0)));
+}
+
+function cleanScreen(s) {
+  if (!s || !s.mode || s.mode === "none") return { mode: "none", objects: [] };
+  return { mode: s.mode === "live" ? "live" : "static", objects: s.objects || [] };
 }
 
 export async function deleteGame(gameId) {
