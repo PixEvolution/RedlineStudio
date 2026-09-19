@@ -110,6 +110,7 @@ export class Engine {
     this.compiled = [];
     this.errors = [];
     this.vars = {};
+    this.lists = {};   // name -> {index: value} — RedScript lists (board[i])
     this.keys = {};
     this.mouse = { x: CANVAS_W / 2, y: CANVAS_H / 2 };
     this.messages = [];
@@ -195,7 +196,7 @@ export class Engine {
       for (const ev of c.events) {
         if (ev.event !== kind) continue;
         if (kind === "key" && !this.keyMatches(ev.key, key)) continue;
-        this.budget = 20000;
+        this.budget = 200000;
         try { this.runStmts(ev.body, c.obj); }
         catch (err) { /* budget exceeded or runtime error — stop this event quietly */ }
       }
@@ -231,7 +232,7 @@ export class Engine {
     const walkExpr = (x) => {
       if (!x || typeof x !== "object") return;
       if (x.e === "call" && x.fn === "keydown" && x.args?.[0]?.e === "str") keys.add(x.args[0].v);
-      for (const f of ["a", "b"]) walkExpr(x[f]);
+      for (const f of ["a", "b", "i"]) walkExpr(x[f]);
       (x.args || []).forEach(walkExpr);
     };
     const walkStmts = (list) => (list || []).forEach(s => {
@@ -262,6 +263,10 @@ export class Engine {
         case "set": {
           const v = this.evalExpr(s.value, self);
           if (s.lhs.kind === "var") this.vars[s.lhs.name] = v;
+          else if (s.lhs.kind === "index") {
+            const arr = this.lists[s.lhs.name] || (this.lists[s.lhs.name] = {});
+            arr[Math.floor(Number(this.evalExpr(s.lhs.index, self)))] = v;
+          }
           else {
             const o = this.resolveObj(s.lhs.target, self);
             if (o) o[s.lhs.prop] = (s.lhs.prop === "color" || s.lhs.prop === "text") ? String(v) : Number(v) || 0;
@@ -271,6 +276,11 @@ export class Engine {
         case "change": {
           const by = Number(this.evalExpr(s.by, self)) || 0;
           if (s.lhs.kind === "var") this.vars[s.lhs.name] = (Number(this.vars[s.lhs.name]) || 0) + by;
+          else if (s.lhs.kind === "index") {
+            const arr = this.lists[s.lhs.name] || (this.lists[s.lhs.name] = {});
+            const i = Math.floor(Number(this.evalExpr(s.lhs.index, self)));
+            arr[i] = (Number(arr[i]) || 0) + by;
+          }
           else {
             const o = this.resolveObj(s.lhs.target, self);
             if (o) o[s.lhs.prop] = (Number(o[s.lhs.prop]) || 0) + by;
@@ -308,6 +318,11 @@ export class Engine {
       case "num": return x.v;
       case "str": return x.v;
       case "var": return this.vars[x.n] ?? 0;
+      case "index": {
+        const arr = this.lists[x.n];
+        if (!arr) return 0;
+        return arr[Math.floor(Number(this.evalExpr(x.i, self)))] ?? 0;
+      }
       case "prop": {
         const o = this.resolveObj(x.target, self);
         return o ? o[x.prop] ?? 0 : 0;

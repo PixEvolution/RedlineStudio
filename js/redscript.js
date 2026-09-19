@@ -49,7 +49,7 @@ function tokenize(src) {
     }
     const two = src.substr(i, 2);
     if (["<=", ">=", "==", "!="].includes(two)) { tokens.push({ t: "op", v: two }); i += 2; continue; }
-    if ("+-*/()<>,.%".includes(c)) { tokens.push({ t: "op", v: c }); i++; continue; }
+    if ("+-*/()<>,.%[]".includes(c)) { tokens.push({ t: "op", v: c }); i++; continue; }
     throw new Error(`unexpected character "${c}"`);
   }
   return tokens;
@@ -143,6 +143,13 @@ class ExprParser {
           : args;
         return { e: "call", fn: t.v, args: finalArgs };
       }
+      // list access: board[i]
+      if (this.peek()?.t === "op" && this.peek().v === "[") {
+        this.next();
+        const idx = this.parseOr();
+        this.expectOp("]");
+        return { e: "index", n: t.v, i: idx };
+      }
       // object.prop?
       if (this.peek()?.t === "op" && this.peek().v === ".") {
         this.next();
@@ -161,13 +168,18 @@ export function parseExpr(src) {
   return new ExprParser(tokenize(src)).parse();
 }
 
-// LHS of set/change: "aim" (variable) or "self.x" (object property)
+// LHS of set/change: "aim" (variable), "self.x" (object property) or "board[i]" (list slot)
 export function parseLhs(src) {
   const ts = tokenize(String(src).trim());
   if (ts.length === 1 && ts[0].t === "id") return { kind: "var", name: ts[0].v };
   if (ts.length === 3 && ts[0].t === "id" && ts[1].v === "." && ts[2].t === "id")
     return { kind: "prop", target: ts[0].v, prop: ts[2].v };
-  throw new Error(`"${src}" isn't a variable or object.property`);
+  if (ts.length >= 4 && ts[0].t === "id" && ts[1].t === "op" && ts[1].v === "[" &&
+      ts[ts.length - 1].t === "op" && ts[ts.length - 1].v === "]") {
+    const index = new ExprParser(ts.slice(2, -1)).parse();
+    return { kind: "index", name: ts[0].v, index };
+  }
+  throw new Error(`"${src}" isn't a variable, object.property or list[index]`);
 }
 
 // ---------------------------------------------------------------------------
