@@ -19,9 +19,11 @@
   <script type="module">
     import { renderNav, toast, fmtDate } from "./js/ui.js";
     import { getGame, countPlay } from "./js/games.js";
-    import { Engine, CANVAS_W, CANVAS_H } from "./js/engine.js";
+    import { Engine, drawFrame, CANVAS_W, CANVAS_H } from "./js/engine.js";
     import { createTouchControls, isTouchDevice } from "./js/touch-controls.js";
     import { attachFullscreenButton } from "./js/fullscreen.js";
+    import { currentUser } from "./js/auth.js";
+    import { transferCoins } from "./js/economy.js";
 
     renderNav("");
 
@@ -42,7 +44,8 @@
         mount.appendChild(wrap);
       },
 
-      // v1: real scripted games on the CRT engine
+      // v1: real scripted games on the CRT engine — with an arcade front-end:
+      // the attract screen plays on the cabinet until you hit PLAY (and pay, if it's a coin game)
       v1(game, mount) {
         mount.innerHTML = "";
         mount.style.display = "block";
@@ -60,25 +63,70 @@
         bar.className = "stage-bar";
         const fsBtn = document.createElement("button");
         fsBtn.className = "btn btn-small btn-ghost";
-        stage.appendChild(bar);
-
-        const engine = new Engine(canvas, game.data?.objects || []);
-        if (engine.errors.length) console.warn("Script issues:", engine.errors);
-
-        // touch controls on phones/tablets, generated from the game's own keys
-        if (isTouchDevice()) createTouchControls(engine, stage);
         bar.appendChild(fsBtn);
+        stage.appendChild(bar);
         attachFullscreenButton(fsBtn, stage);
 
         const hint = document.createElement("p");
         hint.className = "hint";
         hint.style.textAlign = "center";
-        hint.textContent = isTouchDevice()
-          ? "Tap the screen and buttons to play."
-          : "Click the screen, then use your keyboard / mouse.";
         mount.appendChild(hint);
 
-        engine.start();
+        const me = currentUser();
+        const price = me === game.owner ? 0 : (Number(game.price) || 0);
+        const screen = game.screen;
+        const hasScreen = screen && screen.mode !== "none" && screen.objects?.length > 0;
+
+        let attract = null;
+
+        function startGame() {
+          if (attract) { attract.stop(); attract = null; }
+          const engine = new Engine(canvas, game.data?.objects || []);
+          if (engine.errors.length) console.warn("Script issues:", engine.errors);
+          if (isTouchDevice()) createTouchControls(engine, stage);
+          engine.start();
+          countPlay(game.id);
+          hint.textContent = isTouchDevice()
+            ? "Tap the screen and buttons to play."
+            : "Click the screen, then use your keyboard / mouse.";
+        }
+
+        if (!hasScreen && price === 0) { startGame(); return; }
+
+        // ---- attract mode ----
+        if (hasScreen && screen.mode === "live") {
+          attract = new Engine(canvas, screen.objects);
+          attract.start();
+        } else if (hasScreen) {
+          drawFrame(canvas.getContext("2d"), screen.objects);
+        } else {
+          drawFrame(canvas.getContext("2d"), []);
+        }
+
+        const overlay = document.createElement("div");
+        overlay.className = "attract-overlay";
+        const playBtn = document.createElement("button");
+        playBtn.className = "coin-btn";
+        playBtn.textContent = price > 0 ? `🪙 INSERT ${price} — PLAY` : "▶ PLAY";
+        overlay.appendChild(playBtn);
+        stage.appendChild(overlay);
+        hint.textContent = price > 0 ? `This is a coin game — ${price} coins per play. Earn coins on the Market page.` : "";
+
+        playBtn.addEventListener("click", async () => {
+          if (price > 0) {
+            if (!me) { window.location.href = "login.html"; return; }
+            playBtn.disabled = true;
+            try {
+              await transferCoins(me, game.owner, price);
+            } catch (err) {
+              toast(err.message, true);
+              playBtn.disabled = false;
+              return;
+            }
+          }
+          overlay.remove();
+          startGame();
+        });
       }
     };
 
@@ -95,11 +143,19 @@
       ownerLink.style.color = "#ff8f8c";
       metaEl.appendChild(ownerLink);
       metaEl.appendChild(document.createTextNode(
-        ` · ${game.plays || 0} plays · published ${fmtDate(game.createdAt)}`));
+        ` · ${game.plays || 0} plays · published ${fmtDate(game.createdAt)}` +
+        (Number(game.price) > 0 ? ` · 🪙 ${game.price} per play` : "")));
+      if (game.description) {
+        const d = document.createElement("p");
+        d.className = "page-sub";
+        d.style.marginTop = "4px";
+        d.textContent = game.description;
+        metaEl.after(d);
+      }
 
       const render = renderers[game.engine] || renderers.v0;
       render(game, frame);
-      countPlay(id);
+      if (game.engine !== "v1") countPlay(id);   // v1 counts when the game actually starts
     } catch (err) {
       titleEl.textContent = "Whoops";
       frame.textContent = err.message;

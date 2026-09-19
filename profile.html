@@ -38,6 +38,7 @@
     import { Engine } from "./js/engine.js";
     import { createTouchControls, isTouchDevice } from "./js/touch-controls.js";
     import { attachFullscreenButton } from "./js/fullscreen.js";
+    import { gameCard, resetLiveCardBudget } from "./js/cards.js";
 
     renderNav("");
 
@@ -77,22 +78,11 @@
 
       // their games
       gamesGrid.innerHTML = "";
+      resetLiveCardBudget();
       if (games.length === 0) {
         gamesGrid.innerHTML = `<p class="empty-note">No games published yet.</p>`;
       }
-      for (const g of games) {
-        const card = document.createElement("a");
-        card.className = "game-card";
-        card.href = "play.html?id=" + encodeURIComponent(g.id);
-        const title = document.createElement("div");
-        title.className = "game-title";
-        title.textContent = g.title;
-        const meta = document.createElement("div");
-        meta.className = "game-meta";
-        meta.textContent = `${g.plays || 0} plays · ${fmtDate(g.createdAt)}`;
-        card.append(title, meta);
-        gamesGrid.appendChild(card);
-      }
+      for (const g of games) gamesGrid.appendChild(gameCard(g, { rootPath: "", showOwner: false }));
     } catch (err) {
       nameEl.textContent = "Whoops";
       metaEl.textContent = err.message;

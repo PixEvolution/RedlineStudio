@@ -16,8 +16,9 @@
   </main>
 
   <script type="module">
-    import { renderNav, fmtDate, toast } from "./js/ui.js";
+    import { renderNav, toast } from "./js/ui.js";
     import { listGames } from "./js/games.js";
+    import { gameCard, resetLiveCardBudget } from "./js/cards.js";
 
     renderNav("");
 
@@ -26,27 +27,13 @@
     try {
       const games = await listGames();
       grid.innerHTML = "";
+      resetLiveCardBudget();
 
       if (games.length === 0) {
         grid.innerHTML = `<p class="empty-note">No games published yet.<br>Be the first — open the Studio!</p>`;
       }
 
-      for (const g of games) {
-        const card = document.createElement("a");
-        card.className = "game-card";
-        card.href = "play.html?id=" + encodeURIComponent(g.id);
-
-        const title = document.createElement("div");
-        title.className = "game-title";
-        title.textContent = g.title;
-
-        const meta = document.createElement("div");
-        meta.className = "game-meta";
-        meta.textContent = `by ${g.owner} · ${g.plays || 0} plays · ${fmtDate(g.createdAt)}`;
-
-        card.append(title, meta);
-        grid.appendChild(card);
-      }
+      for (const g of games) grid.appendChild(gameCard(g, { rootPath: "", showOwner: true }));
     } catch (err) {
       grid.innerHTML = "";
       toast("Couldn't load games: " + err.message, true);
