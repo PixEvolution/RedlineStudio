@@ -231,8 +231,12 @@
     // ------------------------------------------------------------ canvas interaction
     let dragging = null;
     function canvasPos(e) {
+      // same letterbox-aware mapping the engine uses
       const r = canvas.getBoundingClientRect();
-      return { x: (e.clientX - r.left) * (CANVAS_W / r.width), y: (e.clientY - r.top) * (CANVAS_H / r.height) };
+      const scale = Math.min(r.width / CANVAS_W, r.height / CANVAS_H) || 1;
+      const ox = (r.width - CANVAS_W * scale) / 2;
+      const oy = (r.height - CANVAS_H * scale) / 2;
+      return { x: (e.clientX - r.left - ox) / scale, y: (e.clientY - r.top - oy) / scale };
     }
     canvas.addEventListener("pointerdown", (e) => {
       if (engine) return;

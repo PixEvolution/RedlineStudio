@@ -133,9 +133,13 @@ export class Engine {
     this._onKeyUp = (e) => { this.keys[e.key] = false; };
     this._onMouse = (e) => {
       if (!this.canvas) return;
+      // Maps screen → game coords, including fullscreen letterboxing
       const r = this.canvas.getBoundingClientRect();
-      this.mouse.x = (e.clientX - r.left) * (CANVAS_W / r.width);
-      this.mouse.y = (e.clientY - r.top) * (CANVAS_H / r.height);
+      const scale = Math.min(r.width / CANVAS_W, r.height / CANVAS_H) || 1;
+      const ox = (r.width - CANVAS_W * scale) / 2;
+      const oy = (r.height - CANVAS_H * scale) / 2;
+      this.mouse.x = (e.clientX - r.left - ox) / scale;
+      this.mouse.y = (e.clientY - r.top - oy) / scale;
     };
     this._onMouseDown = (e) => {
       if (!this.running) return;

@@ -1,9 +1,16 @@
 // fullscreen.js — optional fullscreen for a game stage.
 // Uses the real Fullscreen API where it exists; iPhones don't allow it,
 // so there's a CSS "fill the whole viewport" fallback that looks the same.
+// Either way we drive the styling with our own .fs-on class, so the layout
+// is identical no matter which path the browser took.
 
 export function isFullscreen(el) {
   return document.fullscreenElement === el || el.classList.contains("fs-fallback");
+}
+
+function setOn(el, on) {
+  el.classList.toggle("fs-on", on);
+  document.body.classList.toggle("fs-lock", on);
 }
 
 export async function toggleFullscreen(el) {
@@ -12,15 +19,15 @@ export async function toggleFullscreen(el) {
       await document.exitFullscreen().catch(() => {});
     }
     el.classList.remove("fs-fallback");
-    document.body.classList.remove("fs-lock");
+    setOn(el, false);
     return false;
   }
   try {
     await el.requestFullscreen();
   } catch {
     el.classList.add("fs-fallback");     // iOS / anything without the API
-    document.body.classList.add("fs-lock");
   }
+  setOn(el, true);
   return true;
 }
 
@@ -28,11 +35,11 @@ export async function toggleFullscreen(el) {
 // (including when the user exits with the Esc key).
 export function attachFullscreenButton(btn, el) {
   const sync = () => {
-    const on = isFullscreen(el);
-    btn.textContent = on ? "✕ Exit fullscreen" : "⛶ Fullscreen";
+    // Esc key exits native fullscreen without telling our button — resync here
     if (!document.fullscreenElement && !el.classList.contains("fs-fallback")) {
-      document.body.classList.remove("fs-lock");
+      setOn(el, false);
     }
+    btn.textContent = isFullscreen(el) ? "✕ Exit fullscreen" : "⛶ Fullscreen";
   };
   btn.addEventListener("click", async () => { await toggleFullscreen(el); sync(); });
   document.addEventListener("fullscreenchange", sync);
