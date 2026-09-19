@@ -49,7 +49,7 @@ function tokenize(src) {
     }
     const two = src.substr(i, 2);
     if (["<=", ">=", "==", "!="].includes(two)) { tokens.push({ t: "op", v: two }); i += 2; continue; }
-    if ("+-*/()<>,.".includes(c)) { tokens.push({ t: "op", v: c }); i++; continue; }
+    if ("+-*/()<>,.%".includes(c)) { tokens.push({ t: "op", v: c }); i++; continue; }
     throw new Error(`unexpected character "${c}"`);
   }
   return tokens;
@@ -63,7 +63,7 @@ function tokenize(src) {
 const OBJECT_ARG_FNS = new Set(["dist", "explode"]);
 const KNOWN_FNS = new Set([
   "rand", "dist", "keydown", "abs", "min", "max", "floor", "round",
-  "mousex", "mousey", "time"
+  "mousex", "mousey", "time", "xor"
 ]);
 
 class ExprParser {
@@ -109,7 +109,7 @@ class ExprParser {
   }
   parseMul() {
     let a = this.parseUnary();
-    while (this.peek()?.t === "op" && ["*", "/"].includes(this.peek().v)) {
+    while (this.peek()?.t === "op" && ["*", "/", "%"].includes(this.peek().v)) {
       const op = this.next().v; a = { e: "bin", op, a, b: this.parseUnary() };
     }
     return a;

@@ -11,14 +11,39 @@
     <div class="studio-topbar">
       <input type="text" id="g-title" maxlength="40" placeholder="Untitled Game" class="title-input">
       <div class="studio-actions">
+        <div class="seg" id="seg-target">
+          <button class="seg-btn active" id="seg-game">🎮 Game</button>
+          <button class="seg-btn" id="seg-screen">📺 Screen</button>
+        </div>
         <select id="sel-example" class="blk-add" style="margin:0">
           <option value="">Load example…</option>
           <option value="crt">CRT Amusement Device (1947)</option>
           <option value="bertie">Bertie the Brain (1950)</option>
+          <option value="nimrod">NIMROD (1951)</option>
         </select>
         <button class="btn btn-ghost" id="btn-new">New</button>
         <button class="btn" id="btn-test">▶ Test</button>
         <button class="btn" id="btn-publish">Publish</button>
+      </div>
+    </div>
+
+    <div class="panel settings-row" id="game-settings">
+      <div style="flex:2; min-width:220px">
+        <label for="g-desc">Description</label>
+        <textarea id="g-desc" rows="2" maxlength="200" placeholder="What's your game about?"></textarea>
+      </div>
+      <div>
+        <label for="g-price">Price per play (🪙, 0 = free)</label>
+        <input type="number" id="g-price" min="0" value="0">
+      </div>
+      <div>
+        <label for="g-screenmode">Arcade screen</label>
+        <select id="g-screenmode" class="blk-add" style="margin:0; width:100%">
+          <option value="none">None</option>
+          <option value="static">Static</option>
+          <option value="live">Live (runs on the card)</option>
+        </select>
+        <p class="hint" style="margin:6px 0 0">Build it with the 📺 Screen toggle above.</p>
       </div>
     </div>
 
@@ -81,6 +106,7 @@
     import { attachFullscreenButton } from "../js/fullscreen.js";
     import { buildCrtExample } from "./example-crt.js";
     import { buildBertieExample } from "./example-bertie.js";
+    import { buildNimrodExample } from "./example-nimrod.js";
     import { getProfile, savePageScene } from "../js/profiles.js";
 
     renderNav("../");
@@ -92,7 +118,11 @@
     const pageMode = new URLSearchParams(location.search).get("mode") === "page";
 
     // ------------------------------------------------------------ state
-    let scene = { objects: [] };
+    // Two scenes: the game itself, and its arcade screen. The 🎮/📺 toggle
+    // switches which one every panel (explorer, canvas, props, scripts) edits.
+    let scenes = { game: { objects: [] }, screen: { objects: [] } };
+    let editTarget = "game";
+    let scene = scenes.game;
     let selectedId = null;
     let checkedIds = new Set();
     let editingId = null;   // game being edited (null = new)
@@ -104,6 +134,21 @@
 
     // ------------------------------------------------------------ helpers
     const selObj = () => scene.objects.find(o => o.id === selectedId) || null;
+
+    function setTarget(t) {
+      if (engine) { toast("Stop the test first.", true); return; }
+      editTarget = t;
+      scene = scenes[t];
+      $("#seg-game").classList.toggle("active", t === "game");
+      $("#seg-screen").classList.toggle("active", t === "screen");
+      $("#ws-hint").textContent = t === "screen"
+        ? "Editing the ARCADE SCREEN — what players see on the card, before playing."
+        : "Click an object to select it · drag to move · ▶ Test to play";
+      select(null);
+      renderExplorer(); redraw();
+    }
+    $("#seg-game").addEventListener("click", () => setTarget("game"));
+    $("#seg-screen").addEventListener("click", () => setTarget("screen"));
 
     function uniqueName(base) {
       let n = 1;
@@ -299,7 +344,14 @@
             ? "Page saved, but check scripts:\n" + check.errors.slice(0, 3).join("\n")
             : "Page saved! It's live on your profile.", check.errors.length > 0);
         } else {
-          const payload = { title: titleInput.value || "Untitled Game", data: JSON.parse(JSON.stringify(scene)), engine: "v1" };
+          const payload = {
+            title: titleInput.value || "Untitled Game",
+            data: JSON.parse(JSON.stringify(scenes.game)),
+            engine: "v1",
+            description: $("#g-desc").value,
+            price: $("#g-price").value,
+            screen: { mode: $("#g-screenmode").value, objects: JSON.parse(JSON.stringify(scenes.screen.objects)) }
+          };
           if (check.errors.length) toast("Published, but check scripts:\n" + check.errors.slice(0, 3).join("\n"), true);
           if (editingId) {
             await updateGame(editingId, payload);
@@ -317,25 +369,32 @@
     $("#btn-new").addEventListener("click", () => {
       if (!confirm(pageMode ? "Clear your page and start empty? (Nothing changes until you Save.)"
                             : "Start a new empty game? Unpublished changes are lost.")) return;
-      scene = { objects: [] };
+      scenes = { game: { objects: [] }, screen: { objects: [] } };
       editingId = null;
       titleInput.value = "";
-      select(null);
+      if (!pageMode) {
+        $("#g-desc").value = "";
+        $("#g-price").value = "0";
+        $("#g-screenmode").value = "none";
+      }
+      setTarget("game");
     });
 
     const EXAMPLES = {
       crt: { build: buildCrtExample, tip: "Hit ▶ Test. Up/Down aims, Space fires." },
-      bertie: { build: buildBertieExample, tip: "Hit ▶ Test. Click a square — you're X, Bertie is O." }
+      bertie: { build: buildBertieExample, tip: "Hit ▶ Test. Click a square — you're X, Bertie is O." },
+      nimrod: { build: buildNimrodExample, tip: "Hit ▶ Test. Take the last light to win — NIMROD plays perfect Nim." }
     };
     $("#sel-example").addEventListener("change", () => {
       const pick = $("#sel-example").value;
       $("#sel-example").value = "";
       if (!pick) return;
-      if (scene.objects.length > 0 && !confirm("Replace the current workspace with this example?")) return;
+      if (scene.objects.length > 0 && !confirm(`Replace the current ${editTarget === "screen" ? "arcade screen" : "workspace"} with this example?`)) return;
       const ex = EXAMPLES[pick].build();
-      scene = { objects: ex.objects };
-      editingId = null;
-      titleInput.value = ex.title;
+      // loads into whichever target you're editing — an example makes a great arcade screen too
+      scenes[editTarget] = { objects: ex.objects };
+      scene = scenes[editTarget];
+      if (editTarget === "game") { editingId = null; titleInput.value = ex.title; }
       select(scene.objects[0].id);
       toast(`${ex.title} loaded — ${EXAMPLES[pick].tip}`);
     });
@@ -414,16 +473,20 @@
             editingId = g.id;
             titleInput.value = g.title;
             if (g.engine === "v1" && g.data?.objects) {
-              scene = JSON.parse(JSON.stringify(g.data));
+              scenes.game = JSON.parse(JSON.stringify(g.data));
             } else {
               // old v0 message games convert into a text object
-              scene = { objects: [] };
+              scenes.game = { objects: [] };
               const t = makeObject("text", "message1", CANVAS_W / 2, CANVAS_H / 2);
               t.text = g.data?.message || "";
-              scene.objects.push(t);
+              scenes.game.objects.push(t);
             }
+            scenes.screen = { objects: JSON.parse(JSON.stringify(g.screen?.objects || [])) };
+            $("#g-desc").value = g.description || "";
+            $("#g-price").value = String(g.price || 0);
+            $("#g-screenmode").value = g.screen?.mode || "none";
+            setTarget("game");
             select(scene.objects[0]?.id || null);
-            renderExplorer(); redraw();
             window.scrollTo({ top: 0, behavior: "smooth" });
             toast(`Editing "${g.title}" — Publish saves your changes.`);
           });
@@ -471,11 +534,15 @@
       view.textContent = "View my page";
       view.href = "../profile.html?u=" + encodeURIComponent(user);
       $("#btn-publish").parentNode.appendChild(view);
+      // pages have no price/description/arcade screen — hide game-only controls
+      document.getElementById("game-settings").style.display = "none";
+      document.getElementById("seg-target").style.display = "none";
       // load the current page for editing
       try {
         const p = await getProfile(user);
         if (p.pageScene?.objects) {
-          scene = JSON.parse(JSON.stringify(p.pageScene));
+          scenes.game = JSON.parse(JSON.stringify(p.pageScene));
+          scene = scenes.game;
           select(scene.objects[0]?.id || null);
         }
       } catch {}

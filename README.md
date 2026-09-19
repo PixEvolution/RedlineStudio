@@ -17,6 +17,7 @@ A game platform by Redline Digital — players make accounts, build games in the
 | `js/models.js` | Models: save groups, inventory, insert, market buy/sell |
 | `js/economy.js` | Coins + daily claim |
 | `js/profiles.js` | Player profiles + saving the custom page |
+| `js/cards.js` | Game cards with live/static arcade screens |
 | `js/touch-controls.js` | Auto-generated on-screen buttons for phones (from each game's keys) |
 | `js/fullscreen.js` | Optional fullscreen for testing and playing |
 | `js/ui.js` | Shared nav bar, toasts, helpers |
@@ -28,7 +29,7 @@ A game platform by Redline Digital — players make accounts, build games in the
 | `profiles.html` | Players — every account on the platform |
 | `profile.html` | One player: stats, games, and their custom scripted page |
 | `studio/studio.html` | The Studio (game mode + `?mode=page` Page Studio for profiles) |
-|  `studio/example-*.js` | Reference examples: CRT Amusement Device (1947), Bertie the Brain (1950) |
+|  `studio/example-*.js` | Reference examples: CRT Amusement Device (1947), Bertie the Brain (1950), NIMROD (1951) |
 
 **Rules of the road:** one file, one job. New features get new files. Every game is saved with a `version` and `engine` field so old games keep working as the Studio evolves — each engine version keeps its renderer forever.
 
@@ -40,7 +41,7 @@ Blocks and text are the **same language** (RedScript):
 - A 📜 Code block holds full RedScript and compiles into the same structure
 - One interpreter (`engine.js`) runs everything
 
-Events: `when start`, `when tick`, `when click`, `when key "..."` · Actions: `set`, `change`, `if/else`, `repeat`, `say`, `explode` · Objects: dot, ring, box, text with x/y/size/color/glow/visible/text.
+Events: `when start`, `when tick`, `when click`, `when key "..."` · Actions: `set`, `change`, `if/else`, `repeat`, `say`, `explode` · Math: `+ - * / %`, `xor(a,b)`, comparisons, `and or not` · Objects: dot, ring, box, text with x/y/size/color/glow/visible/text.
 
 ## Models & Market (v1)
 

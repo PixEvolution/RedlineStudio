@@ -325,6 +325,7 @@ export class Engine {
           case "-": return Number(a) - Number(b);
           case "*": return Number(a) * Number(b);
           case "/": return Number(b) === 0 ? 0 : Number(a) / Number(b);
+          case "%": return Number(b) === 0 ? 0 : Number(a) % Number(b);
           case "<": return a < b ? 1 : 0;
           case ">": return a > b ? 1 : 0;
           case "<=": return a <= b ? 1 : 0;
@@ -349,6 +350,7 @@ export class Engine {
           case "max": return Math.max(...args.map(Number));
           case "floor": return Math.floor(Number(args[0]));
           case "round": return Math.round(Number(args[0]));
+          case "xor": return (Math.floor(Number(args[0])) ^ Math.floor(Number(args[1] ?? 0)));
           case "mousex": return this.mouse.x;
           case "mousey": return this.mouse.y;
           case "time": return this.now();
