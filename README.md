@@ -29,7 +29,7 @@ A game platform by Redline Digital — players make accounts, build games in the
 | `profiles.html` | Players — every account on the platform |
 | `profile.html` | One player: stats, games, and their custom scripted page |
 | `studio/studio.html` | The Studio (game mode + `?mode=page` Page Studio for profiles) |
-|  `studio/example-*.js` | Reference examples: CRT Amusement Device (1947), Bertie the Brain (1950), NIMROD (1951), Draughts (1951), OXO (1952), Tennis for Two (1958) |
+|  `studio/example-*.js` | Reference examples: CRT Amusement Device (1947), Bertie the Brain (1950), NIMROD (1951), Draughts (1951), OXO (1952), Tennis for Two (1958), Mouse in the Maze (1959) |
 
 **Rules of the road:** one file, one job. New features get new files. Every game is saved with a `version` and `engine` field so old games keep working as the Studio evolves — each engine version keeps its renderer forever.
 
