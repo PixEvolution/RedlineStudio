@@ -19,7 +19,7 @@ export const CANVAS_W = 480;
 export const CANVAS_H = 360;
 export const PHOSPHOR = "#39ff5e"; // classic CRT green
 
-export const OBJECT_TYPES = ["dot", "ring", "box", "text"];
+export const OBJECT_TYPES = ["dot", "ring", "box", "text", "tri"];
 
 let idCounter = 1;
 export function makeObject(type, name, x = CANVAS_W / 2, y = CANVAS_H / 2) {
@@ -28,7 +28,8 @@ export function makeObject(type, name, x = CANVAS_W / 2, y = CANVAS_H / 2) {
     name,
     type,
     x, y,
-    size: type === "text" ? 16 : 14,
+    size: type === "text" ? 16 : type === "tri" ? 16 : 14,
+    angle: 0,          // degrees; tri points along it, box rotates with it
     color: PHOSPHOR,
     glow: 12,
     visible: 1,
@@ -416,8 +417,31 @@ export function drawFrame(ctx, objects, { effects = [], messages = [], selectedI
       case "ring":
         ctx.lineWidth = 2;
         ctx.beginPath(); ctx.arc(o.x, o.y, s, 0, Math.PI * 2); ctx.stroke(); break;
-      case "box":
-        ctx.fillRect(o.x - s / 2, o.y - s / 2, s, s); break;
+      case "box": {
+        const ang = (Number(o.angle) || 0) * Math.PI / 180;
+        if (ang) {
+          ctx.save();
+          ctx.translate(o.x, o.y);
+          ctx.rotate(ang);
+          ctx.fillRect(-s / 2, -s / 2, s, s);
+          ctx.restore();
+        } else {
+          ctx.fillRect(o.x - s / 2, o.y - s / 2, s, s);
+        }
+        break;
+      }
+      case "tri": {
+        // a ship: outline triangle pointing along its angle (PDP-1 vector style)
+        const ang = (Number(o.angle) || 0) * Math.PI / 180;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(o.x + Math.cos(ang) * s, o.y + Math.sin(ang) * s);
+        ctx.lineTo(o.x + Math.cos(ang + 2.6) * s * 0.85, o.y + Math.sin(ang + 2.6) * s * 0.85);
+        ctx.lineTo(o.x + Math.cos(ang - 2.6) * s * 0.85, o.y + Math.sin(ang - 2.6) * s * 0.85);
+        ctx.closePath();
+        ctx.stroke();
+        break;
+      }
       case "text":
         ctx.font = `${s}px "Courier New", monospace`;
         ctx.textAlign = "center";
