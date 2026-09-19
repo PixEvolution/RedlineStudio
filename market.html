@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RedlineStudio — Market</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="page">
+    <div class="market-topbar">
+      <div>
+        <h1 class="page-title" style="margin:0">Market</h1>
+        <p class="page-sub" style="margin:4px 0 0">Models made by players — insert them into your games from the Studio.</p>
+      </div>
+      <div class="coins-box" id="coins-box">
+        <span id="coins-amount">🪙 …</span>
+        <button class="btn btn-small" id="btn-claim">Claim daily</button>
+      </div>
+    </div>
+
+    <div class="tabs" style="max-width:380px;margin-top:20px">
+      <div class="tab active" id="tab-market">Market</div>
+      <div class="tab" id="tab-inv">My Models</div>
+    </div>
+
+    <div id="market-list" class="games-grid"><p class="empty-note">Loading…</p></div>
+    <div id="inv-list" style="display:none"></div>
+  </main>
+
+  <script type="module">
+    import { renderNav, toast, $, fmtDate } from "./js/ui.js";
+    import { currentUser } from "./js/auth.js";
+    import { getCoins, claimDaily, DAILY_COINS } from "./js/economy.js";
+    import { listMarket, listMyModels, acquireModel, setListing, deleteModel } from "./js/models.js";
+
+    renderNav("");
+    const user = currentUser();
+
+    // ---------------- coins ----------------
+    async function refreshCoins() {
+      if (!user) { $("#coins-box").innerHTML = `<a class="btn btn-small" href="login.html">Log in</a>`; return; }
+      try { $("#coins-amount").textContent = "🪙 " + await getCoins(user); } catch {}
+    }
+    $("#btn-claim")?.addEventListener("click", async () => {
+      if (!user) return;
+      try {
+        const r = await claimDaily(user);
+        $("#coins-amount").textContent = "🪙 " + r.coins;
+        toast(r.claimed ? `+${DAILY_COINS} coins — come back tomorrow!` : "Already claimed today — come back tomorrow.", !r.claimed);
+      } catch (err) { toast(err.message, true); }
+    });
+
+    // ---------------- tabs ----------------
+    $("#tab-market").addEventListener("click", () => setTab("market"));
+    $("#tab-inv").addEventListener("click", () => setTab("inv"));
+    function setTab(t) {
+      $("#tab-market").classList.toggle("active", t === "market");
+      $("#tab-inv").classList.toggle("active", t === "inv");
+      $("#market-list").style.display = t === "market" ? "" : "none";
+      $("#inv-list").style.display = t === "inv" ? "" : "none";
+      if (t === "inv") loadInventory();
+    }
+
+    // ---------------- market ----------------
+    async function loadMarket() {
+      const grid = $("#market-list");
+      try {
+        const models = await listMarket();
+        grid.innerHTML = "";
+        if (models.length === 0) {
+          grid.innerHTML = `<p class="empty-note">Nothing for sale yet.<br>Save a model in the Studio, then list it from My Models.</p>`;
+          return;
+        }
+        for (const m of models) {
+          const card = document.createElement("div");
+          card.className = "game-card";
+          const title = document.createElement("div");
+          title.className = "game-title";
+          title.textContent = m.name;
+          const meta = document.createElement("div");
+          meta.className = "game-meta";
+          meta.textContent = `by ${m.owner} · ${m.objects?.length || 0} objects · ${fmtDate(m.createdAt)}`;
+          const priceRow = document.createElement("div");
+          priceRow.style.display = "flex";
+          priceRow.style.justifyContent = "space-between";
+          priceRow.style.alignItems = "center";
+          priceRow.style.marginTop = "8px";
+          const price = document.createElement("strong");
+          price.textContent = m.price > 0 ? `🪙 ${m.price}` : "FREE";
+          const btn = document.createElement("button");
+          btn.className = "btn btn-small";
+          btn.textContent = m.price > 0 ? "Buy" : "Get";
+          btn.addEventListener("click", async () => {
+            if (!user) { window.location.href = "login.html"; return; }
+            btn.disabled = true;
+            try {
+              const r = await acquireModel(m.id, user);
+              toast(r.paid > 0 ? `Bought "${m.name}" for 🪙 ${r.paid} — it's in My Models.` : `"${m.name}" added to My Models.`);
+              refreshCoins();
+            } catch (err) { toast(err.message, true); }
+            btn.disabled = false;
+          });
+          priceRow.append(price, btn);
+          card.append(title, meta, priceRow);
+          grid.appendChild(card);
+        }
+      } catch (err) {
+        grid.innerHTML = "";
+        toast("Couldn't load the market: " + err.message, true);
+      }
+    }
+
+    // ---------------- inventory ----------------
+    async function loadInventory() {
+      const mount = $("#inv-list");
+      if (!user) { mount.innerHTML = `<p class="empty-note">Log in to see your models.</p>`; return; }
+      try {
+        const models = await listMyModels(user);
+        mount.innerHTML = "";
+        if (models.length === 0) {
+          mount.innerHTML = `<p class="empty-note">No models yet.<br>In the Studio: check objects in the Explorer → "Save checked as Model".</p>`;
+          return;
+        }
+        for (const m of models) {
+          const row = document.createElement("div");
+          row.className = "my-game-row";
+
+          const info = document.createElement("div");
+          const t = document.createElement("strong");
+          t.textContent = m.name;
+          const meta = document.createElement("span");
+          meta.className = "hint";
+          meta.textContent = `  ${m.objects?.length || 0} objects` +
+            (m.creator && m.creator !== user ? ` · made by ${m.creator}` : "") +
+            (m.listed ? ` · LISTED for ${m.price > 0 ? "🪙 " + m.price : "free"}` : "");
+          info.append(t, meta);
+
+          const actions = document.createElement("div");
+          actions.style.display = "flex";
+          actions.style.alignItems = "center";
+          actions.style.gap = "6px";
+
+          if (!m.listed) {
+            const priceIn = document.createElement("input");
+            priceIn.type = "number";
+            priceIn.min = "0";
+            priceIn.placeholder = "price";
+            priceIn.style.width = "80px";
+            const sell = document.createElement("button");
+            sell.className = "btn btn-small btn-ghost";
+            sell.textContent = "List for sale";
+            sell.addEventListener("click", async () => {
+              try {
+                await setListing(m.id, true, priceIn.value);
+                toast(`"${m.name}" is on the market.`);
+                loadInventory(); loadMarket();
+              } catch (err) { toast(err.message, true); }
+            });
+            actions.append(priceIn, sell);
+          } else {
+            const unlist = document.createElement("button");
+            unlist.className = "btn btn-small btn-ghost";
+            unlist.textContent = "Unlist";
+            unlist.addEventListener("click", async () => {
+              await setListing(m.id, false, 0);
+              toast("Taken off the market.");
+              loadInventory(); loadMarket();
+            });
+            actions.append(unlist);
+          }
+
+          const del = document.createElement("button");
+          del.className = "btn btn-small btn-ghost";
+          del.textContent = "Delete";
+          del.addEventListener("click", async () => {
+            if (!confirm(`Delete model "${m.name}" forever?`)) return;
+            await deleteModel(m.id);
+            toast("Deleted.");
+            loadInventory(); loadMarket();
+          });
+          actions.append(del);
+
+          row.append(info, actions);
+          mount.appendChild(row);
+        }
+      } catch (err) {
+        mount.innerHTML = "";
+        toast("Couldn't load your models: " + err.message, true);
+      }
+    }
+
+    refreshCoins();
+    loadMarket();
+  </script>
+</body>
+</html>

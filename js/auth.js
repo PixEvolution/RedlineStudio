@@ -24,7 +24,8 @@ export function validateName(value, label) {
 
 // Usernames can contain ANY character, but database IDs can't.
 // So we encode the username (base64url) to make a safe, exact, case-sensitive ID.
-function userDocId(username) {
+// Exported because other modules (economy, models) need to find user docs too.
+export function userDocId(username) {
   const bytes = new TextEncoder().encode(username);
   let bin = "";
   for (const b of bytes) bin += String.fromCharCode(b);
@@ -53,6 +54,8 @@ export async function createAccount(username, password) {
     version: 1,
     username,
     passHash: await hashPassword(password),
+    coins: 100,        // starting coins
+    lastDaily: "",     // for the daily coin claim
     createdAt: serverTimestamp()
   });
 

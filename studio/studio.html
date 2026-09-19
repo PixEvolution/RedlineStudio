@@ -7,38 +7,54 @@
   <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-  <main class="page">
-    <h1 class="page-title">Studio</h1>
-    <p class="page-sub">Build a game, publish it, and it shows up on the Games page for everyone.</p>
+  <main class="page page-wide">
+    <div class="studio-topbar">
+      <input type="text" id="g-title" maxlength="40" placeholder="Untitled Game" class="title-input">
+      <div class="studio-actions">
+        <button class="btn btn-ghost" id="btn-example">Load example: CRT 1947</button>
+        <button class="btn btn-ghost" id="btn-new">New</button>
+        <button class="btn" id="btn-test">▶ Test</button>
+        <button class="btn" id="btn-publish">Publish</button>
+      </div>
+    </div>
 
-    <div class="studio-layout">
-      <!-- Workspace: this area becomes the real editor (blocks, scripting, scene) later -->
-      <div class="workspace" id="workspace">
-        <div>
-          <h2 style="margin:0 0 8px">Workspace</h2>
-          <p style="margin:0">The full editor lives here soon — block coding, scripting,<br>
-          and a real scene view. For now, set your game up in the<br>
-          Properties panel and hit Publish to test the pipeline.</p>
+    <div class="studio-grid">
+      <!-- EXPLORER -->
+      <div class="panel explorer">
+        <h3>Explorer</h3>
+        <div class="add-obj-row">
+          <button class="btn btn-small btn-ghost" data-add="dot">+ Dot</button>
+          <button class="btn btn-small btn-ghost" data-add="ring">+ Ring</button>
+          <button class="btn btn-small btn-ghost" data-add="box">+ Box</button>
+          <button class="btn btn-small btn-ghost" data-add="text">+ Text</button>
         </div>
-      </div>
-
-      <!-- Properties panel: grows as games gain more properties -->
-      <div class="panel props-panel">
-        <h3>Properties</h3>
-
-        <label for="g-title">Game title</label>
-        <input type="text" id="g-title" maxlength="40" placeholder="My First Game">
-
-        <label for="g-message">Welcome message</label>
-        <textarea id="g-message" rows="4" maxlength="200"
-          placeholder="What players see when they open your game"></textarea>
-
-        <br><br>
-        <button class="btn" id="publish" style="width:100%">Publish</button>
-        <button class="btn btn-ghost btn-small" id="new-game" style="width:100%; margin-top:8px">
-          Start a new game
+        <div id="obj-list"></div>
+        <button class="btn btn-small btn-ghost" id="btn-save-model" style="width:100%;margin-top:10px">
+          💾 Save checked as Model
         </button>
+        <h3 style="margin-top:18px">My Models</h3>
+        <div id="model-list" class="hint">Loading…</div>
       </div>
+
+      <!-- WORKSPACE -->
+      <div>
+        <canvas id="workspace" width="480" height="360" class="workspace-canvas"></canvas>
+        <p class="hint" id="ws-hint">Click an object to select it · drag to move · ▶ Test to play</p>
+      </div>
+
+      <!-- PROPERTIES -->
+      <div class="panel props-panel" id="props">
+        <h3>Properties</h3>
+        <div id="props-body" class="hint">Select an object.</div>
+      </div>
+    </div>
+
+    <!-- SCRIPT EDITOR -->
+    <div class="panel" style="margin-top:16px">
+      <h3 id="script-title">Script</h3>
+      <p class="hint">Blocks build the script — a <b>📜 Code</b> block is the same language as text.
+        Expressions work in every field: <code>self.x + 2</code>, <code>rand(10,90)</code>, <code>dist(self, target1) &lt; 20</code>, <code>keydown("ArrowUp")</code></p>
+      <div id="script-editor" class="hint">Select an object to edit its script.</div>
     </div>
 
     <div class="my-games">
@@ -51,78 +67,325 @@
     import { renderNav, toast, $, fmtDate } from "../js/ui.js";
     import { requireLogin } from "../js/auth.js";
     import { publishGame, updateGame, deleteGame, listGamesBy } from "../js/games.js";
+    import { Engine, drawFrame, makeObject, CANVAS_W, CANVAS_H } from "../js/engine.js";
+    import { createBlockEditor } from "../js/blocks.js";
+    import { saveModel, listMyModels, instantiateModel } from "../js/models.js";
+    import { buildCrtExample } from "./example-crt.js";
 
     renderNav("../");
     const user = requireLogin("../login.html");
     if (!user) throw new Error("redirecting");
 
-    let editingId = null; // null = publishing a brand-new game
+    // ------------------------------------------------------------ state
+    let scene = { objects: [] };
+    let selectedId = null;
+    let checkedIds = new Set();
+    let editingId = null;   // game being edited (null = new)
+    let engine = null;      // running test engine
+    let blockEditor = null;
 
+    const canvas = $("#workspace");
     const titleInput = $("#g-title");
-    const msgInput = $("#g-message");
-    const publishBtn = $("#publish");
 
-    function setEditing(game) {
-      editingId = game ? game.id : null;
-      titleInput.value = game ? game.title : "";
-      msgInput.value = game ? (game.data?.message || "") : "";
-      publishBtn.textContent = game ? "Update" : "Publish";
+    // ------------------------------------------------------------ helpers
+    const selObj = () => scene.objects.find(o => o.id === selectedId) || null;
+
+    function uniqueName(base) {
+      let n = 1;
+      const names = new Set(scene.objects.map(o => o.name));
+      while (names.has(base + n)) n++;
+      return base + n;
     }
 
-    $("#new-game").addEventListener("click", () => setEditing(null));
+    function redraw() {
+      if (engine) return; // engine owns the canvas while testing
+      drawFrame(canvas.getContext("2d"), scene.objects, { selectedIds: selectedId ? [selectedId] : [] });
+    }
 
-    publishBtn.addEventListener("click", async () => {
-      publishBtn.disabled = true;
-      try {
-        const payload = {
-          title: titleInput.value,
-          data: { message: msgInput.value }
-        };
-        if (editingId) {
-          await updateGame(editingId, payload);
-          toast("Game updated!");
-        } else {
-          const id = await publishGame({ ...payload, owner: user });
-          editingId = id;
-          publishBtn.textContent = "Update";
-          toast("Published! It's live on the Games page.");
-        }
-        loadMyGames();
-      } catch (err) {
-        toast(err.message, true);
+    // ------------------------------------------------------------ explorer
+    function renderExplorer() {
+      const list = $("#obj-list");
+      list.innerHTML = "";
+      if (scene.objects.length === 0) list.innerHTML = `<p class="hint">No objects yet — add one above.</p>`;
+      for (const o of scene.objects) {
+        const row = document.createElement("div");
+        row.className = "obj-row" + (o.id === selectedId ? " selected" : "");
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = checkedIds.has(o.id);
+        cb.addEventListener("change", () => { cb.checked ? checkedIds.add(o.id) : checkedIds.delete(o.id); });
+        const name = document.createElement("span");
+        name.textContent = `${o.name}`;
+        name.className = "obj-name";
+        const type = document.createElement("span");
+        type.textContent = o.type;
+        type.className = "hint";
+        const del = document.createElement("button");
+        del.className = "blk-mini blk-del";
+        del.textContent = "✕";
+        del.addEventListener("click", (e) => {
+          e.stopPropagation();
+          scene.objects = scene.objects.filter(x => x.id !== o.id);
+          checkedIds.delete(o.id);
+          if (selectedId === o.id) select(null);
+          renderExplorer(); redraw();
+        });
+        row.append(cb, name, type, del);
+        row.addEventListener("click", (e) => { if (e.target !== cb && e.target !== del) select(o.id); });
+        list.appendChild(row);
       }
-      publishBtn.disabled = false;
+    }
+
+    document.querySelectorAll("[data-add]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const type = btn.dataset.add;
+        const o = makeObject(type, uniqueName(type), CANVAS_W / 2, CANVAS_H / 2);
+        scene.objects.push(o);
+        select(o.id);
+        renderExplorer(); redraw();
+      });
     });
 
+    // ------------------------------------------------------------ selection + properties
+    function select(id) {
+      selectedId = id;
+      renderExplorer();
+      renderProps();
+      renderScriptEditor();
+      redraw();
+    }
+
+    function renderProps() {
+      const body = $("#props-body");
+      const o = selObj();
+      if (!o) { body.innerHTML = "Select an object."; body.className = "hint"; return; }
+      body.className = "";
+      body.innerHTML = "";
+
+      const field = (label, input) => {
+        const l = document.createElement("label"); l.textContent = label;
+        body.append(l, input);
+      };
+      const num = (prop, step = 1) => {
+        const i = document.createElement("input");
+        i.type = "number"; i.step = step; i.value = o[prop];
+        i.addEventListener("input", () => { o[prop] = Number(i.value) || 0; redraw(); });
+        return i;
+      };
+      const txt = (prop) => {
+        const i = document.createElement("input");
+        i.type = "text"; i.value = o[prop] ?? ""; i.spellcheck = false;
+        i.addEventListener("input", () => { o[prop] = i.value; renderExplorer(); renderScriptEditor(); redraw(); });
+        return i;
+      };
+
+      field("Name", txt("name"));
+      field("X", num("x"));
+      field("Y", num("y"));
+      field("Size", num("size"));
+      field("Color", txt("color"));
+      field("Glow", num("glow"));
+      const vis = document.createElement("input");
+      vis.type = "checkbox"; vis.checked = Number(o.visible) !== 0;
+      vis.addEventListener("change", () => { o.visible = vis.checked ? 1 : 0; redraw(); });
+      const visLabel = document.createElement("label");
+      visLabel.style.display = "flex"; visLabel.style.alignItems = "center"; visLabel.style.gap = "8px";
+      visLabel.append(vis, document.createTextNode("Visible"));
+      body.appendChild(visLabel);
+      if (o.type === "text") field("Text", txt("text"));
+    }
+
+    // ------------------------------------------------------------ script editor
+    function renderScriptEditor() {
+      const mount = $("#script-editor");
+      const o = selObj();
+      if (!o) {
+        $("#script-title").textContent = "Script";
+        mount.className = "hint";
+        mount.innerHTML = "Select an object to edit its script.";
+        blockEditor = null;
+        return;
+      }
+      $("#script-title").textContent = `Script — ${o.name}`;
+      mount.className = "";
+      mount.innerHTML = "";
+      o.script = o.script || [];
+      blockEditor = createBlockEditor(mount, o.script, { onChange: () => {} });
+    }
+
+    // ------------------------------------------------------------ canvas interaction
+    let dragging = null;
+    function canvasPos(e) {
+      const r = canvas.getBoundingClientRect();
+      return { x: (e.clientX - r.left) * (CANVAS_W / r.width), y: (e.clientY - r.top) * (CANVAS_H / r.height) };
+    }
+    canvas.addEventListener("mousedown", (e) => {
+      if (engine) return;
+      const p = canvasPos(e);
+      for (let i = scene.objects.length - 1; i >= 0; i--) {
+        const o = scene.objects[i];
+        const r = Math.max(14, Number(o.size) || 10);
+        if (Math.hypot(o.x - p.x, o.y - p.y) <= r) {
+          select(o.id);
+          dragging = { obj: o, dx: o.x - p.x, dy: o.y - p.y };
+          return;
+        }
+      }
+      select(null);
+    });
+    window.addEventListener("mousemove", (e) => {
+      if (!dragging || engine) return;
+      const p = canvasPos(e);
+      dragging.obj.x = Math.round(p.x + dragging.dx);
+      dragging.obj.y = Math.round(p.y + dragging.dy);
+      renderProps(); redraw();
+    });
+    window.addEventListener("mouseup", () => dragging = null);
+
+    // ------------------------------------------------------------ test mode
+    const testBtn = $("#btn-test");
+    testBtn.addEventListener("click", () => {
+      if (engine) {
+        engine.stop(); engine = null;
+        testBtn.textContent = "▶ Test";
+        $("#ws-hint").textContent = "Click an object to select it · drag to move · ▶ Test to play";
+        redraw();
+        return;
+      }
+      engine = new Engine(canvas, scene.objects);
+      if (engine.errors.length) {
+        toast("Script problems:\n" + engine.errors.slice(0, 4).join("\n"), true);
+      }
+      engine.start();
+      testBtn.textContent = "■ Stop";
+      $("#ws-hint").textContent = "Testing — your game is live. Click Stop to go back to editing.";
+    });
+
+    // ------------------------------------------------------------ publish / new / example
+    $("#btn-publish").addEventListener("click", async () => {
+      const btn = $("#btn-publish");
+      btn.disabled = true;
+      try {
+        const payload = { title: titleInput.value || "Untitled Game", data: JSON.parse(JSON.stringify(scene)), engine: "v1" };
+        // quick compile check so broken scripts get flagged before publishing
+        const check = new Engine(null, scene.objects);
+        if (check.errors.length) toast("Published, but check scripts:\n" + check.errors.slice(0, 3).join("\n"), true);
+        if (editingId) {
+          await updateGame(editingId, payload);
+          if (check.errors.length === 0) toast("Game updated!");
+        } else {
+          editingId = await publishGame({ ...payload, owner: user, engine: "v1" });
+          if (check.errors.length === 0) toast("Published! It's live on the Games page.");
+        }
+        loadMyGames();
+      } catch (err) { toast(err.message, true); }
+      btn.disabled = false;
+    });
+
+    $("#btn-new").addEventListener("click", () => {
+      if (!confirm("Start a new empty game? Unpublished changes are lost.")) return;
+      scene = { objects: [] };
+      editingId = null;
+      titleInput.value = "";
+      select(null);
+    });
+
+    $("#btn-example").addEventListener("click", () => {
+      if (scene.objects.length > 0 && !confirm("Replace the current workspace with the CRT 1947 example?")) return;
+      const ex = buildCrtExample();
+      scene = { objects: ex.objects };
+      editingId = null;
+      titleInput.value = ex.title;
+      select(scene.objects[0].id);
+      toast("CRT Amusement Device loaded — hit ▶ Test. Up/Down aims, Space fires.");
+    });
+
+    // ------------------------------------------------------------ models
+    $("#btn-save-model").addEventListener("click", async () => {
+      let objs = scene.objects.filter(o => checkedIds.has(o.id));
+      if (objs.length === 0 && selObj()) objs = [selObj()];
+      if (objs.length === 0) { toast("Check some objects in the Explorer first.", true); return; }
+      const name = prompt(`Model name for ${objs.length} object(s):`);
+      if (name == null) return;
+      try {
+        await saveModel({ name, owner: user, objects: objs });
+        toast(`Model "${name}" saved to your inventory.`);
+        loadModels();
+      } catch (err) { toast(err.message, true); }
+    });
+
+    async function loadModels() {
+      const mount = $("#model-list");
+      try {
+        const models = await listMyModels(user);
+        mount.innerHTML = "";
+        mount.className = models.length ? "" : "hint";
+        if (models.length === 0) { mount.textContent = "No models yet."; return; }
+        for (const m of models) {
+          const row = document.createElement("div");
+          row.className = "obj-row";
+          const name = document.createElement("span");
+          name.className = "obj-name";
+          name.textContent = m.name;
+          const count = document.createElement("span");
+          count.className = "hint";
+          count.textContent = `${m.objects.length} obj`;
+          const ins = document.createElement("button");
+          ins.className = "blk-mini";
+          ins.textContent = "Insert";
+          ins.addEventListener("click", () => {
+            const added = instantiateModel(m, scene);
+            renderExplorer(); redraw();
+            if (added[0]) select(added[0].id);
+            toast(`Inserted "${m.name}".`);
+          });
+          row.append(name, count, ins);
+          mount.appendChild(row);
+        }
+      } catch (err) {
+        mount.className = "hint";
+        mount.textContent = "Couldn't load models.";
+      }
+    }
+
+    // ------------------------------------------------------------ my games
     async function loadMyGames() {
       const list = $("#my-games-list");
       try {
         const games = await listGamesBy(user);
         list.innerHTML = "";
-        if (games.length === 0) {
-          list.innerHTML = `<p class="hint">Nothing published yet.</p>`;
-          return;
-        }
+        if (games.length === 0) { list.innerHTML = `<p class="hint">Nothing published yet.</p>`; return; }
         for (const g of games) {
           const row = document.createElement("div");
           row.className = "my-game-row";
-
           const info = document.createElement("div");
           const t = document.createElement("strong");
           t.textContent = g.title;
-          const m = document.createElement("span");
-          m.className = "hint";
-          m.textContent = `  ${g.plays || 0} plays · ${fmtDate(g.createdAt)}`;
-          info.append(t, m);
+          const meta = document.createElement("span");
+          meta.className = "hint";
+          meta.textContent = `  ${g.engine || "v0"} · ${g.plays || 0} plays · ${fmtDate(g.createdAt)}`;
+          info.append(t, meta);
 
           const actions = document.createElement("div");
-
           const edit = document.createElement("button");
           edit.className = "btn btn-small btn-ghost";
           edit.textContent = "Edit";
           edit.addEventListener("click", () => {
-            setEditing(g);
+            editingId = g.id;
+            titleInput.value = g.title;
+            if (g.engine === "v1" && g.data?.objects) {
+              scene = JSON.parse(JSON.stringify(g.data));
+            } else {
+              // old v0 message games convert into a text object
+              scene = { objects: [] };
+              const t = makeObject("text", "message1", CANVAS_W / 2, CANVAS_H / 2);
+              t.text = g.data?.message || "";
+              scene.objects.push(t);
+            }
+            select(scene.objects[0]?.id || null);
+            renderExplorer(); redraw();
             window.scrollTo({ top: 0, behavior: "smooth" });
+            toast(`Editing "${g.title}" — Publish saves your changes.`);
           });
 
           const play = document.createElement("a");
@@ -138,7 +401,7 @@
           del.addEventListener("click", async () => {
             if (!confirm(`Delete "${g.title}" forever?`)) return;
             await deleteGame(g.id);
-            if (editingId === g.id) setEditing(null);
+            if (editingId === g.id) editingId = null;
             toast("Deleted.");
             loadMyGames();
           });
@@ -153,7 +416,13 @@
       }
     }
 
+    // ------------------------------------------------------------ go
+    renderExplorer();
+    renderProps();
+    renderScriptEditor();
+    redraw();
     loadMyGames();
+    loadModels();
   </script>
 </body>
 </html>

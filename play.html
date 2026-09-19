@@ -11,13 +11,15 @@
     <h1 class="page-title" id="game-title">Loading…</h1>
     <p class="page-sub" id="game-meta"></p>
 
-    <!-- The game player. Each engine version gets its own renderer as the studio evolves. -->
+    <!-- The game player. Each engine version keeps its renderer forever,
+         so old games always work as the studio evolves. -->
     <div class="game-frame" id="frame"></div>
   </main>
 
   <script type="module">
     import { renderNav, toast, fmtDate } from "./js/ui.js";
     import { getGame, countPlay } from "./js/games.js";
+    import { Engine, CANVAS_W, CANVAS_H } from "./js/engine.js";
 
     renderNav("");
 
@@ -25,17 +27,37 @@
     const titleEl = document.getElementById("game-title");
     const metaEl = document.getElementById("game-meta");
 
-    // One renderer per engine version — old games always keep working.
     const renderers = {
+      // v0: the original "welcome message" games
       v0(game, mount) {
         const wrap = document.createElement("div");
         const msg = document.createElement("h2");
         msg.textContent = game.data?.message || "(This game has no content yet.)";
         const note = document.createElement("p");
         note.className = "hint";
-        note.textContent = "Engine v0 — real gameplay arrives when the Studio grows.";
+        note.textContent = "Engine v0 — an early RedlineStudio game.";
         wrap.append(msg, note);
         mount.appendChild(wrap);
+      },
+
+      // v1: real scripted games on the CRT engine
+      v1(game, mount) {
+        mount.innerHTML = "";
+        mount.style.display = "block";
+        const canvas = document.createElement("canvas");
+        canvas.width = CANVAS_W;
+        canvas.height = CANVAS_H;
+        canvas.className = "workspace-canvas";
+        mount.appendChild(canvas);
+        const hint = document.createElement("p");
+        hint.className = "hint";
+        hint.style.textAlign = "center";
+        hint.textContent = "Click the screen, then use your keyboard / mouse.";
+        mount.appendChild(hint);
+
+        const engine = new Engine(canvas, game.data?.objects || []);
+        if (engine.errors.length) console.warn("Script issues:", engine.errors);
+        engine.start();
       }
     };
 

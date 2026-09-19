@@ -12,13 +12,13 @@ import {
 const GAMES = "games";
 
 // Publish a brand-new game. `data` is the game's content — its shape can evolve.
-export async function publishGame({ title, owner, data }) {
+export async function publishGame({ title, owner, data, engine = "v1" }) {
   if (!title || title.trim().length === 0) throw new Error("Your game needs a title.");
   if (title.length > 40) throw new Error("Title must be 40 characters or less.");
 
   const ref = await addDoc(collection(db, GAMES), {
     version: 1,           // game format version — bump when the studio evolves
-    engine: "v0",         // which engine/player understands this game
+    engine,               // which engine/player understands this game
     title: title.trim(),
     owner,                // username of the creator
     data,                 // the game itself (open-ended)
@@ -30,10 +30,11 @@ export async function publishGame({ title, owner, data }) {
 }
 
 // Overwrite an existing game with new content (republish/update).
-export async function updateGame(gameId, { title, data }) {
+export async function updateGame(gameId, { title, data, engine }) {
   await updateDoc(doc(db, GAMES, gameId), {
     ...(title !== undefined ? { title: title.trim() } : {}),
     ...(data !== undefined ? { data } : {}),
+    ...(engine !== undefined ? { engine } : {}),
     updatedAt: serverTimestamp()
   });
 }

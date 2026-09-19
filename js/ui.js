@@ -17,6 +17,7 @@ export function renderNav(rootPath = "") {
     <div class="nav-links">
       <a href="${rootPath}index.html">Games</a>
       <a href="${rootPath}studio/studio.html">Studio</a>
+      <a href="${rootPath}market.html">Market</a>
       <span class="nav-user"></span>
     </div>
   `;
