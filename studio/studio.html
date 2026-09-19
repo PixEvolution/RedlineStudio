@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RedlineStudio — Studio</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <main class="page">
+    <h1 class="page-title">Studio</h1>
+    <p class="page-sub">Build a game, publish it, and it shows up on the Games page for everyone.</p>
+
+    <div class="studio-layout">
+      <!-- Workspace: this area becomes the real editor (blocks, scripting, scene) later -->
+      <div class="workspace" id="workspace">
+        <div>
+          <h2 style="margin:0 0 8px">Workspace</h2>
+          <p style="margin:0">The full editor lives here soon — block coding, scripting,<br>
+          and a real scene view. For now, set your game up in the<br>
+          Properties panel and hit Publish to test the pipeline.</p>
+        </div>
+      </div>
+
+      <!-- Properties panel: grows as games gain more properties -->
+      <div class="panel props-panel">
+        <h3>Properties</h3>
+
+        <label for="g-title">Game title</label>
+        <input type="text" id="g-title" maxlength="40" placeholder="My First Game">
+
+        <label for="g-message">Welcome message</label>
+        <textarea id="g-message" rows="4" maxlength="200"
+          placeholder="What players see when they open your game"></textarea>
+
+        <br><br>
+        <button class="btn" id="publish" style="width:100%">Publish</button>
+        <button class="btn btn-ghost btn-small" id="new-game" style="width:100%; margin-top:8px">
+          Start a new game
+        </button>
+      </div>
+    </div>
+
+    <div class="my-games">
+      <h2>My Games</h2>
+      <div id="my-games-list"><p class="hint">Loading…</p></div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { renderNav, toast, $, fmtDate } from "../js/ui.js";
+    import { requireLogin } from "../js/auth.js";
+    import { publishGame, updateGame, deleteGame, listGamesBy } from "../js/games.js";
+
+    renderNav("../");
+    const user = requireLogin("../login.html");
+    if (!user) throw new Error("redirecting");
+
+    let editingId = null; // null = publishing a brand-new game
+
+    const titleInput = $("#g-title");
+    const msgInput = $("#g-message");
+    const publishBtn = $("#publish");
+
+    function setEditing(game) {
+      editingId = game ? game.id : null;
+      titleInput.value = game ? game.title : "";
+      msgInput.value = game ? (game.data?.message || "") : "";
+      publishBtn.textContent = game ? "Update" : "Publish";
+    }
+
+    $("#new-game").addEventListener("click", () => setEditing(null));
+
+    publishBtn.addEventListener("click", async () => {
+      publishBtn.disabled = true;
+      try {
+        const payload = {
+          title: titleInput.value,
+          data: { message: msgInput.value }
+        };
+        if (editingId) {
+          await updateGame(editingId, payload);
+          toast("Game updated!");
+        } else {
+          const id = await publishGame({ ...payload, owner: user });
+          editingId = id;
+          publishBtn.textContent = "Update";
+          toast("Published! It's live on the Games page.");
+        }
+        loadMyGames();
+      } catch (err) {
+        toast(err.message, true);
+      }
+      publishBtn.disabled = false;
+    });
+
+    async function loadMyGames() {
+      const list = $("#my-games-list");
+      try {
+        const games = await listGamesBy(user);
+        list.innerHTML = "";
+        if (games.length === 0) {
+          list.innerHTML = `<p class="hint">Nothing published yet.</p>`;
+          return;
+        }
+        for (const g of games) {
+          const row = document.createElement("div");
+          row.className = "my-game-row";
+
+          const info = document.createElement("div");
+          const t = document.createElement("strong");
+          t.textContent = g.title;
+          const m = document.createElement("span");
+          m.className = "hint";
+          m.textContent = `  ${g.plays || 0} plays · ${fmtDate(g.createdAt)}`;
+          info.append(t, m);
+
+          const actions = document.createElement("div");
+
+          const edit = document.createElement("button");
+          edit.className = "btn btn-small btn-ghost";
+          edit.textContent = "Edit";
+          edit.addEventListener("click", () => {
+            setEditing(g);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          });
+
+          const play = document.createElement("a");
+          play.className = "btn btn-small btn-ghost";
+          play.style.marginLeft = "6px";
+          play.textContent = "Play";
+          play.href = "../play.html?id=" + encodeURIComponent(g.id);
+
+          const del = document.createElement("button");
+          del.className = "btn btn-small btn-ghost";
+          del.style.marginLeft = "6px";
+          del.textContent = "Delete";
+          del.addEventListener("click", async () => {
+            if (!confirm(`Delete "${g.title}" forever?`)) return;
+            await deleteGame(g.id);
+            if (editingId === g.id) setEditing(null);
+            toast("Deleted.");
+            loadMyGames();
+          });
+
+          actions.append(edit, play, del);
+          row.append(info, actions);
+          list.appendChild(row);
+        }
+      } catch (err) {
+        list.innerHTML = "";
+        toast("Couldn't load your games: " + err.message, true);
+      }
+    }
+
+    loadMyGames();
+  </script>
+</body>
+</html>
