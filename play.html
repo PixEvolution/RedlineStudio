@@ -14,6 +14,8 @@
     <!-- The game player. Each engine version keeps its renderer forever,
          so old games always work as the studio evolves. -->
     <div class="game-frame" id="frame"></div>
+    <div id="game-votes" style="margin-top:14px"></div>
+    <div id="game-comments" style="margin-top:10px"></div>
   </main>
 
   <script type="module">
@@ -24,6 +26,7 @@
     import { attachFullscreenButton } from "./js/fullscreen.js";
     import { currentUser } from "./js/auth.js";
     import { transferCoins, getCoins } from "./js/economy.js";
+    import { renderVotes, renderComments } from "./js/social.js";
 
     renderNav("");
 
@@ -157,6 +160,9 @@
       const render = renderers[game.engine] || renderers.v0;
       render(game, frame);
       if (game.engine !== "v1") countPlay(id);   // v1 counts when the game actually starts
+
+      renderVotes(document.getElementById("game-votes"), "games", id, game, currentUser());
+      renderComments(document.getElementById("game-comments"), "games", id, currentUser());
     } catch (err) {
       titleEl.textContent = "Whoops";
       frame.textContent = err.message;

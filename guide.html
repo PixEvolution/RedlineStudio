@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RedlineStudio — Coding Guide</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="page guide">
+    <h1 class="page-title">Coding Guide</h1>
+    <p class="page-sub">Everything the Studio can do — blocks, RedScript, objects, and how real games are built.</p>
+
+    <div class="panel">
+      <h2>The big idea</h2>
+      <p>A game is a set of <b>objects</b> (dots, rings, boxes, text, ships). Each object can carry a <b>script</b>:
+      a list of <b>events</b> ("when the game starts", "every frame", "when clicked", "when a key is pressed") filled with
+      <b>actions</b>. You build scripts with blocks — and a <b>📜 Code block</b> is the exact same language typed as text,
+      so anything blocks can do, code can do, and the two mix freely.</p>
+      <p>Fastest way to learn: in the Studio, use <b>Load example…</b> to open any of the historic games (1947–1971),
+      click its objects, and read their scripts. Every one is built from the pieces on this page.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Objects &amp; properties</h2>
+      <p>Add objects from the Explorer: <b>Dot</b>, <b>Ring</b>, <b>Box</b>, <b>Text</b>, <b>Ship</b> (a triangle that
+      points along its angle — boxes rotate with angle too). Every object has:</p>
+      <pre class="codeblock">x  y        position (the screen is 480 wide, 360 tall; 0,0 is top-left)
+size        how big it is
+angle       heading in degrees (0 = right, 90 = down) — ships point along it
+color       any color, like "#ff9d4a"
+glow        CRT glow strength
+visible     1 shows it, 0 hides it
+text        what a Text object says</pre>
+      <p>Scripts read and write these as <span class="code">self.x</span>, <span class="code">ball.y</span>,
+      <span class="code">hud.text</span> — any object, by name. You can also invent <b>custom properties</b>:
+      <span class="code">set self.hp to 3</span> just works, and other objects can read
+      <span class="code">enemy.hp</span>.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Events</h2>
+      <pre class="codeblock">when start          runs once, when the game begins
+when tick           runs every frame (~60 times a second) — physics lives here
+when click          runs on every tap/click; read mousex() and mousey()
+when key "ArrowUp"  runs when that key is pressed (works with gamepads too)</pre>
+    </div>
+
+    <div class="panel">
+      <h2>Actions</h2>
+      <pre class="codeblock">set self.x to 240            set a property, variable, or list slot
+change self.y by -2          add to it
+if score > 5 then … else … end
+repeat 10 … end              loop (use a counter variable to count)
+say "HIT!" for 1.5           big message on screen
+explode target1              CRT blast effect at that object</pre>
+    </div>
+
+    <div class="panel">
+      <h2>Expressions — the same everywhere</h2>
+      <p>Every value field in every block accepts a full expression:</p>
+      <pre class="codeblock">Math        + - * / %   (% is remainder)
+Compare     &lt; &gt; &lt;= &gt;= == !=      combine with: and, or, not
+rand(10, 90)          random number in a range
+dist(self, target1)   distance between two objects
+keydown("w")          1 while that key/button is held
+mousex()  mousey()    where the pointer is
+abs(x)  min(a,b)  max(a,b)  floor(x)  round(x)
+sin(deg)  cos(deg)    trig in degrees — angles into motion
+xor(a, b)             binary XOR (NIMROD's whole brain)
+time()                seconds since the game started</pre>
+    </div>
+
+    <div class="panel">
+      <h2>Variables &amp; lists</h2>
+      <pre class="codeblock">set score to 0            variables are shared by every object
+change score by 1
+set board[i] to 5         lists: any expression as the index
+set board[r * 8 + c] to 1</pre>
+      <p>Lists + <span class="code">repeat</span> = real algorithms. Draughts keeps its whole board in
+      <span class="code">board[0..63]</span>; OXO's perfect brain is loops over a
+      <span class="code">lines[]</span> table. Open those examples and read them.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Recipes</h2>
+      <p><b>Move with keys</b> (put on the player object):</p>
+      <pre class="codeblock">when tick
+if keydown("ArrowRight") then
+  change self.x by 3
+end
+if keydown("ArrowLeft") then
+  change self.x by -3
+end
+end</pre>
+      <p><b>A ship that flies like Spacewar</b> (a Ship object):</p>
+      <pre class="codeblock">when tick
+if keydown("a") then
+  set self.angle to self.angle - 3
+end
+if keydown("d") then
+  set self.angle to self.angle + 3
+end
+if keydown("w") then
+  set self.velx to self.velx + cos(self.angle) * 0.1
+  set self.vely to self.vely + sin(self.angle) * 0.1
+end
+change self.x by self.velx
+change self.y by self.vely
+end</pre>
+      <p><b>Gravity + bounce</b>:</p>
+      <pre class="codeblock">when tick
+set vy to vy + 0.13
+change self.y by vy
+if self.y >= 300 then
+  set self.y to 300
+  set vy to 0 - vy * 0.7
+end
+end</pre>
+      <p><b>A clickable button</b> (any object):</p>
+      <pre class="codeblock">when click
+if abs(mousex() - self.x) < 20 and abs(mousey() - self.y) < 20 then
+  set score to score + 1
+  say "CLICKED!" for 1
+end
+end</pre>
+      <p><b>Win condition</b>:</p>
+      <pre class="codeblock">when tick
+if dist(player, goal) < 15 then
+  say "YOU WIN!" for 3
+  explode goal
+end
+end</pre>
+    </div>
+
+    <div class="panel">
+      <h2>The Studio itself</h2>
+      <p><b>Explorer</b> — add and pick objects (checkboxes select several) · <b>Workspace</b> — drag things into place,
+      <b>▶ Test</b> plays your game right there · <b>Properties</b> — tune the selected object ·
+      <b>Script</b> — the block editor for whatever's selected.</p>
+      <p><b>📺 Screen</b> — a second scene that plays on your game's card in the Games list (the arcade "attract screen").
+      Pick Static or Live in the settings row, where the description and the <b>price per play</b> also live —
+      set a price and players insert coins to play, paid straight to you.</p>
+      <p><b>Models</b> — check objects → "Save checked as Model." Models keep their scripts, live in your inventory,
+      insert into any game fully editable, and can be sold on the Market for free or coins. The <b>Page Studio</b>
+      (from your profile: 🎨 Edit my page) is the same editor pointed at your profile page.</p>
+      <p>Controls come free: keyboards work everywhere, phones get on-screen buttons generated from whatever keys your
+      scripts use, and gamepads just work (press a button on the pad once so the browser wakes it up).</p>
+    </div>
+
+    <div class="panel">
+      <h2>Rules of thumb</h2>
+      <p>One object, one job — a ball owns its physics, a referee object owns scoring. Use a variable like
+      <span class="code">game</span> for state (0 = playing, 1 = won…) and gate your <span class="code">when tick</span>
+      logic on it. Runaway loops get stopped automatically, so experiment freely — Test, tweak, Test again.
+      When something's cool, save it as a Model and reuse it forever.</p>
+    </div>
+  </main>
+
+  <script type="module">
+    import { renderNav } from "./js/ui.js";
+    renderNav("");
+  </script>
+</body>
+</html>

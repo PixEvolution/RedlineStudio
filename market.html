@@ -33,6 +33,7 @@
     import { currentUser } from "./js/auth.js";
     import { getCoins, claimDaily, DAILY_COINS } from "./js/economy.js";
     import { listMarket, listMyModels, acquireModel, setListing, deleteModel } from "./js/models.js";
+    import { renderVotes, renderComments } from "./js/social.js";
 
     renderNav("");
     const user = currentUser();
@@ -104,7 +105,31 @@
             btn.disabled = false;
           });
           priceRow.append(price, btn);
-          card.append(title, meta, priceRow);
+
+          // likes + a fold-out comments panel per model
+          const social = document.createElement("div");
+          social.style.display = "flex";
+          social.style.alignItems = "center";
+          social.style.gap = "8px";
+          social.style.marginTop = "6px";
+          const votesMount = document.createElement("div");
+          renderVotes(votesMount, "models", m.id, m, user);
+          const cbtn = document.createElement("button");
+          cbtn.className = "blk-mini";
+          cbtn.textContent = "💬 comments";
+          social.append(votesMount, cbtn);
+          const cpanel = document.createElement("div");
+          cpanel.style.display = "none";
+          cbtn.addEventListener("click", () => {
+            const open = cpanel.style.display === "none";
+            cpanel.style.display = open ? "" : "none";
+            if (open && !cpanel.dataset.loaded) {
+              cpanel.dataset.loaded = "1";
+              renderComments(cpanel, "models", m.id, user, { heading: "" });
+            }
+          });
+
+          card.append(title, meta, priceRow, social, cpanel);
           grid.appendChild(card);
         }
       } catch (err) {

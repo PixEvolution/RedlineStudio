@@ -17,7 +17,9 @@ A game platform by Redline Digital — players make accounts, build games in the
 | `js/models.js` | Models: save groups, inventory, insert, market buy/sell |
 | `js/economy.js` | Coins + daily claim |
 | `js/profiles.js` | Player profiles + saving the custom page |
-| `js/cards.js` | Game cards with live/static arcade screens |
+| `js/cards.js` | Game cards with live/static arcade screens + like counts |
+| `js/social.js` | Likes/dislikes + comments (games, players, models) |
+| `js/forum.js` | Forums: threads and replies |
 | `js/touch-controls.js` | Auto-generated on-screen buttons for phones (from each game's keys) |
 | (engine) | Gamepad support: 1 controller drives any game, 2 controllers = P1/P2 |
 | `js/fullscreen.js` | Optional fullscreen for testing and playing |
@@ -28,7 +30,10 @@ A game platform by Redline Digital — players make accounts, build games in the
 | `play.html` | Plays a published game (one renderer per engine version) |
 | `market.html` | Model market + inventory + coins |
 | `profiles.html` | Players — every account on the platform |
-| `profile.html` | One player: stats, games, and their custom scripted page |
+| `profile.html` | One player: stats, games, custom page, likes + comment wall |
+| `forums.html` | Forums — threads and replies |
+| `guide.html` | The Coding Guide — full RedScript + Studio reference |
+| `about.html` | About the platform |
 | `studio/studio.html` | The Studio (game mode + `?mode=page` Page Studio for profiles) |
 |  `studio/example-*.js` | Reference examples: CRT Amusement Device (1947), Bertie the Brain (1950), NIMROD (1951), Draughts (1951), OXO (1952), Tennis for Two (1958), Mouse in the Maze (1959), Tic-Tac-Toe on TX-0 (1959), Spacewar! (1962), Computer Space (1971) |
 

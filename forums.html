@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RedlineStudio — Forums</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="page">
+    <!-- thread list view -->
+    <div id="list-view">
+      <div class="market-topbar">
+        <div>
+          <h1 class="page-title" style="margin:0">Forums</h1>
+          <p class="page-sub" style="margin:4px 0 0">Talk games, share what you're building, ask for help.</p>
+        </div>
+        <button class="btn" id="btn-new">+ New thread</button>
+      </div>
+
+      <div class="panel" id="new-thread" style="display:none; margin-top:16px">
+        <label for="t-title">Title</label>
+        <input type="text" id="t-title" maxlength="60" placeholder="What's it about?">
+        <label for="t-body">First post</label>
+        <textarea id="t-body" rows="4" maxlength="1000" placeholder="Say the thing…"></textarea>
+        <br><br>
+        <button class="btn" id="btn-post-thread">Post thread</button>
+      </div>
+
+      <div id="threads" style="margin-top:16px"><p class="empty-note">Loading threads…</p></div>
+    </div>
+
+    <!-- single thread view -->
+    <div id="thread-view" style="display:none">
+      <p><a href="forums.html" style="color:#ff8f8c">← All threads</a></p>
+      <h1 class="page-title" id="th-title"></h1>
+      <p class="page-sub" id="th-meta"></p>
+      <div id="posts"></div>
+      <div class="panel" id="reply-box" style="margin-top:16px">
+        <label for="r-text">Reply</label>
+        <textarea id="r-text" rows="3" maxlength="1000" placeholder="Add to the thread…"></textarea>
+        <br><br>
+        <button class="btn" id="btn-reply">Reply</button>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { renderNav, toast, $, fmtDate } from "./js/ui.js";
+    import { currentUser } from "./js/auth.js";
+    import { listThreads, getThread, createThread, listPosts, replyToThread, deletePost, deleteThread } from "./js/forum.js";
+
+    renderNav("");
+    const me = currentUser();
+    const threadId = new URLSearchParams(location.search).get("t");
+
+    // ---------------- thread list ----------------
+    async function loadThreads() {
+      const mount = $("#threads");
+      try {
+        const threads = await listThreads();
+        mount.innerHTML = "";
+        if (threads.length === 0) {
+          mount.innerHTML = `<p class="empty-note">No threads yet — start the first one!</p>`;
+          return;
+        }
+        for (const t of threads) {
+          const row = document.createElement("a");
+          row.className = "forum-thread";
+          row.href = "forums.html?t=" + encodeURIComponent(t.id);
+          const title = document.createElement("div");
+          title.className = "forum-title";
+          title.textContent = t.title;
+          title.title = t.title;
+          const meta = document.createElement("div");
+          meta.className = "hint";
+          meta.textContent = `by ${t.author} · ${t.replies || 0} repl${(t.replies || 0) === 1 ? "y" : "ies"} · ${fmtDate(t.lastAt || t.createdAt)}`;
+          row.append(title, meta);
+          mount.appendChild(row);
+        }
+      } catch (err) {
+        mount.innerHTML = "";
+        toast("Couldn't load threads: " + err.message, true);
+      }
+    }
+
+    $("#btn-new").addEventListener("click", () => {
+      if (!me) { window.location.href = "login.html"; return; }
+      const box = $("#new-thread");
+      box.style.display = box.style.display === "none" ? "" : "none";
+    });
+
+    $("#btn-post-thread").addEventListener("click", async () => {
+      const btn = $("#btn-post-thread");
+      btn.disabled = true;
+      try {
+        const id = await createThread(me, $("#t-title").value, $("#t-body").value);
+        window.location.href = "forums.html?t=" + encodeURIComponent(id);
+      } catch (err) { toast(err.message, true); btn.disabled = false; }
+    });
+
+    // ---------------- one thread ----------------
+    async function loadThread() {
+      $("#list-view").style.display = "none";
+      $("#thread-view").style.display = "";
+      try {
+        const t = await getThread(threadId);
+        $("#th-title").textContent = t.title;
+        document.title = "RedlineStudio — " + t.title;
+        $("#th-meta").textContent = `started by ${t.author} · ${fmtDate(t.createdAt)}`;
+        if (me === t.author) {
+          const del = document.createElement("a");
+          del.href = "#";
+          del.style.color = "#ff8f8c";
+          del.textContent = " · delete thread";
+          del.addEventListener("click", async (e) => {
+            e.preventDefault();
+            if (!confirm("Delete this whole thread?")) return;
+            await deleteThread(t.id);
+            window.location.href = "forums.html";
+          });
+          $("#th-meta").appendChild(del);
+        }
+        loadPosts();
+      } catch (err) {
+        $("#th-title").textContent = "Whoops";
+        $("#th-meta").textContent = err.message;
+        $("#reply-box").style.display = "none";
+      }
+    }
+
+    async function loadPosts() {
+      const mount = $("#posts");
+      const posts = await listPosts(threadId);
+      mount.innerHTML = "";
+      for (const p of posts) {
+        const row = document.createElement("div");
+        row.className = "forum-post";
+        const head = document.createElement("div");
+        head.className = "forum-post-head";
+        const who = document.createElement("a");
+        who.className = "comment-author";
+        who.textContent = p.author;
+        who.href = "profile.html?u=" + encodeURIComponent(p.author);
+        const when = document.createElement("span");
+        when.className = "hint";
+        when.textContent = fmtDate(p.createdAt);
+        head.append(who, when);
+        if (me === p.author) {
+          const del = document.createElement("button");
+          del.className = "blk-mini blk-del";
+          del.textContent = "✕";
+          del.addEventListener("click", async () => { await deletePost(p.id); loadPosts(); });
+          head.appendChild(del);
+        }
+        const body = document.createElement("div");
+        body.className = "forum-post-body";
+        body.textContent = p.text;
+        row.append(head, body);
+        mount.appendChild(row);
+      }
+    }
+
+    $("#btn-reply").addEventListener("click", async () => {
+      if (!me) { window.location.href = "login.html"; return; }
+      const btn = $("#btn-reply");
+      btn.disabled = true;
+      try {
+        await replyToThread(threadId, me, $("#r-text").value);
+        $("#r-text").value = "";
+        loadPosts();
+      } catch (err) { toast(err.message, true); }
+      btn.disabled = false;
+    });
+
+    if (threadId) loadThread();
+    else loadThreads();
+  </script>
+</body>
+</html>

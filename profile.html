@@ -15,7 +15,10 @@
         <h1 class="page-title" id="p-name" style="margin:0">Loading…</h1>
         <p class="page-sub" id="p-meta" style="margin:6px 0 0"></p>
       </div>
-      <a class="btn" id="btn-edit-page" href="studio/studio.html?mode=page" style="display:none">🎨 Edit my page</a>
+      <div style="display:flex; align-items:center; gap:12px">
+        <div id="p-votes"></div>
+        <a class="btn" id="btn-edit-page" href="studio/studio.html?mode=page" style="display:none">🎨 Edit my page</a>
+      </div>
     </div>
 
     <!-- The player's custom page: a full scripted scene, same engine as games -->
@@ -28,6 +31,8 @@
 
     <h2 style="margin-top:28px" id="games-heading">Games</h2>
     <div id="p-games" class="games-grid"><p class="empty-note">Loading…</p></div>
+
+    <div id="p-comments" style="margin-top:28px"></div>
   </main>
 
   <script type="module">
@@ -39,6 +44,10 @@
     import { createTouchControls, isTouchDevice } from "./js/touch-controls.js";
     import { attachFullscreenButton } from "./js/fullscreen.js";
     import { gameCard, resetLiveCardBudget } from "./js/cards.js";
+    import { renderVotes, renderComments } from "./js/social.js";
+    import { db } from "./js/firebase.js";
+    import { userDocId } from "./js/auth.js";
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     renderNav("");
 
@@ -63,6 +72,13 @@
       if (me === profile.username) {
         document.getElementById("btn-edit-page").style.display = "";
       }
+
+      // likes on the player + their comment wall
+      getDoc(doc(db, "users", userDocId(profile.username))).then(snap => {
+        renderVotes(document.getElementById("p-votes"), "users", profile.username, snap.data() || {}, me);
+      }).catch(() => {});
+      renderComments(document.getElementById("p-comments"), "users", profile.username, me,
+        { heading: "Comment wall" });
 
       // their custom page, running live
       if (profile.pageScene?.objects?.length > 0) {
