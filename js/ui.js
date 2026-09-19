@@ -2,6 +2,9 @@
 // Every page calls renderNav() so login state shows everywhere consistently.
 
 import { currentUser, logout } from "./auth.js";
+import { getCoins } from "./economy.js";
+
+export const COIN = "◎";   // the coin symbol — renders on every platform (the coin emoji does not on Windows)
 
 export const $ = (sel, root = document) => root.querySelector(sel);
 
@@ -25,11 +28,23 @@ export function renderNav(rootPath = "") {
 
   const userSlot = nav.querySelector(".nav-user");
   if (user) {
+    // coin balance, top right — click it to visit the Market
+    const coins = document.createElement("a");
+    coins.className = "nav-coins";
+    coins.id = "nav-coins";
+    coins.href = rootPath + "market.html";
+    coins.title = "Your coins — earn more on the Market";
+    coins.textContent = COIN + " …";
+    userSlot.append(coins);
+    getCoins(user)
+      .then(n => { coins.textContent = COIN + " " + n; })
+      .catch(() => { coins.textContent = COIN; });
+
     const name = document.createElement("a");
     name.className = "nav-username";
     name.textContent = user; // textContent = safe for any character
     name.href = rootPath + "profile.html?u=" + encodeURIComponent(user);
-    name.title = "My profile";
+    name.title = user + " — my profile";
     const out = document.createElement("a");
     out.href = "#";
     out.textContent = "Log out";
@@ -67,4 +82,10 @@ export function toast(message, isError = false) {
 export function fmtDate(ts) {
   if (!ts?.seconds) return "";
   return new Date(ts.seconds * 1000).toLocaleDateString();
+}
+
+// Update the nav coin chip after a balance change (claiming daily, buying, paying to play).
+export function setNavCoins(n) {
+  const chip = document.getElementById("nav-coins");
+  if (chip) chip.textContent = COIN + " " + n;
 }

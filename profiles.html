@@ -33,6 +33,7 @@
         const name = document.createElement("div");
         name.className = "game-title";
         name.textContent = u.username;
+        name.title = u.username;
         const meta = document.createElement("div");
         meta.className = "game-meta";
         meta.textContent = "joined " + (fmtDate(u.createdAt) || "recently");

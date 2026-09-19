@@ -35,6 +35,7 @@ export function gameCard(g, { rootPath = "", showOwner = true } = {}) {
   const title = document.createElement("div");
   title.className = "game-title";
   title.textContent = g.title;
+  title.title = g.title;             // hover = full name
   card.appendChild(title);
 
   if (g.description) {
@@ -56,7 +57,7 @@ export function gameCard(g, { rootPath = "", showOwner = true } = {}) {
   const price = Number(g.price) || 0;
   const badge = document.createElement("div");
   badge.className = "price-badge" + (price > 0 ? " paid" : "");
-  badge.textContent = price > 0 ? `🪙 ${price} / play` : "FREE";
+  badge.textContent = price > 0 ? `◎ ${price} / play` : "FREE";
   card.appendChild(badge);
 
   return card;

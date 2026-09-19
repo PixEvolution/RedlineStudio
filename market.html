@@ -14,7 +14,7 @@
         <p class="page-sub" style="margin:4px 0 0">Models made by players — insert them into your games from the Studio.</p>
       </div>
       <div class="coins-box" id="coins-box">
-        <span id="coins-amount">🪙 …</span>
+        <span id="coins-amount">◎ …</span>
         <button class="btn btn-small" id="btn-claim">Claim daily</button>
       </div>
     </div>
@@ -29,7 +29,7 @@
   </main>
 
   <script type="module">
-    import { renderNav, toast, $, fmtDate } from "./js/ui.js";
+    import { renderNav, toast, $, fmtDate, setNavCoins, COIN } from "./js/ui.js";
     import { currentUser } from "./js/auth.js";
     import { getCoins, claimDaily, DAILY_COINS } from "./js/economy.js";
     import { listMarket, listMyModels, acquireModel, setListing, deleteModel } from "./js/models.js";
@@ -40,13 +40,14 @@
     // ---------------- coins ----------------
     async function refreshCoins() {
       if (!user) { $("#coins-box").innerHTML = `<a class="btn btn-small" href="login.html">Log in</a>`; return; }
-      try { $("#coins-amount").textContent = "🪙 " + await getCoins(user); } catch {}
+      try { const n = await getCoins(user); $("#coins-amount").textContent = COIN + " " + n; setNavCoins(n); } catch {}
     }
     $("#btn-claim")?.addEventListener("click", async () => {
       if (!user) return;
       try {
         const r = await claimDaily(user);
-        $("#coins-amount").textContent = "🪙 " + r.coins;
+        $("#coins-amount").textContent = COIN + " " + r.coins;
+        setNavCoins(r.coins);
         toast(r.claimed ? `+${DAILY_COINS} coins — come back tomorrow!` : "Already claimed today — come back tomorrow.", !r.claimed);
       } catch (err) { toast(err.message, true); }
     });
@@ -78,6 +79,7 @@
           const title = document.createElement("div");
           title.className = "game-title";
           title.textContent = m.name;
+          title.title = m.name;
           const meta = document.createElement("div");
           meta.className = "game-meta";
           meta.textContent = `by ${m.owner} · ${m.objects?.length || 0} objects · ${fmtDate(m.createdAt)}`;
@@ -87,7 +89,7 @@
           priceRow.style.alignItems = "center";
           priceRow.style.marginTop = "8px";
           const price = document.createElement("strong");
-          price.textContent = m.price > 0 ? `🪙 ${m.price}` : "FREE";
+          price.textContent = m.price > 0 ? `◎ ${m.price}` : "FREE";
           const btn = document.createElement("button");
           btn.className = "btn btn-small";
           btn.textContent = m.price > 0 ? "Buy" : "Get";
@@ -96,7 +98,7 @@
             btn.disabled = true;
             try {
               const r = await acquireModel(m.id, user);
-              toast(r.paid > 0 ? `Bought "${m.name}" for 🪙 ${r.paid} — it's in My Models.` : `"${m.name}" added to My Models.`);
+              toast(r.paid > 0 ? `Bought "${m.name}" for ◎ ${r.paid} — it's in My Models.` : `"${m.name}" added to My Models.`);
               refreshCoins();
             } catch (err) { toast(err.message, true); }
             btn.disabled = false;
@@ -133,7 +135,7 @@
           meta.className = "hint";
           meta.textContent = `  ${m.objects?.length || 0} objects` +
             (m.creator && m.creator !== user ? ` · made by ${m.creator}` : "") +
-            (m.listed ? ` · LISTED for ${m.price > 0 ? "🪙 " + m.price : "free"}` : "");
+            (m.listed ? ` · LISTED for ${m.price > 0 ? "◎ " + m.price : "free"}` : "");
           info.append(t, meta);
 
           const actions = document.createElement("div");

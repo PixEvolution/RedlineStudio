@@ -45,7 +45,7 @@ export async function transferCoins(from, to, amount) {
     const tSnap = await t.get(toRef);
     if (!fSnap.exists()) throw new Error("Your account wasn't found.");
     const balance = Number(fSnap.data().coins) || 0;
-    if (balance < amount) throw new Error(`Not enough coins — that costs 🪙 ${amount} and you have 🪙 ${balance}.`);
+    if (balance < amount) throw new Error(`Not enough coins — that costs ◎ ${amount} and you have ◎ ${balance}.`);
     t.update(fromRef, { coins: balance - amount });
     if (tSnap.exists()) t.update(toRef, { coins: (Number(tSnap.data().coins) || 0) + amount });
   });

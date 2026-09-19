@@ -166,8 +166,10 @@ input:focus, textarea:focus { outline: 2px solid var(--red); border-color: var(-
   font-weight: 800;
   font-size: 17px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;         /* long names wrap to two lines… */
+  -webkit-box-orient: vertical;
+  overflow-wrap: anywhere;       /* …and hover shows the full name (title attr) */
 }
 .game-meta { color: var(--text-dim); font-size: 13px; }
 .game-desc {
@@ -393,11 +395,22 @@ input:focus, textarea:focus { outline: 2px solid var(--red); border-color: var(-
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 8px;
+  gap: 6px;
+  padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
   width: 100vw;
   height: 100vh;
+  overflow: hidden;
 }
+@supports (height: 100dvh) {
+  .stage.fs-on { height: 100dvh; }   /* phones: the REAL visible height, not behind the URL bar */
+}
+.stage.fs-on .touch-controls {
+  flex: 0 0 auto;                    /* controls always keep their space… */
+  margin: 0;
+  width: 100%;
+  max-width: 640px;
+}
+.stage.fs-on .stage-bar { position: absolute; top: 8px; right: 8px; margin: 0; z-index: 10; }
 .stage.fs-fallback {
   position: fixed;
   inset: 0;
@@ -416,13 +429,7 @@ body.fs-lock { overflow: hidden; }
   border: none;
   border-radius: 0;
 }
-.stage.fs-on .stage-bar {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  margin: 0;
-  z-index: 10;
-}
+
 
 .touch-controls {
   display: flex;
@@ -456,6 +463,8 @@ body.fs-lock { overflow: hidden; }
   cursor: pointer;
   touch-action: none;
 }
+.stage.fs-on .touch-btn { min-width: 50px; min-height: 50px; font-size: 16px; }
+
 .touch-btn.held {
   background: rgba(57, 255, 94, 0.3);
   box-shadow: 0 0 14px rgba(57, 255, 94, 0.5);
@@ -618,3 +627,14 @@ code {
   border-left: 4px solid var(--red);
 }
 a.nav-username:hover { border-color: var(--red); color: #fff; }
+
+.nav-coins {
+  font-weight: 800;
+  color: #ffd75e;
+  background: rgba(255, 215, 94, 0.08);
+  border: 1px solid #b58900;
+  padding: 4px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.nav-coins:hover { color: #fff3c4; border-color: #ffd75e; }

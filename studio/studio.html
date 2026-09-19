@@ -40,7 +40,7 @@
         <textarea id="g-desc" rows="2" maxlength="200" placeholder="What's your game about?"></textarea>
       </div>
       <div>
-        <label for="g-price">Price per play (🪙, 0 = free)</label>
+        <label for="g-price">Price per play (◎, 0 = free)</label>
         <input type="number" id="g-price" min="0" value="0">
       </div>
       <div>
@@ -406,7 +406,7 @@
       mouse: { build: buildMouseExample, tip: "Hit ▶ Test. Draw walls, drop the cheese, press RUN — then run it AGAIN." },
       txo: { build: buildTxoExample, tip: "Hit ▶ Test. Pick the opponent program and run the experiment." },
       spacewar: { build: buildSpacewarExample, tip: "Hit ▶ Test. Two players — mind the star, and save hyperspace for emergencies." },
-      galaxy: { build: buildGalaxyExample, tip: "Hit ▶ Test, click to drop a coin. Publish it with a 🪙 price + Live screen for the full 1971." }
+      galaxy: { build: buildGalaxyExample, tip: "Hit ▶ Test, click to drop a coin. Publish it with a ◎ price + Live screen for the full 1971." }
     };
     $("#sel-example").addEventListener("change", () => {
       const pick = $("#sel-example").value;

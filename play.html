@@ -17,13 +17,13 @@
   </main>
 
   <script type="module">
-    import { renderNav, toast, fmtDate } from "./js/ui.js";
+    import { renderNav, toast, fmtDate, setNavCoins } from "./js/ui.js";
     import { getGame, countPlay } from "./js/games.js";
     import { Engine, drawFrame, CANVAS_W, CANVAS_H } from "./js/engine.js";
     import { createTouchControls, isTouchDevice } from "./js/touch-controls.js";
     import { attachFullscreenButton } from "./js/fullscreen.js";
     import { currentUser } from "./js/auth.js";
-    import { transferCoins } from "./js/economy.js";
+    import { transferCoins, getCoins } from "./js/economy.js";
 
     renderNav("");
 
@@ -107,7 +107,7 @@
         overlay.className = "attract-overlay";
         const playBtn = document.createElement("button");
         playBtn.className = "coin-btn";
-        playBtn.textContent = price > 0 ? `🪙 INSERT ${price} — PLAY` : "▶ PLAY";
+        playBtn.textContent = price > 0 ? `◎ INSERT ${price} — PLAY` : "▶ PLAY";
         overlay.appendChild(playBtn);
         stage.appendChild(overlay);
         hint.textContent = price > 0 ? `This is a coin game — ${price} coins per play. Earn coins on the Market page.` : "";
@@ -118,6 +118,7 @@
             playBtn.disabled = true;
             try {
               await transferCoins(me, game.owner, price);
+              getCoins(me).then(setNavCoins).catch(() => {});
             } catch (err) {
               toast(err.message, true);
               playBtn.disabled = false;
@@ -144,7 +145,7 @@
       metaEl.appendChild(ownerLink);
       metaEl.appendChild(document.createTextNode(
         ` · ${game.plays || 0} plays · published ${fmtDate(game.createdAt)}` +
-        (Number(game.price) > 0 ? ` · 🪙 ${game.price} per play` : "")));
+        (Number(game.price) > 0 ? ` · ◎ ${game.price} per play` : "")));
       if (game.description) {
         const d = document.createElement("p");
         d.className = "page-sub";

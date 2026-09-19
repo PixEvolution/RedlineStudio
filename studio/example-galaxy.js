@@ -9,7 +9,7 @@
 // This one is single-player — the first example you don't need a friend for.
 //   A / D rotate · W thrust · S fire · 90 seconds per coin · beat the saucers!
 //
-// PUBLISH IT LIKE IT'S 1971: set a price (say 🪙 1) and a Live arcade screen —
+// PUBLISH IT LIKE IT'S 1971: set a price (say ◎ 1) and a Live arcade screen —
 // this example is the platform's flagship coin game. The click that starts a
 // round IS the coin drop.
 
