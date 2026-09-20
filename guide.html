@@ -140,7 +140,14 @@ end</pre>
       <b>Script</b> — the block editor for whatever's selected.</p>
       <p><b>📺 Screen</b> — a second scene that plays on your game's card in the Games list (the arcade "attract screen").
       Pick Static or Live in the settings row, where the description and the <b>price per play</b> also live —
-      set a price and players insert coins to play, paid straight to you.</p>
+      set a price and players insert coins to play, paid straight to you. Loading any historic example fills the
+      Screen automatically (Computer Space and Pong come with live attract reels — steal their setup).</p>
+      <p><b>Arcade games</b> — the platform runs the coin slot for you, and two reserved variables wire your game
+      into it. <span class="code">arcade</span> is 1 when a paid play is already underway — check it in
+      <span class="code">when start</span> and skip your own insert-coin screen. Set
+      <span class="code">endplay</span> to 1 when the play is over (game over, out of lives, time up): the game
+      stops and the coin slot comes back — <b>the next play costs another coin</b>, just like 1971. Load
+      Computer Space (1971) or Pong (1972) to see the whole pattern working.</p>
       <p><b>Models</b> — check objects → "Save checked as Model." Models keep their scripts, live in your inventory,
       insert into any game fully editable, and can be sold on the Market for free or coins. The <b>Page Studio</b>
       (from your profile: 🎨 Edit my page) is the same editor pointed at your profile page.</p>

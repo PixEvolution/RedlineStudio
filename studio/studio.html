@@ -401,18 +401,18 @@
     });
 
     const EXAMPLES = {
-      crt: { build: buildCrtExample, tip: "Hit ▶ Test. Up/Down aims, Space fires." },
-      bertie: { build: buildBertieExample, tip: "Hit ▶ Test. Click a square — you're X, Bertie is O." },
-      nimrod: { build: buildNimrodExample, tip: "Hit ▶ Test. Take the last light to win — NIMROD plays perfect Nim." },
-      checkers: { build: buildCheckersExample, tip: "Hit ▶ Test. Click a piece, then a square. Captures are mandatory!" },
-      oxo: { build: buildOxoExample, tip: "Hit ▶ Test. Pick who starts — EDSAC plays a perfect game." },
-      tennis: { build: buildTennisExample, tip: "Hit ▶ Test. Grab a friend — W/S+D vs ↑/↓+←. First to 5!" },
-      mouse: { build: buildMouseExample, tip: "Hit ▶ Test. Draw walls, drop the cheese, press RUN — then run it AGAIN." },
-      txo: { build: buildTxoExample, tip: "Hit ▶ Test. Pick the opponent program and run the experiment." },
-      spacewar: { build: buildSpacewarExample, tip: "Hit ▶ Test. Two players — mind the star, and save hyperspace for emergencies." },
-      galaxy: { build: buildGalaxyExample, tip: "Hit ▶ Test, click to drop a coin. Publish it with a ◎ price + Live screen for the full 1971." },
-      odyssey: { build: buildOdysseyExample, tip: "Hit ▶ Test. Two players — and hold your keys AFTER hitting to curve the ball (english)!" },
-      pong: { build: buildPongExample, tip: "Hit ▶ Test, click a mode. Edges of your paddle = sharp angles. Avoid missing ball for high score." }
+      crt: { build: buildCrtExample, screen: "static", tip: "Hit ▶ Test. Up/Down aims, Space fires." },
+      bertie: { build: buildBertieExample, screen: "static", tip: "Hit ▶ Test. Click a square — you're X, Bertie is O." },
+      nimrod: { build: buildNimrodExample, screen: "static", tip: "Hit ▶ Test. Take the last light to win — NIMROD plays perfect Nim." },
+      checkers: { build: buildCheckersExample, screen: "static", tip: "Hit ▶ Test. Click a piece, then a square. Captures are mandatory!" },
+      oxo: { build: buildOxoExample, screen: "static", tip: "Hit ▶ Test. Pick who starts — EDSAC plays a perfect game." },
+      tennis: { build: buildTennisExample, screen: "static", tip: "Hit ▶ Test. Grab a friend — W/S+D vs ↑/↓+←. First to 5!" },
+      mouse: { build: buildMouseExample, screen: "static", tip: "Hit ▶ Test. Draw walls, drop the cheese, press RUN — then run it AGAIN." },
+      txo: { build: buildTxoExample, screen: "static", tip: "Hit ▶ Test. Pick the opponent program and run the experiment." },
+      spacewar: { build: buildSpacewarExample, screen: "static", tip: "Hit ▶ Test. Two players — mind the star, and save hyperspace for emergencies." },
+      galaxy: { build: buildGalaxyExample, screen: "live", tip: "Hit ▶ Test, click to drop a coin. Publish it with a ◎ price + Live screen for the full 1971." },
+      odyssey: { build: buildOdysseyExample, screen: "static", tip: "Hit ▶ Test. Two players — and hold your keys AFTER hitting to curve the ball (english)!" },
+      pong: { build: buildPongExample, screen: "live", tip: "Hit ▶ Test, click a mode. Edges of your paddle = sharp angles. Avoid missing ball for high score." }
     };
     $("#sel-example").addEventListener("change", () => {
       const pick = $("#sel-example").value;
@@ -424,6 +424,15 @@
       scenes[editTarget] = { objects: ex.objects };
       scene = scenes[editTarget];
       if (editTarget === "game") { editingId = null; titleInput.value = ex.title; }
+      if (editTarget === "game" && !pageMode) {
+        // every example ships with its arcade screen pre-made: a static snapshot
+        // by default; Computer Space and Pong run their LIVE attract reels
+        const smode = EXAMPLES[pick].screen || "static";
+        const shot = JSON.parse(JSON.stringify(ex.objects));
+        if (smode !== "live") for (const o of shot) o.script = [];
+        scenes.screen = { objects: shot };
+        $("#g-screenmode").value = smode;
+      }
       select(scene.objects[0].id);
       toast(`${ex.title} loaded — ${EXAMPLES[pick].tip}`);
     });

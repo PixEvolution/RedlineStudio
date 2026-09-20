@@ -207,6 +207,7 @@ function brainCode() {
   const push = (s) => L.push(s);
   const startRound = (pad) => {
     push(`${pad}set game to 0`);
+    push(`${pad}set endplay to 0`);
     push(`${pad}set pscore to 0`);
     push(`${pad}set sscore to 0`);
     push(`${pad}set basep to 0`);
@@ -240,7 +241,12 @@ function brainCode() {
   push("set killrocket to 0");
   push("set killsaucer1 to 0");
   push("set killsaucer2 to 0");
+  push("set endplay to 0");
   push('set self.text to "◉ INSERT COIN — CLICK TO PLAY ◉"');
+  // the platform's coin slot already took the quarter → straight into the round
+  push("if arcade == 1 then");
+  startRound("  ");
+  push("end");
   push("end");
 
   push("when tick");
@@ -322,6 +328,7 @@ function brainCode() {
   push("      set bases to sscore");
   push("    else");
   push("      set game to 2");
+  push("      set endplay to 1");   // play spent — the platform re-arms the coin slot
   push('      set self.text to "GAME OVER · YOU " + pscore + " — " + sscore + " · INSERT COIN (CLICK)"');
   push("    end");
   push("  end");

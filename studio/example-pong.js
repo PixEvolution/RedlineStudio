@@ -73,6 +73,7 @@ function ballCode() {
 
   const startMatch = (pad) => {
     push(`${pad}set game to 0`);
+    push(`${pad}set endplay to 0`);
     push(`${pad}set lscore to 0`);
     push(`${pad}set rscore to 0`);
     push(`${pad}set serving to 1`);
@@ -92,6 +93,7 @@ function ballCode() {
     push(`${pad}explode self`);
     push(`${pad}if ${who}score >= ${WIN} then`);
     push(`${pad}  set game to 2`);
+    push(`${pad}  set endplay to 1`);
     push(`${pad}  set status.text to "${who === "l" ? "LEFT" : "RIGHT"} WINS ${"—"} CLICK FOR A NEW GAME"`);
     push(`${pad}else`);
     push(`${pad}  set serving to 1`);
@@ -113,6 +115,7 @@ function ballCode() {
   push("set vx to 3");
   push("set vy to 2");
   push("set speed to 0");
+  push("set endplay to 0");
   push('set status.text to ""');
   push("end");
 
@@ -127,6 +130,11 @@ function ballCode() {
   push("set p1btn.visible to (game == 9)");
   push("set p2btn.visible to (game == 9)");
   push("set coinline.glow to 8 + sin(time() * 300) * 6");   // the marquee blinks
+  push("if arcade == 1 then");
+  push('  set coinline.text to "◎ COIN ACCEPTED — PICK A MODE ◎"');
+  push("else");
+  push('  set coinline.text to "◎ INSERT COIN — PICK A MODE ◎"');
+  push("end");
 
   push("if game == 9 then");
   // attract: the ball plays with itself, corner to corner
