@@ -50,7 +50,7 @@ export function gameCard(g, { rootPath = "", showOwner = true } = {}) {
   const bits = [];
   if (showOwner) bits.push("by " + g.owner);
   bits.push(`${g.plays || 0} plays`);
-  if (Number(g.likes) > 0) bits.push(`▲ ${g.likes}`);
+  bits.push(`▲ ${Number(g.likes) || 0} ▼ ${Number(g.dislikes) || 0}`);
   bits.push(fmtDate(g.createdAt));
   meta.textContent = bits.filter(Boolean).join(" · ");
   card.appendChild(meta);

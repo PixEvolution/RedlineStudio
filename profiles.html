@@ -36,7 +36,7 @@
         name.title = u.username;
         const meta = document.createElement("div");
         meta.className = "game-meta";
-        meta.textContent = "joined " + (fmtDate(u.createdAt) || "recently");
+        meta.textContent = `joined ${fmtDate(u.createdAt) || "recently"} · ▲ ${u.likes} ▼ ${u.dislikes}`;
         card.append(name, meta);
         grid.appendChild(card);
       }

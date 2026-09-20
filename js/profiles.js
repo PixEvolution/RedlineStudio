@@ -14,7 +14,10 @@ export async function listUsers() {
   const snap = await getDocs(collection(db, "users"));
   const users = snap.docs.map(d => {
     const data = d.data();
-    return { username: data.username, createdAt: data.createdAt };
+    return {
+      username: data.username, createdAt: data.createdAt,
+      likes: Number(data.likes) || 0, dislikes: Number(data.dislikes) || 0
+    };
   }).filter(u => u.username);
   users.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
   return users;
