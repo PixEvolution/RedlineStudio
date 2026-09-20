@@ -23,6 +23,7 @@ A game platform by Redline Digital — players make accounts, build games in the
 | `js/touch-controls.js` | Auto-generated on-screen buttons for phones (from each game's keys) |
 | (engine) | Gamepad support: 1 controller drives any game, 2 controllers = P1/P2 |
 | `js/fullscreen.js` | Optional fullscreen for testing and playing |
+| `js/studio-panels.js` | Studio panels: collapsible headers + floatable windows (desktop) |
 | `js/ui.js` | Shared nav bar, toasts, helpers |
 | `css/style.css` | All styling |
 | `index.html` | Home — the public games list |
@@ -35,7 +36,7 @@ A game platform by Redline Digital — players make accounts, build games in the
 | `guide.html` | The Coding Guide — full RedScript + Studio reference |
 | `about.html` | About the platform |
 | `studio/studio.html` | The Studio (game mode + `?mode=page` Page Studio for profiles) |
-|  `studio/example-*.js` | Reference examples: CRT Amusement Device (1947), Bertie the Brain (1950), NIMROD (1951), Draughts (1951), OXO (1952), Tennis for Two (1958), Mouse in the Maze (1959), Tic-Tac-Toe on TX-0 (1959), Spacewar! (1962), Computer Space (1971), Odyssey Table Tennis (1972), Pong (1972), Space Race (1973), Gotcha (1973) |
+|  `studio/example-*.js` | Reference examples: CRT Amusement Device (1947), Bertie the Brain (1950), NIMROD (1951), Draughts (1951), OXO (1952), Tennis for Two (1958), Mouse in the Maze (1959), Tic-Tac-Toe on TX-0 (1959), Spacewar! (1962), Computer Space (1971), Odyssey Table Tennis (1972), Pong (1972), Space Race (1973), Gotcha (1973), Hunt the Wumpus (1973) |
 
 **Rules of the road:** one file, one job. New features get new files. Every game is saved with a `version` and `engine` field so old games keep working as the Studio evolves — each engine version keeps its renderer forever.
 
