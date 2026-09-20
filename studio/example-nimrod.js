@@ -165,7 +165,7 @@ export function buildNimrodExample() {
   const rules = {
     id: "ex_nimrules", name: "rules", type: "text",
     x: 240, y: 336, size: 11, color: "#1f8f3c", glow: 4, visible: 1,
-    text: "CLICK A LIGHT: IT + ALL TO ITS RIGHT GO OUT · TAKE THE LAST LIGHT TO WIN",
+    text: "CLICK A LIGHT: IT AND ALL TO ITS RIGHT GO OUT · LAST LIGHT WINS",
     script: []
   };
 

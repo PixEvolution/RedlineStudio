@@ -241,7 +241,7 @@ export function buildTennisExample() {
   objects.push({
     id: "tn_title", name: "title", type: "text",
     x: 240, y: 336, size: 11, color: "#1f8f3c", glow: 4, visible: 1,
-    text: "TENNIS FOR TWO — BROOKHAVEN 1958 · LEFT: W/S + D · RIGHT: ↑/↓ + ← · FIRST TO 5",
+    text: "TENNIS FOR TWO 1958 · LEFT W/S + D · RIGHT ↑/↓ + ← · FIRST TO 5",
     script: []
   });
 

@@ -346,7 +346,7 @@ export function buildSpacewarExample() {
   objects.push({
     id: "sw_help", name: "help", type: "text",
     x: 240, y: 348, size: 10, color: "#1f8f3c", glow: 4, visible: 1,
-    text: "SPACEWAR! · PDP-1 1962 · NEEDLE: A/D W S Q-HYPER · WEDGE: ←/→ ↑ ↓ ENTER-HYPER · FIRST TO 5",
+    text: "SPACEWAR 1962 · NEEDLE: A/D W S, Q=HYPER · WEDGE: ←→ ↑ ↓, ENTER=HYPER",
     script: []
   });
 

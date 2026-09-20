@@ -279,7 +279,7 @@ export function buildPongExample() {
   objects.push({
     id: "pg_help", name: "help", type: "text",
     x: 240, y: 350, size: 10, color: DIM, glow: 3, visible: 1,
-    text: "PONG · ATARI 1972 · LEFT W/S · RIGHT ↑/↓ · EDGES OF YOUR PADDLE = SHARP ANGLES · RALLIES SPEED UP · FIRST TO 11",
+    text: "ATARI 1972 · LEFT W/S · RIGHT ↑/↓ · EDGES = SHARP ANGLES · FIRST TO 11",
     script: []
   });
 
