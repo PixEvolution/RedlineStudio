@@ -25,7 +25,9 @@ export function gameCard(g, { rootPath = "", showOwner = true } = {}) {
     card.appendChild(canvas);
     if (screen.mode === "live" && liveCount < MAX_LIVE_CARDS) {
       liveCount++;
-      const eng = new Engine(canvas, screen.objects);
+      // attract mode: the screen runs live but hears no input —
+      // you can't play a game from its card
+      const eng = new Engine(canvas, screen.objects, { input: false });
       eng.start();
     } else {
       drawFrame(canvas.getContext("2d"), screen.objects);

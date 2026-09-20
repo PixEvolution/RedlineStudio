@@ -102,9 +102,13 @@ export function compileObjectScript(objName, script) {
 // ---------------------------------------------------------------------------
 
 export class Engine {
-  // canvas may be null for headless testing
-  constructor(canvas, sceneObjects) {
+  // canvas may be null for headless testing.
+  // opts.input: false = ATTRACT MODE — the scene runs but hears nothing:
+  // no keyboard, no pointer, no gamepads. Used by live game cards and the
+  // coin-slot attract screen, so nobody can play a game from the Games page.
+  constructor(canvas, sceneObjects, opts = {}) {
     this.canvas = canvas;
+    this.inputEnabled = opts.input !== false;
     this.ctx = canvas ? canvas.getContext("2d") : null;
     this.objects = JSON.parse(JSON.stringify(sceneObjects || []));
     this.byName = {};
@@ -154,16 +158,18 @@ export class Engine {
   start() {
     this.running = true;
     this.t0 = performance.now();
-    window.addEventListener("keydown", this._onKeyDown);
-    window.addEventListener("keyup", this._onKeyUp);
-    if (this.canvas) {
-      this.canvas.addEventListener("pointermove", this._onMouse);
-      this.canvas.addEventListener("pointerdown", this._onMouseDown);
+    if (this.inputEnabled) {
+      window.addEventListener("keydown", this._onKeyDown);
+      window.addEventListener("keyup", this._onKeyUp);
+      if (this.canvas) {
+        this.canvas.addEventListener("pointermove", this._onMouse);
+        this.canvas.addEventListener("pointerdown", this._onMouseDown);
+      }
     }
     this.runEvents("start");
     const loop = () => {
       if (!this.running) return;
-      this.pollGamepads();
+      if (this.inputEnabled) this.pollGamepads();
       this.step();
       this.render();
       this._raf = requestAnimationFrame(loop);

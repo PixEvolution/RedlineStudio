@@ -110,7 +110,8 @@
         function showGate(again) {
           // attract mode behind the coin slot
           if (hasScreen && screen.mode === "live") {
-            attract = new Engine(canvas, screen.objects);
+            // attract mode: live, but deaf — controls only exist once you press PLAY
+            attract = new Engine(canvas, screen.objects, { input: false });
             attract.start();
           } else if (hasScreen) {
             drawFrame(canvas.getContext("2d"), screen.objects);
