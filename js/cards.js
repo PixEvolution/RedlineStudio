@@ -57,10 +57,15 @@ export function gameCard(g, { rootPath = "", showOwner = true } = {}) {
   meta.textContent = bits.filter(Boolean).join(" · ");
   card.appendChild(meta);
 
-  const price = Number(g.price) || 0;
   const badge = document.createElement("div");
-  badge.className = "price-badge" + (price > 0 ? " paid" : "");
-  badge.textContent = price > 0 ? `◎ ${price} / play` : "FREE";
+  if (g.casino) {
+    badge.className = "price-badge paid";
+    badge.textContent = `🎰 pool ◎ ${Number(g.pool) || 0}`;
+  } else {
+    const price = Number(g.price) || 0;
+    badge.className = "price-badge" + (price > 0 ? " paid" : "");
+    badge.textContent = price > 0 ? `◎ ${price} / play` : "FREE";
+  }
   card.appendChild(badge);
 
   return card;

@@ -65,6 +65,10 @@ function compileStmtList(list, errors, where) {
           out.push({ k: "explode", target: s.target || "self" }); break;
         case "beep":
           out.push({ k: "beep", value: parseExpr(s.value || "440"), seconds: parseExpr(s.seconds || "0.1") }); break;
+        case "print":
+          out.push({ k: "print", value: parseExpr(s.value || '""') }); break;
+        case "clear":
+          out.push({ k: "clear" }); break;
         case "code":
           out.push(...compileStmtList(compileStmts(s.source || ""), errors, where)); break;
         default:
@@ -122,6 +126,8 @@ export class Engine {
     this.gpKeys = {};   // keys held via gamepads (merged with the keyboard)
     this._pads = {};    // per-gamepad activation state (see pollGamepads)
     this.beeps = [];    // sounds played this session (tests read this)
+    this.termLines = []; // the teletype: print writes here, drawFrame shows it
+    this.lastAnswer = ""; // the last thing the player typed (answer() reads it)
     this.mouse = { x: CANVAS_W / 2, y: CANVAS_H / 2 };
     this.messages = [];
     this.effects = [];
@@ -137,11 +143,17 @@ export class Engine {
 
     this._onKeyDown = (e) => {
       if (!this.running) return;
+      const tag = e.target && e.target.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;   // typing, not playing
       this.keys[e.key] = true;
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)) e.preventDefault();
       this.fireKey(e.key);
     };
-    this._onKeyUp = (e) => { this.keys[e.key] = false; };
+    this._onKeyUp = (e) => {
+      const tag = e.target && e.target.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      this.keys[e.key] = false;
+    };
     this._onMouse = (e) => {
       if (!this.canvas) return;
       // Maps screen → game coords, including fullscreen letterboxing
@@ -340,6 +352,46 @@ export class Engine {
     return [...out];
   }
 
+  // The player typed something into the terminal input and hit Enter.
+  submitAnswer(text) {
+    this.lastAnswer = String(text ?? "");
+    this.runEvents("answer");
+  }
+
+  // Does this game use the teletype? (print/clear anywhere, or a "when answer"
+  // event.) Harnesses show the text-input row when it does.
+  usesTerminal() {
+    const scanStmts = (list) => (list || []).some(s =>
+      s.k === "print" || s.k === "clear" ||
+      scanStmts(s.then) || scanStmts(s.else) || scanStmts(s.body));
+    for (const c of this.compiled) {
+      for (const ev of c.events) {
+        if (ev.event === "answer") return true;
+        if (scanStmts(ev.body)) return true;
+      }
+    }
+    return false;
+  }
+
+  // Does this game use the casino loop? (sets the reserved var `spin` AND
+  // reads `result`.) Publishing a casino machine requires both.
+  usesCasino() {
+    let setsSpin = false, readsResult = false;
+    const walkExpr = (x) => {
+      if (!x || typeof x !== "object") return;
+      if (x.e === "var" && x.n === "result") readsResult = true;
+      for (const f of ["a", "b", "i"]) walkExpr(x[f]);
+      (x.args || []).forEach(walkExpr);
+    };
+    const walkStmts = (list) => (list || []).forEach(s => {
+      if ((s.k === "set" || s.k === "change") && s.lhs?.kind === "var" && s.lhs.name === "spin") setsSpin = true;
+      for (const f of ["value", "by", "cond", "times", "seconds"]) walkExpr(s[f]);
+      walkStmts(s.then); walkStmts(s.else); walkStmts(s.body);
+    });
+    for (const c of this.compiled) for (const ev of c.events) walkStmts(ev.body);
+    return setsSpin && readsResult;
+  }
+
   resolveObj(name, self) {
     if (name === "self") return self;
     return this.byName[name] || null;
@@ -396,6 +448,15 @@ export class Engine {
           if (o) this.effects.push({ x: o.x, y: o.y, start: performance.now(), color: o.color });
           break;
         }
+        case "print": {
+          // the teletype: one line at a time, like 1973
+          this.termLines.push(String(this.evalExpr(s.value, self)));
+          if (this.termLines.length > 200) this.termLines.splice(0, this.termLines.length - 200);
+          break;
+        }
+        case "clear":
+          this.termLines.length = 0;
+          break;
         case "beep": {
           const freq = Math.max(30, Math.min(4000, Number(this.evalExpr(s.value, self)) || 440));
           const secs = Math.max(0.02, Math.min(2, Number(this.evalExpr(s.seconds, self)) || 0.1));
@@ -508,6 +569,9 @@ export class Engine {
           case "xor": return (Math.floor(Number(args[0])) ^ Math.floor(Number(args[1] ?? 0)));
           case "sin": return Math.sin(Number(args[0]) * Math.PI / 180);   // degrees
           case "cos": return Math.cos(Number(args[0]) * Math.PI / 180);   // degrees
+          case "answer": return String(this.lastAnswer ?? "");
+          case "upper": return String(args[0] ?? "").toUpperCase();
+          case "len": return String(args[0] ?? "").length;
           case "mousex": return this.mouse.x;
           case "mousey": return this.mouse.y;
           case "time": return this.now();
@@ -522,7 +586,7 @@ export class Engine {
 
   render() {
     if (!this.ctx) return;
-    drawFrame(this.ctx, this.objects, { effects: this.effects, messages: this.messages });
+    drawFrame(this.ctx, this.objects, { effects: this.effects, messages: this.messages, terminal: this.termLines });
   }
 }
 
@@ -530,7 +594,7 @@ export class Engine {
 // Drawing (shared by engine + studio edit mode)
 // ---------------------------------------------------------------------------
 
-export function drawFrame(ctx, objects, { effects = [], messages = [], selectedIds = [] } = {}) {
+export function drawFrame(ctx, objects, { effects = [], messages = [], selectedIds = [], terminal = null } = {}) {
   const now = performance.now();
 
   // CRT background
@@ -626,6 +690,24 @@ export function drawFrame(ctx, objects, { effects = [], messages = [], selectedI
     ctx.textAlign = "center";
     ctx.fillText(msg.text, CANVAS_W / 2, 40 + idx * 26);
   });
+
+  // the teletype: print output, latest lines at the bottom — 1973 on phosphor
+  if (terminal && terminal.length > 0) {
+    const LINE_H = 15, MAX_LINES = 21, X = 14, Y0 = 26;
+    const lines = terminal.slice(-MAX_LINES);
+    ctx.font = '12px "Courier New", monospace';
+    ctx.textAlign = "left";
+    ctx.shadowColor = "#39ff5e";
+    ctx.shadowBlur = 4;
+    ctx.fillStyle = "#8dffa9";
+    lines.forEach((line, i) => {
+      ctx.fillText(String(line).slice(0, 64), X, Y0 + i * LINE_H);
+    });
+    // a blinking cursor under the last line, like the real thing
+    if (Math.floor(now / 500) % 2 === 0) {
+      ctx.fillRect(X, Y0 + (lines.length - 1) * LINE_H + 5, 8, 3);
+    }
+  }
 
   ctx.restore();
 }

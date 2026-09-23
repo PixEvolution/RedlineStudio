@@ -14,6 +14,9 @@
 //   say "HIT!" for 1
 //   explode target1
 //   beep 440 for 0.1
+//   print "YOU ARE IN ROOM " + pos     (terminal games — teletype output)
+//   clear                              (wipe the terminal)
+//   when answer                        (player typed something: read answer())
 //   # comments start with # or //
 //
 //   Expressions: numbers, "strings", variables, object.props (self.x, target1.y),
@@ -65,7 +68,8 @@ function tokenize(src) {
 const OBJECT_ARG_FNS = new Set(["dist", "touching", "explode"]);
 const KNOWN_FNS = new Set([
   "rand", "dist", "touching", "keydown", "abs", "min", "max", "floor", "round",
-  "mousex", "mousey", "time", "xor", "sin", "cos"
+  "mousex", "mousey", "time", "xor", "sin", "cos",
+  "answer", "upper", "len"
 ]);
 
 class ExprParser {
@@ -243,6 +247,13 @@ function parseStmtLine(line) {
   if ((r = m(/^explode\s+([A-Za-z_][A-Za-z0-9_]*)$/i))) {
     return { k: "explode", target: r[1] };
   }
+  if ((r = m(/^print\s+(.+)$/i))) {
+    parseExpr(r[1]);
+    return { k: "print", value: r[1].trim() };
+  }
+  if (/^clear$/i.test(line)) {
+    return { k: "clear" };
+  }
   if ((r = m(/^beep\s+(.+?)\s+for\s+(.+)$/i))) {
     parseExpr(r[1]); parseExpr(r[2]);
     return { k: "beep", value: r[1].trim(), seconds: r[2].trim() };
@@ -294,17 +305,19 @@ export function compileProgram(source) {
     try {
       let r;
       if ((r = line.match(/^when\s+start$/i)) || (r = line.match(/^when\s+tick$/i)) ||
-          (r = line.match(/^when\s+click$/i)) || (r = line.match(/^when\s+key\s+"(.*)"$/i))) {
+          (r = line.match(/^when\s+click$/i)) || (r = line.match(/^when\s+answer$/i)) ||
+          (r = line.match(/^when\s+key\s+"(.*)"$/i))) {
         if (stack && stack.length > 1) throw new Error(`missing "end" before next "when"`);
         current = /start$/i.test(line) ? { event: "start", body: [] }
                 : /tick$/i.test(line) ? { event: "tick", body: [] }
                 : /click$/i.test(line) ? { event: "click", body: [] }
+                : /answer$/i.test(line) ? { event: "answer", body: [] }
                 : { event: "key", key: r[1], body: [] };
         events.push(current);
         stack = [{ body: current.body }];
         continue;
       }
-      if (!current) throw new Error(`code must start with "when start", "when tick", "when click" or "when key \\"...\\""`);
+      if (!current) throw new Error(`code must start with "when start", "when tick", "when click", "when answer" or "when key \\"...\\""`);
       if (/^end$/i.test(line)) {
         if (stack.length === 1) { current = null; stack = null; continue; } // closing the event itself
         stack.pop(); continue;

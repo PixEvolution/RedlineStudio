@@ -14,7 +14,7 @@ function stripModules(source) {
     .join("\n");
 }
 
-const BUNDLE_FILES = ["js/redscript.js", "js/engine.js", "js/touch-controls.js"];
+const BUNDLE_FILES = ["js/redscript.js", "js/engine.js", "js/touch-controls.js", "js/terminal.js", "js/casino-odds.js"];
 
 export async function buildStandaloneHtml({ title, objects }, { rootPath = "", fetchText } = {}) {
   const get = fetchText || (async (path) => {
@@ -72,6 +72,13 @@ export async function buildStandaloneHtml({ title, objects }, { rootPath = "", f
                   border: 1px solid #2a2a31; border-radius: 10px; }
   .ctl-edit-bar button { font-family: inherit; background: #17171c; color: #e8e8ec; border: 1px solid #2a2a31;
                          border-radius: 8px; padding: 4px 10px; cursor: pointer; }
+  .term-row { display: flex; gap: 8px; margin-top: 8px; }
+  .term-input { flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid #1f8f3c;
+                background: #03110a; color: #8dffa9; font-family: inherit; font-size: 15px;
+                user-select: text !important; -webkit-user-select: text !important; }
+  .term-input:focus { outline: none; border-color: #39ff5e; }
+  .term-send { font-family: inherit; font-weight: 800; padding: 8px 16px; border-radius: 10px;
+               border: 2px solid #1f8f3c; background: rgba(57,255,94,.12); color: #8dffa9; cursor: pointer; }
   .credit { font-size: 12px; color: #7a8894; }
   .credit a { color: #ff8f8c; }
 </style>
@@ -95,8 +102,10 @@ const _overlay = document.getElementById("overlay");
 document.getElementById("startbtn").addEventListener("click", () => {
   _overlay.remove();
   const engine = new Engine(_canvas, GAME.objects || []);
+  if (engine.usesCasino()) attachCasinoLoop(engine, localWallet(100, 1000));  // offline = free play
   engine.start();
   if (isTouchDevice()) createTouchControls(engine, _stage);
+  attachTerminalInput(engine, _stage);
 });
 </script>
 </body>

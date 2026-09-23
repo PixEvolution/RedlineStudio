@@ -31,7 +31,9 @@
           <option value="pong">Pong (1972)</option>
           <option value="spacerace">Space Race (1973)</option>
           <option value="gotcha">Gotcha (1973)</option>
-          <option value="wumpus">Hunt the Wumpus (1973)</option>
+          <option value="wumpus">Hunt the Wumpus (Map)</option>
+          <option value="wumpus2">Hunt the Wumpus (Teletype)</option>
+          <option value="slots">Redline Slots (casino)</option>
         </select>
         <button class="btn btn-ghost" id="btn-new">New</button>
         <button class="btn btn-ghost" id="btn-download" title="Download this game as a standalone HTML file — runs offline, uploads to itch.io">⬇ Download</button>
@@ -44,6 +46,13 @@
       <div style="flex:2; min-width:220px">
         <label for="g-desc">Description</label>
         <textarea id="g-desc" rows="2" maxlength="200" placeholder="What's your game about?"></textarea>
+      </div>
+      <div>
+        <label for="g-type">Publish to</label>
+        <select id="g-type" class="blk-add" style="margin:0; width:100%">
+          <option value="game">Games page</option>
+          <option value="casino">Casino floor (must use the casino loop)</option>
+        </select>
       </div>
       <div>
         <label for="g-price">Price per play (◎, 0 = free)</label>
@@ -120,6 +129,8 @@
     import { attachFullscreenButton } from "../js/fullscreen.js";
     import { setupPanel } from "../js/studio-panels.js";
     import { downloadStandalone } from "../js/export.js";
+    import { attachTerminalInput } from "../js/terminal.js";
+    import { attachCasinoLoop, localWallet } from "../js/casino-odds.js";
     import { buildCrtExample } from "./example-crt.js";
     import { buildBertieExample } from "./example-bertie.js";
     import { buildNimrodExample } from "./example-nimrod.js";
@@ -135,6 +146,8 @@
     import { buildSpaceraceExample } from "./example-spacerace.js";
     import { buildGotchaExample } from "./example-gotcha.js";
     import { buildWumpusExample } from "./example-wumpus.js";
+    import { buildWumpus2Example } from "./example-wumpus2.js";
+    import { buildSlotsExample } from "./example-slots.js";
     import { getProfile, savePageScene } from "../js/profiles.js";
 
     renderNav("../");
@@ -345,12 +358,14 @@
 
     // ------------------------------------------------------------ test mode
     const testBtn = $("#btn-test");
-    let testControls = null;
+    let testControls = null, testTerminal = null, testCasino = null;
     attachFullscreenButton($("#btn-fs"), $("#stage"));
     testBtn.addEventListener("click", () => {
       if (engine) {
         engine.stop(); engine = null;
         if (testControls) { testControls.destroy(); testControls = null; }
+        if (testTerminal) { testTerminal.destroy(); testTerminal = null; }
+        if (testCasino) { testCasino.destroy(); testCasino = null; }
         testBtn.textContent = "▶ Test";
         $("#ws-hint").textContent = "Click an object to select it · drag to move · ▶ Test to play";
         redraw();
@@ -360,10 +375,15 @@
       if (engine.errors.length) {
         toast("Script problems:\n" + engine.errors.slice(0, 4).join("\n"), true);
       }
+      // casino machines test in FREE PLAY: pretend coins, the real odds
+      if (engine.usesCasino()) testCasino = attachCasinoLoop(engine, localWallet(100, 1000));
       engine.start();
       if (isTouchDevice()) testControls = createTouchControls(engine, $("#stage"));
+      testTerminal = attachTerminalInput(engine, $("#stage"));
       testBtn.textContent = "■ Stop";
-      $("#ws-hint").textContent = "Testing — your game is live. Click Stop to go back to editing.";
+      $("#ws-hint").textContent = engine.usesCasino()
+        ? "Testing in FREE PLAY — pretend coins, the platform's real odds."
+        : "Testing — your game is live. Click Stop to go back to editing.";
     });
 
     // ------------------------------------------------------------ publish / new / example
@@ -373,6 +393,10 @@
       try {
         // quick compile check so broken scripts get flagged before publishing
         const check = new Engine(null, scene.objects);
+        const isCasino = !pageMode && $("#g-type").value === "casino";
+        if (isCasino && !new Engine(null, scenes.game.objects).usesCasino()) {
+          throw new Error("A casino machine must use the casino loop: set bet, set spin to 1, and read result. Load Redline Slots to see the pattern.");
+        }
         if (pageMode) {
           await savePageScene(user, JSON.parse(JSON.stringify(scene)));
           toast(check.errors.length
@@ -384,7 +408,8 @@
             data: JSON.parse(JSON.stringify(scenes.game)),
             engine: "v1",
             description: $("#g-desc").value,
-            price: $("#g-price").value,
+            price: isCasino ? 0 : $("#g-price").value,
+            casino: isCasino,
             screen: { mode: $("#g-screenmode").value, objects: JSON.parse(JSON.stringify(scenes.screen.objects)) }
           };
           if (check.errors.length) toast("Published, but check scripts:\n" + check.errors.slice(0, 3).join("\n"), true);
@@ -444,7 +469,9 @@
       pong: { build: buildPongExample, screen: "live", tip: "Hit ▶ Test, click a mode. Edges of your paddle = sharp angles. Avoid missing ball for high score." },
       spacerace: { build: buildSpaceraceExample, screen: "live", tip: "Hit ▶ Test, click a mode. Race to the top — the coin buys TIME, and the center bar is it draining." },
       gotcha: { build: buildGotchaExample, screen: "live", tip: "Hit ▶ Test, click a mode. Square hunts ring through a maze that never stops moving — the first maze game." },
-      wumpus: { build: buildWumpusExample, screen: "static", tip: "Hit ▶ Test. Walk the lit rooms and hunt by ear — smell, drafts, bats. SHOOT mode fires into a tunnel." }
+      wumpus: { build: buildWumpusExample, screen: "static", tip: "Hit ▶ Test. Walk the lit rooms and hunt by ear — smell, drafts, bats. SHOOT mode fires into a tunnel." },
+      wumpus2: { build: buildWumpus2Example, screen: "static", tip: "Hit ▶ Test. The 1973 original: type M or S, then a room number. Draw your map on paper!" },
+      slots: { build: buildSlotsExample, screen: "live", casino: true, tip: "Hit ▶ Test for FREE PLAY. Publish to the Casino floor and fund the pool to open for business." }
     };
     $("#sel-example").addEventListener("change", () => {
       const pick = $("#sel-example").value;
@@ -456,6 +483,7 @@
       scenes[editTarget] = { objects: ex.objects };
       scene = scenes[editTarget];
       if (editTarget === "game") { editingId = null; titleInput.value = ex.title; }
+      if (editTarget === "game" && !pageMode) $("#g-type").value = EXAMPLES[pick].casino ? "casino" : "game";
       if (editTarget === "game" && !pageMode) {
         // every example ships with its arcade screen pre-made: a static snapshot
         // by default; the Atari coin-ops (Computer Space, Pong, Space Race)

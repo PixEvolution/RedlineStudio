@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RedlineStudio — Casino</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="page">
+    <h1 class="page-title">Casino</h1>
+    <p class="page-sub">Player-built machines, platform-run odds. Every machine returns 92% long-run —
+      the chances are locked in the engine, and no owner can touch them. Coins only: they can't be bought
+      and they can't be cashed out. Play for fun, not for keeps.</p>
+    <div id="filter-mount"></div>
+    <div id="machines" class="games-grid">
+      <p class="empty-note">Loading machines…</p>
+    </div>
+  </main>
+
+  <script type="module">
+    import { renderNav, toast } from "./js/ui.js";
+    import { listCasino } from "./js/games.js";
+    import { gameCard, resetLiveCardBudget } from "./js/cards.js";
+    import { createFilterBar, applyFilter } from "./js/filterbar.js";
+
+    renderNav("");
+
+    const grid = document.getElementById("machines");
+
+    try {
+      const machines = await listCasino();
+
+      const render = (search, sort) => {
+        grid.innerHTML = "";
+        resetLiveCardBudget();
+        const shown = applyFilter(machines, search, sort, ["title", "owner", "description"]);
+        if (shown.length === 0) {
+          grid.innerHTML = machines.length === 0
+            ? `<p class="empty-note">The floor is empty.<br>Build a machine in the Studio — load Redline Slots to see how.</p>`
+            : `<p class="empty-note">No machines match that search.</p>`;
+          return;
+        }
+        for (const g of shown) grid.appendChild(gameCard(g, { rootPath: "", showOwner: true }));
+      };
+
+      createFilterBar(document.getElementById("filter-mount"), {
+        placeholder: "Search machines…",
+        sorts: [
+          ["recent", "Most recent"],
+          ["rated", "Top rated"],
+          ["played", "Top played"],
+          ["pool", "Biggest pool"]
+        ],
+        onChange: render
+      });
+      render("", "recent");
+    } catch (err) {
+      grid.innerHTML = "";
+      toast("Couldn't load the casino: " + err.message, true);
+    }
+  </script>
+</body>
+</html>

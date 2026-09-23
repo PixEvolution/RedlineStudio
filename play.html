@@ -27,6 +27,9 @@
     import { currentUser } from "./js/auth.js";
     import { transferCoins, getCoins } from "./js/economy.js";
     import { renderVotes, renderComments } from "./js/social.js";
+    import { attachTerminalInput } from "./js/terminal.js";
+    import { attachCasinoLoop } from "./js/casino-odds.js";
+    import { spinMachine, fundMachine, collectPool } from "./js/casino.js";
 
     renderNav("");
 
@@ -45,6 +48,115 @@
         note.textContent = "Engine v0 — an early RedlineStudio game.";
         wrap.append(msg, note);
         mount.appendChild(wrap);
+      },
+
+      // v1 CASINO MACHINES: no coin gate — the BET is the price. The platform
+      // runs the odds (see the Guide); the machine's script only does the show.
+      casino(game, mount) {
+        mount.innerHTML = "";
+        mount.style.display = "block";
+
+        const stage = document.createElement("div");
+        stage.className = "stage";
+        const canvas = document.createElement("canvas");
+        canvas.width = CANVAS_W;
+        canvas.height = CANVAS_H;
+        canvas.className = "workspace-canvas";
+        stage.appendChild(canvas);
+        mount.appendChild(stage);
+
+        const bar = document.createElement("div");
+        bar.className = "stage-bar";
+        const fsBtn = document.createElement("button");
+        fsBtn.className = "btn btn-small btn-ghost";
+        bar.appendChild(fsBtn);
+        stage.appendChild(bar);
+        attachFullscreenButton(fsBtn, stage);
+
+        const hint = document.createElement("p");
+        hint.className = "hint";
+        hint.style.textAlign = "center";
+        mount.appendChild(hint);
+
+        const me = currentUser();
+        let cachedCoins = 0, cachedPool = Number(game.pool) || 0;
+        let attract = null, engine = null, controls = null, term = null, loop = null;
+
+        // the owner's till: load the machine, collect the take
+        if (me === game.owner) {
+          const till = document.createElement("div");
+          till.className = "till-row";
+          const amt = document.createElement("input");
+          amt.type = "number"; amt.min = "1"; amt.placeholder = "amount"; amt.className = "till-amt";
+          const fundBtn = document.createElement("button");
+          fundBtn.className = "btn btn-small"; fundBtn.textContent = "Fund pool";
+          const takeBtn = document.createElement("button");
+          takeBtn.className = "btn btn-small btn-ghost"; takeBtn.textContent = "Collect";
+          const poolLbl = document.createElement("span");
+          poolLbl.className = "hint";
+          const showPool = () => { poolLbl.textContent = ` pool: ◎ ${cachedPool}`; };
+          showPool();
+          const op = async (fn) => {
+            try {
+              const out = await fn(game.id, me, amt.value);
+              cachedCoins = out.coins; cachedPool = out.pool;
+              setNavCoins(out.coins); showPool();
+              if (engine) { engine.vars.pool = cachedPool; engine.vars.coins = cachedCoins; }
+              toast(`Pool is now ◎ ${out.pool}.`);
+            } catch (err) { toast(err.message, true); }
+          };
+          fundBtn.addEventListener("click", () => op(fundMachine));
+          takeBtn.addEventListener("click", () => op(collectPool));
+          till.append(amt, fundBtn, takeBtn, poolLbl);
+          mount.appendChild(till);
+        }
+
+        function sitDown() {
+          if (attract) { attract.stop(); attract = null; }
+          engine = new Engine(canvas, game.data?.objects || []);
+          if (engine.errors.length) console.warn("Script issues:", engine.errors);
+          const wallet = {
+            coins: () => cachedCoins,
+            pool: () => cachedPool,
+            async spin(bet) {
+              const out = await spinMachine(game.id, me, bet);
+              cachedCoins = out.coins; cachedPool = out.pool;
+              setNavCoins(out.coins);
+              return out;
+            }
+          };
+          loop = attachCasinoLoop(engine, wallet, { real: true });
+          if (isTouchDevice()) controls = createTouchControls(engine, stage);
+          term = attachTerminalInput(engine, stage);
+          engine.start();
+          if (me !== game.owner) countPlay(game.id);
+          hint.textContent = "Real coins. The odds are the platform's — every machine returns 92% long-run. Bet 1–10.";
+        }
+
+        // attract behind the seat
+        if (game.screen && game.screen.mode === "live" && game.screen.objects?.length) {
+          attract = new Engine(canvas, game.screen.objects, { input: false });
+          attract.start();
+        } else if (game.screen && game.screen.mode !== "none" && game.screen.objects?.length) {
+          drawFrame(canvas.getContext("2d"), game.screen.objects);
+        } else {
+          drawFrame(canvas.getContext("2d"), []);
+        }
+        const overlay = document.createElement("div");
+        overlay.className = "attract-overlay";
+        const sitBtn = document.createElement("button");
+        sitBtn.className = "coin-btn";
+        sitBtn.textContent = me ? "🎰 SIT DOWN" : "LOG IN TO PLAY";
+        overlay.appendChild(sitBtn);
+        stage.appendChild(overlay);
+        hint.textContent = `This machine holds ◎ ${cachedPool}. Bets go in, winnings come out — capped by the pool, like a real cabinet.`;
+        sitBtn.addEventListener("click", async () => {
+          if (!me) { window.location.href = "login.html"; return; }
+          sitBtn.disabled = true;
+          try { cachedCoins = await getCoins(me); } catch {}
+          overlay.remove();
+          sitDown();
+        });
       },
 
       // v1: real scripted games on the CRT engine — with a real arcade front-end.
@@ -83,7 +195,7 @@
         const screen = game.screen;
         const hasScreen = screen && screen.mode !== "none" && screen.objects?.length > 0;
 
-        let attract = null, engine = null, controls = null, watcher = null;
+        let attract = null, engine = null, controls = null, watcher = null, term = null;
 
         function startGame() {
           if (attract) { attract.stop(); attract = null; }
@@ -91,6 +203,7 @@
           engine.vars.arcade = 1;   // the coin door is handled out here
           if (engine.errors.length) console.warn("Script issues:", engine.errors);
           if (isTouchDevice()) controls = createTouchControls(engine, stage);
+          term = attachTerminalInput(engine, stage);   // text adventures get their keyboard
           engine.start();
           if (me !== game.owner) countPlay(game.id);   // your own plays don't count
           hint.textContent = isTouchDevice()
@@ -102,6 +215,7 @@
               clearInterval(watcher); watcher = null;
               engine.stop(); engine = null;
               if (controls) { controls.destroy(); controls = null; }
+              if (term) { term.destroy(); term = null; }
               showGate(true);
             }
           }, 300);
@@ -169,7 +283,8 @@
       metaEl.appendChild(ownerLink);
       metaEl.appendChild(document.createTextNode(
         ` · ${game.plays || 0} plays · published ${fmtDate(game.createdAt)}` +
-        (Number(game.price) > 0 ? ` · ◎ ${game.price} per play` : "")));
+        (Number(game.price) > 0 ? ` · ◎ ${game.price} per play` : "") +
+        (game.casino ? ` · 🎰 pool ◎ ${Number(game.pool) || 0}` : "")));
       if (game.description) {
         const d = document.createElement("p");
         d.className = "page-sub";
@@ -178,7 +293,7 @@
         metaEl.after(d);
       }
 
-      const render = renderers[game.engine] || renderers.v0;
+      const render = game.casino ? renderers.casino : (renderers[game.engine] || renderers.v0);
       render(game, frame);
       if (game.engine !== "v1" && currentUser() !== game.owner) countPlay(id);   // v1 counts when the game actually starts
 

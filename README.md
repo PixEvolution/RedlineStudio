@@ -26,19 +26,23 @@ A game platform by Redline Digital — players make accounts, build games in the
 | `js/studio-panels.js` | Studio panels: collapsible headers + floatable windows (desktop) |
 | `js/filterbar.js` | Search + sort bar for the Games, Market and Players lists |
 | `js/export.js` | ⬇ Download: bundles a game into one standalone offline HTML file |
+| `js/terminal.js` | The teletype input row for text-adventure games |
+| `js/casino-odds.js` | THE HOUSE RULES — fixed public odds (92% RTP) + the casino loop |
+| `js/casino.js` | Casino money: atomic spin/fund/collect transactions on machine pools |
 | `js/ui.js` | Shared nav bar, toasts, helpers |
 | `css/style.css` | All styling |
 | `index.html` | Home — the public games list |
 | `login.html` | Log in / create account |
 | `play.html` | Plays a published game (one renderer per engine version) |
 | `market.html` | Model market + inventory + coins |
+| `casino.html` | The Casino floor — player-built machines, platform-run odds |
 | `profiles.html` | Players — every account on the platform |
 | `profile.html` | One player: stats, games, custom page, likes + comment wall |
 | `forums.html` | Forums — threads and replies |
 | `guide.html` | The Coding Guide — full RedScript + Studio reference |
 | `about.html` | About the platform |
 | `studio/studio.html` | The Studio (game mode + `?mode=page` Page Studio for profiles) |
-|  `studio/example-*.js` | Reference examples: CRT Amusement Device (1947), Bertie the Brain (1950), NIMROD (1951), Draughts (1951), OXO (1952), Tennis for Two (1958), Mouse in the Maze (1959), Tic-Tac-Toe on TX-0 (1959), Spacewar! (1962), Computer Space (1971), Odyssey Table Tennis (1972), Pong (1972), Space Race (1973), Gotcha (1973), Hunt the Wumpus (1973) |
+|  `studio/example-*.js` | Reference examples: CRT Amusement Device (1947), Bertie the Brain (1950), NIMROD (1951), Draughts (1951), OXO (1952), Tennis for Two (1958), Mouse in the Maze (1959), Tic-Tac-Toe on TX-0 (1959), Spacewar! (1962), Computer Space (1971), Odyssey Table Tennis (1972), Pong (1972), Space Race (1973), Gotcha (1973), Hunt the Wumpus (Map + Teletype, 1973), Redline Slots |
 
 **Rules of the road:** one file, one job. New features get new files. Every game is saved with a `version` and `engine` field so old games keep working as the Studio evolves — each engine version keeps its renderer forever.
 
@@ -50,7 +54,7 @@ Blocks and text are the **same language** (RedScript):
 - A 📜 Code block holds full RedScript and compiles into the same structure
 - One interpreter (`engine.js`) runs everything
 
-Events: `when start`, `when tick`, `when click`, `when key "..."` (tick is a fixed 60Hz on every screen) · Actions: `set`, `change`, `if/else`, `repeat`, `say`, `explode`, `beep freq for secs` · Math: `+ - * / %`, `xor(a,b)`, `sin(deg)` `cos(deg)`, comparisons, `and or not`, unary minus, `touching(a,b)` · Lists: `board[i]` read/write anywhere · Objects: dot, ring, box, text, tri (ship) with angle/rotation and x/y/size/color/glow/visible/text.
+Events: `when start`, `when tick`, `when click`, `when answer`, `when key "..."` (tick is a fixed 60Hz on every screen) · Actions: `set`, `change`, `if/else`, `repeat`, `say`, `explode`, `beep freq for secs`, `print`, `clear` · Math: `+ - * / %`, `xor(a,b)`, `sin(deg)` `cos(deg)`, comparisons, `and or not`, unary minus, `touching(a,b)`, `answer()` `upper()` `len()` · Lists: `board[i]` read/write anywhere · Objects: dot, ring, box, text, tri (ship) with angle/rotation and x/y/size/color/glow/visible/text.
 
 ## Models & Market (v1)
 

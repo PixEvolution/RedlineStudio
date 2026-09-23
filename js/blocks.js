@@ -8,6 +8,7 @@ const EVENT_LABELS = {
   tick: "🔁 Every frame",
   key: "⌨️ When key pressed",
   click: "🖱 When clicked",
+  answer: "💬 When answered (terminal)",
   code: "📜 Code section"
 };
 
@@ -19,6 +20,8 @@ const STMT_DEFS = {
   say:     { label: "Say",     make: () => ({ k: "say", value: '"Hello"', seconds: "2" }) },
   explode: { label: "Explode", make: () => ({ k: "explode", target: "self" }) },
   beep:    { label: "Beep",    make: () => ({ k: "beep", value: "440", seconds: "0.1" }) },
+  print:   { label: "Print",   make: () => ({ k: "print", value: '"HELLO"' }) },
+  clear:   { label: "Clear",   make: () => ({ k: "clear" }) },
   code:    { label: "📜 Code block", make: () => ({ k: "code", source: 'set self.x to self.x + 1' }) }
 };
 
@@ -111,6 +114,12 @@ export function createBlockEditor(container, script, { onChange = () => {} } = {
         head.append(el("span", "blk-kw", "beep"), exprInput(s, "value", "frequency (Hz)", "blk-in blk-lhs"),
           el("span", "blk-kw", "for"), exprInput(s, "seconds", "seconds", "blk-in blk-lhs"),
           el("span", "blk-kw", "sec"));
+        break;
+      case "print":
+        head.append(el("span", "blk-kw", "print"), exprInput(s, "value", '"a line for the terminal"'));
+        break;
+      case "clear":
+        head.append(el("span", "blk-kw", "clear"), el("span", "blk-kw", "(wipe the terminal)"));
         break;
       case "code": {
         head.append(el("span", "blk-kw", "📜 code"));

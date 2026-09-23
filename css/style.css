@@ -845,3 +845,32 @@ a.nav-username:hover { border-color: var(--red); color: #fff; }
 }
 .filter-search:focus { outline: none; border-color: var(--red); }
 .filter-sort { margin: 0; min-width: 150px; }
+
+/* ---------- teletype input (text adventures) ---------- */
+.term-row { display: flex; gap: 8px; margin-top: 8px; width: 100%; }
+.term-input {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #1f8f3c;
+  background: #03110a;
+  color: #8dffa9;
+  font-family: "Courier New", monospace;
+  font-size: 15px;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
+.term-input:focus { outline: none; border-color: #39ff5e; }
+.term-send { flex: 0 0 auto; }
+.stage.fs-on .term-row { flex: 0 0 auto; padding: 0 8px 8px; box-sizing: border-box; }
+
+/* ---------- the owner's till (casino machines) ---------- */
+.till-row { display: flex; gap: 8px; align-items: center; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
+.till-amt {
+  width: 110px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  color: var(--text);
+}

@@ -21,6 +21,7 @@ export function renderNav(rootPath = "") {
       <a href="${rootPath}index.html">Games</a>
       <a href="${rootPath}studio/studio.html">Studio</a>
       <a href="${rootPath}market.html">Market</a>
+      <a href="${rootPath}casino.html">Casino</a>
       <a href="${rootPath}profiles.html">Players</a>
       <a href="${rootPath}forums.html">Forums</a>
       <a href="${rootPath}guide.html">Guide</a>

@@ -36,7 +36,8 @@ export const SORTERS = {
   rated:    (a, b) => ((Number(b.likes) || 0) - (Number(b.dislikes) || 0)) -
                       ((Number(a.likes) || 0) - (Number(a.dislikes) || 0)),
   cheapest: (a, b) => (Number(a.price) || 0) - (Number(b.price) || 0),
-  played:   (a, b) => (Number(b.plays) || 0) - (Number(a.plays) || 0)
+  played:   (a, b) => (Number(b.plays) || 0) - (Number(a.plays) || 0),
+  pool:     (a, b) => (Number(b.pool) || 0) - (Number(a.pool) || 0)
 };
 
 export function applyFilter(list, search, sortKey, searchFields = ["title", "owner"]) {

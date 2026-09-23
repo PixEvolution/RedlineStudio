@@ -44,7 +44,9 @@ text        what a Text object says</pre>
       <pre class="codeblock">when start          runs once, when the game begins
 when tick           runs exactly 60 times a second on EVERY screen — physics lives here
 when click          runs on every tap/click; read mousex() and mousey()
-when key "ArrowUp"  runs when that key is pressed (works with gamepads too)</pre>
+when key "ArrowUp"  runs when that key is pressed (works with gamepads too)
+when answer         runs when the player types into the terminal and hits
+                    Enter — read what they typed with answer()</pre>
     </div>
 
     <div class="panel">
@@ -56,7 +58,9 @@ repeat 10 … end              loop (use a counter variable to count)
 say "HIT!" for 1.5           big message on screen
 explode target1              CRT blast effect at that object
 beep 440 for 0.1             a square-wave tone: frequency (Hz) + seconds —
-                             the whole 1972 sound chip (load Pong to hear it)</pre>
+                             the whole 1972 sound chip (load Pong to hear it)
+print "YOU ARE IN ROOM " + pos   a line on the on-screen teletype
+clear                        wipe the teletype</pre>
     </div>
 
     <div class="panel">
@@ -72,7 +76,10 @@ mousex()  mousey()    where the pointer is
 abs(x)  min(a,b)  max(a,b)  floor(x)  round(x)
 sin(deg)  cos(deg)    trig in degrees — angles into motion
 xor(a, b)             binary XOR (NIMROD's whole brain)
-time()                seconds since the game started</pre>
+time()                seconds since the game started
+answer()              what the player just typed (in "when answer")
+upper("m")            uppercase a string — answer comparisons ignore caps
+len(x)                length of a string</pre>
     </div>
 
     <div class="panel">
@@ -138,6 +145,50 @@ if dist(player, goal) < 15 then
   explode goal
 end
 end</pre>
+    </div>
+
+    <div class="panel">
+      <h2>Text adventures</h2>
+      <p>Any game that uses <span class="code">print</span> gets a <b>teletype</b>: lines appear on the screen,
+      and a text input shows up under it. When the player types and hits Enter, every
+      <span class="code">when answer</span> event runs — read the text with <span class="code">answer()</span>.
+      That's the whole kit: with <span class="code">print</span>, <span class="code">clear</span> and a
+      <span class="code">mode</span> variable for "what question am I asking?", you can build interactive
+      fiction, quizzes, dungeon crawls — anything made of words. Loose comparisons help:
+      <span class="code">answer() == 12</span> is true when they type 12, and
+      <span class="code">upper(answer()) == "M"</span> ignores caps.</p>
+      <p>Load <b>Hunt the Wumpus (Teletype)</b> — the real 1973 game, prompts and all — and read its one
+      script: a state machine of questions. The Map version is the same cave with graphics; the teletype
+      is how it actually shipped.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Casino machines</h2>
+      <p>The Casino floor runs on one rule: <b>machines do the show, the platform does the math.</b>
+      The odds are locked in the engine — no owner can make a machine pay better or worse. They're public:</p>
+      <pre class="codeblock">multiplier   chance     ·  RETURN TO PLAYER: 92%
+0x           58.7%      ·  the other 8% stays in the pool —
+1x           25%        ·  that's the owner's take
+2x           10%
+5x           5%         ·  payouts are CAPPED by the pool:
+10x          1.2%       ·  a machine can never pay coins
+100x         0.1%       ·  it doesn't hold</pre>
+      <p>A machine's script talks to the platform through reserved variables — this loop is REQUIRED
+      to publish to the Casino floor:</p>
+      <pre class="codeblock">set bet to 1              pick a stake (1–10)
+set spin to 1             pull the lever — the platform moves the coins
+                          (spin reads 2 while the reels should turn,
+                           then 0 when it's settled)
+result                    the multiplier that came up (-1 = no coins)
+win                       coins paid out this spin
+coins   pool              live balances for your readouts
+casino                    1 on the floor, 0 in Studio test (free play)</pre>
+      <p>Your script never computes a payout — it reads <span class="code">result</span> and dresses the
+      reels. Bets go into the machine's <b>pool</b>; winnings come out of it. Owners fund the pool to
+      offer bigger payouts and collect the take from the machine's page. In the Studio, ▶ Test plays
+      with pretend coins on the same odds. Load <b>Redline Slots</b> and reskin it into anything.</p>
+      <p class="hint">Coins can't be bought and can't be cashed out — the casino is for fun, bragging
+      rights and pool-sized jackpots, not for keeps.</p>
     </div>
 
     <div class="panel">
