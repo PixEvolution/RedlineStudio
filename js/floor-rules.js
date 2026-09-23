@@ -148,3 +148,21 @@ export function pruneLine(data, now = Date.now()) {
   }
   return { queue: live, qbeat, qsince };
 }
+
+// One account, one machine: when a player sits or lines up somewhere new,
+// the old machine releases them completely — seat, line spot, kick votes.
+export function releaseFrom(data, user, now = Date.now()) {
+  const pruned = pruneLine(data, now);
+  delete pruned.qbeat[user];
+  delete pruned.qsince[user];
+  const wasSeated = data?.player === user;
+  return {
+    ...data,
+    player: wasSeated ? null : (data?.player ?? null),
+    ...(wasSeated ? { snap: null, snapAt: 0 } : {}),
+    kickvotes: (data?.kickvotes || []).filter(v => v !== user),
+    queue: pruned.queue.filter(u => u !== user),
+    qbeat: pruned.qbeat,
+    qsince: pruned.qsince
+  };
+}

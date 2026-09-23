@@ -16,8 +16,9 @@
 // Firestore transactions just apply it.
 
 import { db } from "./firebase.js";
+import { userDocId } from "./auth.js";
 import {
-  doc, onSnapshot, runTransaction, updateDoc
+  doc, onSnapshot, runTransaction, updateDoc, setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 export {
@@ -28,7 +29,7 @@ export {
 import {
   BEAT_MS, QBEAT_MS, HOG_MS, seatTakenBy, sitBlocker, liveQueue,
   seatAgeMs, waitedMs, eligibleKickers, canNudge, canVoteKick,
-  kickThreshold, countKickVotes, voteCarries, pruneLine
+  kickThreshold, countKickVotes, voteCarries, pruneLine, releaseFrom
 } from "./floor-rules.js";
 
 const seatRef = (gameId) => doc(db, "seats", gameId);
@@ -37,6 +38,21 @@ const seatRef = (gameId) => doc(db, "seats", gameId);
 
 export function createFloor(gameId, me, { hogMs = HOG_MS } = {}) {
   const ref = seatRef(gameId);
+  // ONE ACCOUNT, ONE MACHINE: this doc records where the player currently is;
+  // sitting or lining up somewhere new releases the old machine atomically.
+  const presRef = me ? doc(db, "present", userDocId(me)) : null;
+
+  // inside a transaction: read where I am now, and if it's another machine,
+  // read that machine too so I can be released from it. ALL reads, no writes.
+  const readElsewhere = async (tx) => {
+    if (!presRef) return null;
+    const p = await tx.get(presRef);
+    const prevGame = p.exists() ? p.data().game : null;
+    if (!prevGame || prevGame === gameId) return null;
+    const otherRef = seatRef(prevGame);
+    const os = await tx.get(otherRef);
+    return os.exists() ? { otherRef, otherData: os.data() } : { otherRef: null, otherData: null };
+  };
   let state = null;
   let ready = false;      // true once the first snapshot has arrived
   let listeners = [];
@@ -88,10 +104,13 @@ export function createFloor(gameId, me, { hogMs = HOG_MS } = {}) {
       if (!me) return { reason: "login" };
       try {
         return await runTransaction(db, async (tx) => {
+          const elsewhere = await readElsewhere(tx);
           const s = await tx.get(ref);
           const data = s.exists() ? s.data() : {};
           const block = sitBlocker(data, me);
           if (block) return block;
+          if (elsewhere && elsewhere.otherRef) tx.set(elsewhere.otherRef, releaseFrom(elsewhere.otherData, me));
+          if (presRef) tx.set(presRef, { user: me, game: gameId, kind: "seat", at: Date.now() });
           const pruned = pruneLine(data);
           delete pruned.qbeat[me];
           delete pruned.qsince[me];
@@ -137,9 +156,13 @@ export function createFloor(gameId, me, { hogMs = HOG_MS } = {}) {
       if (!me) return;
       try {
         await runTransaction(db, async (tx) => {
+          const p = presRef ? await tx.get(presRef) : null;
           const s = await tx.get(ref);
           if (!s.exists() || s.data().player !== me) return;
           tx.update(ref, { player: null, snap: null, snapAt: 0, kickvotes: [] });
+          if (presRef && p?.exists() && p.data().game === gameId) {
+            tx.set(presRef, { user: me, game: null, at: Date.now() });
+          }
         });
       } catch {}
     },
@@ -160,15 +183,21 @@ export function createFloor(gameId, me, { hogMs = HOG_MS } = {}) {
         upd.qbeat = pruned.qbeat;
         upd.qsince = pruned.qsince;
       }
-      if (Object.keys(upd).length) updateDoc(ref, upd).catch(() => {});
+      if (Object.keys(upd).length) {
+        updateDoc(ref, upd).catch(() => {});
+        if (presRef) setDoc(presRef, { user: me, game: null, at: Date.now() }).catch(() => {});
+      }
     },
 
     async joinLine() {
       if (!me) return;
       try {
         await runTransaction(db, async (tx) => {
+          const elsewhere = await readElsewhere(tx);
           const s = await tx.get(ref);
           const data = s.exists() ? s.data() : {};
+          if (elsewhere && elsewhere.otherRef) tx.set(elsewhere.otherRef, releaseFrom(elsewhere.otherData, me));
+          if (presRef) tx.set(presRef, { user: me, game: gameId, kind: "line", at: Date.now() });
           const pruned = pruneLine(data);
           const queue = pruned.queue.filter(u => u !== me).slice(0, 19);
           queue.push(me);
@@ -185,6 +214,7 @@ export function createFloor(gameId, me, { hogMs = HOG_MS } = {}) {
       if (!me) return;
       try {
         await runTransaction(db, async (tx) => {
+          const p = presRef ? await tx.get(presRef) : null;
           const s = await tx.get(ref);
           if (!s.exists()) return;
           const data = s.data();
@@ -192,6 +222,9 @@ export function createFloor(gameId, me, { hogMs = HOG_MS } = {}) {
           delete pruned.qbeat[me];
           delete pruned.qsince[me];
           tx.update(ref, { queue: pruned.queue.filter(u => u !== me), qbeat: pruned.qbeat, qsince: pruned.qsince });
+          if (presRef && p?.exists() && p.data().game === gameId) {
+            tx.set(presRef, { user: me, game: null, at: Date.now() });
+          }
         });
       } catch {}
     },
@@ -252,6 +285,7 @@ export function createFloor(gameId, me, { hogMs = HOG_MS } = {}) {
           const qbeat = { ...pruned.qbeat, [me]: Date.now() };
           const qsince = { ...pruned.qsince, [me]: Date.now() };
           tx.set(ref, { ...data, player: null, snap: null, snapAt: 0, kickvotes: [], nudgeAt: 0, queue, qbeat, qsince });
+          if (presRef) tx.set(presRef, { user: me, game: gameId, kind: "line", at: Date.now() });
           return true;
         });
       } catch { return false; }

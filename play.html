@@ -121,7 +121,7 @@
             if (controls) { controls.destroy(); controls = null; }
             if (term) { term.destroy(); term = null; }
             floorCtl.stopBeating();
-            toast("The line voted — your time is up. Get in line to play again.", true);
+            toast("Your turn here ended — the line voted you off, or you sat down at another machine.", true);
             showSeatGate();
             startAttract();
             return;
@@ -287,7 +287,7 @@
             if (controls) { controls.destroy(); controls = null; }
             if (term) { term.destroy(); term = null; }
             floorCtl.stopBeating();
-            toast("The line voted — your time is up. Get in line to play again.", true);
+            toast("Your turn here ended — the line voted you off, or you sat down at another machine.", true);
             showGate(true);
             return;
           }
