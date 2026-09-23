@@ -14,6 +14,7 @@
     <!-- The game player. Each engine version keeps its renderer forever,
          so old games always work as the studio evolves. -->
     <div class="game-frame" id="frame"></div>
+    <div id="game-floor" style="margin-top:14px"></div>
     <div id="game-votes" style="margin-top:14px"></div>
     <div id="game-comments" style="margin-top:10px"></div>
   </main>
@@ -30,12 +31,19 @@
     import { attachTerminalInput } from "./js/terminal.js";
     import { attachCasinoLoop } from "./js/casino-odds.js";
     import { spinMachine, fundMachine, collectPool } from "./js/casino.js";
+    import { createFloor, renderFloorPanel, seatTakenBy, snapFromEngine, snapToObjects } from "./js/floor.js";
 
     renderNav("");
 
     const frame = document.getElementById("frame");
     const titleEl = document.getElementById("game-title");
     const metaEl = document.getElementById("game-meta");
+
+    let floorCtl = null;   // the machine's seat (set once the game loads)
+    const blockMsg = (b) => b.reason === "login" ? "Log in to play."
+      : b.reason === "occupied" ? `${b.by} is playing this machine — get in line below.`
+      : b.reason === "line" ? `There's a line — ${b.next} is up next. Get in line below.`
+      : (b.message || "Couldn't take the seat.");
 
     const renderers = {
       // v0: the original "welcome message" games
@@ -81,6 +89,49 @@
         const me = currentUser();
         let cachedCoins = 0, cachedPool = Number(game.pool) || 0;
         let attract = null, engine = null, controls = null, term = null, loop = null;
+        let gateBtn = null;
+
+        function startAttract() {
+          if (attract || engine) return;
+          if (game.screen && game.screen.mode === "live" && game.screen.objects?.length) {
+            attract = new Engine(canvas, game.screen.objects, { input: false });
+            attract.start();
+          } else if (game.screen && game.screen.mode !== "none" && game.screen.objects?.length) {
+            drawFrame(canvas.getContext("2d"), game.screen.objects);
+          } else {
+            drawFrame(canvas.getContext("2d"), []);
+          }
+        }
+
+        // the floor: an occupied machine locks the seat and opens the window
+        if (floorCtl) floorCtl.onChange((data) => {
+          const holder = seatTakenBy(data);
+          const occupied = holder && holder !== me;
+          // voted off: the machine takes itself back
+          if (engine && me && data && data.player !== me) {
+            engine.stop(); engine = null;
+            if (loop) { loop.destroy(); loop = null; }
+            if (controls) { controls.destroy(); controls = null; }
+            if (term) { term.destroy(); term = null; }
+            floorCtl.stopBeating();
+            toast("The line voted — your time is up. Get in line to play again.", true);
+            showSeatGate();
+            startAttract();
+            return;
+          }
+          if (gateBtn) {
+            if (occupied) { gateBtn.disabled = true; gateBtn.textContent = `🕹 ${holder} IS PLAYING`; }
+            else if (gateBtn.dataset.busy !== "1") { gateBtn.disabled = false; gateBtn.textContent = me ? "🎰 SIT DOWN" : "LOG IN TO PLAY"; }
+          }
+          if (!engine) {
+            if (occupied && data.snap) {
+              if (attract) { attract.stop(); attract = null; }
+              drawFrame(canvas.getContext("2d"), snapToObjects(data.snap), { terminal: data.snap.term || [] });
+            } else if (!occupied) {
+              startAttract();
+            }
+          }
+        });
 
         // the owner's till: load the machine, collect the take
         if (me === game.owner) {
@@ -129,34 +180,42 @@
           if (isTouchDevice()) controls = createTouchControls(engine, stage);
           term = attachTerminalInput(engine, stage);
           engine.start();
+          if (floorCtl) floorCtl.startBeating(() => engine ? snapFromEngine(engine) : null);
           if (me !== game.owner) countPlay(game.id);
           hint.textContent = "Real coins. The odds are the platform's — every machine returns 92% long-run. Bet 1–10.";
         }
 
-        // attract behind the seat
-        if (game.screen && game.screen.mode === "live" && game.screen.objects?.length) {
-          attract = new Engine(canvas, game.screen.objects, { input: false });
-          attract.start();
-        } else if (game.screen && game.screen.mode !== "none" && game.screen.objects?.length) {
-          drawFrame(canvas.getContext("2d"), game.screen.objects);
-        } else {
-          drawFrame(canvas.getContext("2d"), []);
+        // attract behind the seat (a kick re-shows this gate)
+        function showSeatGate() {
+          startAttract();
+          const overlay = document.createElement("div");
+          overlay.className = "attract-overlay";
+          const sitBtn = document.createElement("button");
+          sitBtn.className = "coin-btn";
+          sitBtn.textContent = me ? "🎰 SIT DOWN" : "LOG IN TO PLAY";
+          overlay.appendChild(sitBtn);
+          stage.appendChild(overlay);
+          gateBtn = sitBtn;
+          hint.textContent = `This machine holds ◎ ${cachedPool}. Bets go in, winnings come out — capped by the pool, like a real cabinet.`;
+          sitBtn.addEventListener("click", async () => {
+            if (!me) { window.location.href = "login.html"; return; }
+            sitBtn.dataset.busy = "1";
+            sitBtn.disabled = true;
+            if (floorCtl) {
+              const block = await floorCtl.sit();
+              if (block) {
+                toast(blockMsg(block), true);
+                sitBtn.dataset.busy = "";
+                return;   // the floor handler re-enables when the seat frees
+              }
+            }
+            try { cachedCoins = await getCoins(me); } catch {}
+            gateBtn = null;
+            overlay.remove();
+            sitDown();
+          });
         }
-        const overlay = document.createElement("div");
-        overlay.className = "attract-overlay";
-        const sitBtn = document.createElement("button");
-        sitBtn.className = "coin-btn";
-        sitBtn.textContent = me ? "🎰 SIT DOWN" : "LOG IN TO PLAY";
-        overlay.appendChild(sitBtn);
-        stage.appendChild(overlay);
-        hint.textContent = `This machine holds ◎ ${cachedPool}. Bets go in, winnings come out — capped by the pool, like a real cabinet.`;
-        sitBtn.addEventListener("click", async () => {
-          if (!me) { window.location.href = "login.html"; return; }
-          sitBtn.disabled = true;
-          try { cachedCoins = await getCoins(me); } catch {}
-          overlay.remove();
-          sitDown();
-        });
+        showSeatGate();
       },
 
       // v1: real scripted games on the CRT engine — with a real arcade front-end.
@@ -196,6 +255,48 @@
         const hasScreen = screen && screen.mode !== "none" && screen.objects?.length > 0;
 
         let attract = null, engine = null, controls = null, watcher = null, term = null;
+        let gateBtn = null, gateLabel = "";
+
+        function startAttract() {
+          if (attract || engine) return;
+          if (hasScreen && screen.mode === "live") {
+            attract = new Engine(canvas, screen.objects, { input: false });
+            attract.start();
+          } else if (hasScreen) {
+            drawFrame(canvas.getContext("2d"), screen.objects);
+          } else {
+            drawFrame(canvas.getContext("2d"), []);
+          }
+        }
+
+        // the floor: one player per cabinet; everyone else watches the window
+        if (floorCtl) floorCtl.onChange((data) => {
+          const holder = seatTakenBy(data);
+          const occupied = holder && holder !== me;
+          // voted off (or seat lost): the machine takes the game back
+          if (engine && me && data && data.player !== me) {
+            if (watcher) { clearInterval(watcher); watcher = null; }
+            engine.stop(); engine = null;
+            if (controls) { controls.destroy(); controls = null; }
+            if (term) { term.destroy(); term = null; }
+            floorCtl.stopBeating();
+            toast("The line voted — your time is up. Get in line to play again.", true);
+            showGate(true);
+            return;
+          }
+          if (gateBtn) {
+            if (occupied) { gateBtn.disabled = true; gateBtn.textContent = `🕹 ${holder} IS PLAYING`; }
+            else if (gateBtn.dataset.busy !== "1") { gateBtn.disabled = false; gateBtn.textContent = gateLabel; }
+          }
+          if (!engine) {
+            if (occupied && data.snap) {
+              if (attract) { attract.stop(); attract = null; }
+              drawFrame(canvas.getContext("2d"), snapToObjects(data.snap), { terminal: data.snap.term || [] });
+            } else if (!occupied) {
+              startAttract();
+            }
+          }
+        });
 
         function startGame() {
           if (attract) { attract.stop(); attract = null; }
@@ -205,6 +306,7 @@
           if (isTouchDevice()) controls = createTouchControls(engine, stage);
           term = attachTerminalInput(engine, stage);   // text adventures get their keyboard
           engine.start();
+          if (floorCtl) floorCtl.startBeating(() => engine ? snapFromEngine(engine) : null);
           if (me !== game.owner) countPlay(game.id);   // your own plays don't count
           hint.textContent = isTouchDevice()
             ? "Tap the screen and buttons to play."
@@ -217,48 +319,63 @@
               if (controls) { controls.destroy(); controls = null; }
               if (term) { term.destroy(); term = null; }
               showGate(true);
+              // arcade etiquette: play's over and people are waiting →
+              // back of the line (no line = keep your seat, play again)
+              if (floorCtl && floorCtl.line().length > 0) {
+                floorCtl.rotateToBack().then((rotated) => {
+                  if (rotated) toast("Play over — people are waiting, so you're at the back of the line.");
+                  else floorCtl.startBeating(() => engine ? snapFromEngine(engine) : null);
+                });
+              }
             }
           }, 300);
         }
 
         function showGate(again) {
-          // attract mode behind the coin slot
-          if (hasScreen && screen.mode === "live") {
-            // attract mode: live, but deaf — controls only exist once you press PLAY
-            attract = new Engine(canvas, screen.objects, { input: false });
-            attract.start();
-          } else if (hasScreen) {
-            drawFrame(canvas.getContext("2d"), screen.objects);
-          } else {
-            drawFrame(canvas.getContext("2d"), []);
-          }
+          // attract mode behind the coin slot (live, but deaf)
+          startAttract();
 
           const overlay = document.createElement("div");
           overlay.className = "attract-overlay";
           const playBtn = document.createElement("button");
           playBtn.className = "coin-btn";
-          playBtn.textContent = price > 0
+          gateLabel = price > 0
             ? `◎ INSERT ${price} — PLAY${again ? " AGAIN" : ""}`
             : (again ? "▶ PLAY AGAIN" : "▶ PLAY");
+          playBtn.textContent = gateLabel;
           overlay.appendChild(playBtn);
           stage.appendChild(overlay);
+          gateBtn = playBtn;
           hint.textContent = price > 0
             ? `This is a coin game — ${price} coins per play. Earn coins on the Market page.`
             : "";
 
           playBtn.addEventListener("click", async () => {
+            playBtn.dataset.busy = "1";
+            playBtn.disabled = true;
+            // the seat first — nobody pays for an occupied machine
+            if (floorCtl && me) {
+              const block = await floorCtl.sit();
+              if (block) {
+                toast(blockMsg(block), true);
+                playBtn.dataset.busy = "";
+                playBtn.disabled = false;
+                return;
+              }
+            }
             if (price > 0) {
               if (!me) { window.location.href = "login.html"; return; }
-              playBtn.disabled = true;
               try {
                 await transferCoins(me, game.owner, price);
                 getCoins(me).then(setNavCoins).catch(() => {});
               } catch (err) {
                 toast(err.message, true);
+                playBtn.dataset.busy = "";
                 playBtn.disabled = false;
                 return;
               }
             }
+            gateBtn = null;
             overlay.remove();
             startGame();
           });
@@ -291,6 +408,12 @@
         d.style.marginTop = "4px";
         d.textContent = game.description;
         metaEl.after(d);
+      }
+
+      if (game.engine === "v1" || game.casino) {
+        floorCtl = createFloor(id, currentUser());
+        renderFloorPanel(document.getElementById("game-floor"), floorCtl, currentUser());
+        window.addEventListener("pagehide", () => floorCtl.leaveBeacon());
       }
 
       const render = game.casino ? renderers.casino : (renderers[game.engine] || renderers.v0);
