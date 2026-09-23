@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RedlineStudio — Games</title>
+  <meta name="description" content="A free game platform: build retro CRT-style games in your browser with blocks or code, publish them instantly, and play everyone else's — arcade coin slots, lines and all.">
+  <link rel="canonical" href="https://redlinestudio.dev/">
+  <meta property="og:site_name" content="RedlineStudio">
+  <meta property="og:title" content="RedlineStudio — make and play retro browser games">
+  <meta property="og:description" content="A free game platform: build retro CRT-style games in your browser with blocks or code, publish them instantly, and play everyone else's — arcade coin slots, lines and all.">
+  <meta property="og:url" content="https://redlinestudio.dev/">
+  <meta property="og:type" content="website">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -45,14 +52,14 @@
       createFilterBar(document.getElementById("filter-mount"), {
         placeholder: "Search games…",
         sorts: [
-          ["recent", "Most recent"],
           ["rated", "Top rated"],
+          ["recent", "Most recent"],
           ["played", "Top played"],
           ["cheapest", "Cheapest"]
         ],
         onChange: render
       });
-      render("", "recent");
+      render("", "rated");
     } catch (err) {
       grid.innerHTML = "";
       toast("Couldn't load games: " + err.message, true);

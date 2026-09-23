@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RedlineStudio — Casino</title>
+  <meta name="description" content="A casino floor of player-built machines running on platform-locked odds (92% return, public paytable). Free platform coins only — nothing to buy, nothing to cash out.">
+  <link rel="canonical" href="https://redlinestudio.dev/casino.html">
+  <meta property="og:site_name" content="RedlineStudio">
+  <meta property="og:title" content="RedlineStudio Casino — player-built machines, fair odds">
+  <meta property="og:description" content="A casino floor of player-built machines running on platform-locked odds (92% return, public paytable). Free platform coins only — nothing to buy, nothing to cash out.">
+  <meta property="og:url" content="https://redlinestudio.dev/casino.html">
+  <meta property="og:type" content="website">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -47,14 +54,14 @@
       createFilterBar(document.getElementById("filter-mount"), {
         placeholder: "Search machines…",
         sorts: [
-          ["recent", "Most recent"],
           ["rated", "Top rated"],
+          ["recent", "Most recent"],
           ["played", "Top played"],
           ["pool", "Biggest pool"]
         ],
         onChange: render
       });
-      render("", "recent");
+      render("", "rated");
     } catch (err) {
       grid.innerHTML = "";
       toast("Couldn't load the casino: " + err.message, true);

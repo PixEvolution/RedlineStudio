@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RedlineStudio — Players</title>
+  <meta name="description" content="Every player on RedlineStudio — their games, custom profile pages, ratings and total plays.">
+  <link rel="canonical" href="https://redlinestudio.dev/profiles.html">
+  <meta property="og:site_name" content="RedlineStudio">
+  <meta property="og:title" content="RedlineStudio Players">
+  <meta property="og:description" content="Every player on RedlineStudio — their games, custom profile pages, ratings and total plays.">
+  <meta property="og:url" content="https://redlinestudio.dev/profiles.html">
+  <meta property="og:type" content="website">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -61,13 +68,13 @@
       createFilterBar(document.getElementById("filter-mount"), {
         placeholder: "Search players…",
         sorts: [
-          ["recent", "Most recent"],
           ["rated", "Top rated"],
+          ["recent", "Most recent"],
           ["played", "Most plays"]
         ],
         onChange: render
       });
-      render("", "recent");
+      render("", "rated");
     } catch (err) {
       grid.innerHTML = "";
       toast("Couldn't load players: " + err.message, true);

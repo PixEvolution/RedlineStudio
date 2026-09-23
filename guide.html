@@ -27,8 +27,9 @@
       <b>every action on this page is also a block</b> (set, change, if, repeat, say, explode, beep, print, clear),
       and every event — including <span class="code">when answer</span> for text games — is in the block editor's
       event menu. Nothing needs typed code.</p>
-      <p>Fastest way to learn: in the Studio, use <b>Load example…</b> to open any of the historic games (1947–1973),
-      click its objects, and read their scripts. Every one is built from the pieces on this page.</p>
+      <p>Fastest way to learn: in the Studio, use <b>Load example…</b> to open any of the 16 reference games — the whole prehistory of video
+      games, 1947–1973, plus Redline Slots for casino machines — click their objects, and read their scripts.
+      Every one is built from the pieces on this page.</p>
     </div>
 
     <div class="panel">
@@ -173,6 +174,20 @@ end</pre>
     </div>
 
     <div class="panel">
+      <h2>Coins</h2>
+      <p>◎ Coins are the platform's play money — they can't be bought and can't be cashed out, and the database
+      itself guarantees no one can create them from nothing. How they move:</p>
+      <pre class="codeblock">EARN   100 when you sign up
+       +100 a day — the Claim button on the Market page (resets on UTC days)
+       your games' price-per-play, paid to you every time someone plays
+       selling Models on the Market
+       your casino machine's take (fund the pool, collect the profits)
+       winning at someone else's machine (92% return, long run — it's a casino)
+SPEND  playing coin games · buying Models · betting at the casino ·
+       funding your own machine's pool</pre>
+    </div>
+
+    <div class="panel">
       <h2>The arcade floor</h2>
       <p>Machines are physical: <b>one player per machine</b>. If someone's playing, the PLAY button
       shows who, and you can <b>get in line</b> — when the seat frees, the front of the line sits first.
@@ -230,14 +245,22 @@ casino                    1 on the floor, 0 in Studio test (free play)</pre>
 
     <div class="panel">
       <h2>The Studio itself</h2>
-      <p><b>Explorer</b> — add and pick objects (checkboxes select several) · <b>Workspace</b> — drag things into place,
-      <b>▶ Test</b> plays your game right there · <b>Properties</b> — tune the selected object ·
-      <b>Script</b> — the block editor for whatever's selected.</p>
-      <p><b>📺 Screen</b> — a second scene that plays on your game's card in the Games list (the arcade "attract screen").
-      Pick Static or Live in the settings row, where the description, the <b>Visibility</b> switch
-      (Public, or Unlisted while you're still building) and the <b>price per play</b> also live —
-      set a price and players insert coins to play, paid straight to you. Loading any historic example fills the
-      Screen automatically (Computer Space and Pong come with live attract reels — steal their setup).</p>
+      <p><b>Explorer</b> — add and pick objects; checkboxes select several, and the <b>search box</b> filters by
+      name or type when a game gets big · <b>Workspace</b> — drag things into place, <b>▶ Test</b> plays your game
+      right there (casino machines test in FREE PLAY: pretend coins, the real odds) · <b>Properties</b> — tune the
+      selected object · <b>Script</b> — the block editor for whatever's selected.</p>
+      <p><b>The panels are yours to arrange:</b> click any panel's header to collapse it, and on desktop drag the
+      <b>⠿</b> handle to pop it out into a floating window you can park anywhere (⟲ docks it back) — float
+      Properties next to the Script editor and thank yourself later.</p>
+      <p><b>📺 Screen</b> — a second scene that plays on your game's card in the Games list (the arcade "attract
+      screen"). Loading any historic example fills the Screen automatically — the Atari coin-ops come with live
+      attract reels; steal their setup.</p>
+      <p><b>The settings row</b>, left to right: the <b>description</b> shown on your card ·
+      <b>Publish to</b> (the Games page, or the Casino floor — machines need the casino loop to go public) ·
+      <b>Visibility</b> (Public, or Unlisted to keep working on it in private — flip it later) ·
+      <b>Price per play</b> (◎, paid straight to you; hidden for casino machines, where the bet is the price) ·
+      <b>Line patience</b> (how long someone must wait at your machine before the line can vote to skip a player —
+      1 to 120 minutes, shown on your game's page) · the <b>Arcade screen</b> mode (None / Static / Live).</p>
       <p><b>Arcade games</b> — the platform runs the coin slot for you, and two reserved variables wire your game
       into it. <span class="code">arcade</span> is 1 when a paid play is already underway — check it in
       <span class="code">when start</span> and skip your own insert-coin screen. Set

@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RedlineStudio — Market</title>
+  <meta name="description" content="Trade game-ready models built by players: save part of your game as a model, sell it for coins, and build faster with everyone else's parts.">
+  <link rel="canonical" href="https://redlinestudio.dev/market.html">
+  <meta property="og:site_name" content="RedlineStudio">
+  <meta property="og:title" content="RedlineStudio Market — buy and sell game models">
+  <meta property="og:description" content="Trade game-ready models built by players: save part of your game as a model, sell it for coins, and build faster with everyone else's parts.">
+  <meta property="og:url" content="https://redlinestudio.dev/market.html">
+  <meta property="og:type" content="website">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -165,13 +172,13 @@
         createFilterBar(mount, {
           placeholder: "Search models…",
           sorts: [
-            ["recent", "Most recent"],
             ["rated", "Top rated"],
+            ["recent", "Most recent"],
             ["cheapest", "Cheapest"]
           ],
           onChange: render
         });
-        render("", "recent");
+        render("", "rated");
       } catch (err) {
         grid.innerHTML = "";
         toast("Couldn't load the market: " + err.message, true);
