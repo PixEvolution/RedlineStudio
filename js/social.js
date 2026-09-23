@@ -4,6 +4,7 @@
 // lists can show counts with no extra reads. Comments are their own collection.
 
 import { db } from "./firebase.js";
+import { auth } from "./auth.js";
 import { userDocId } from "./auth.js";
 import {
   collection, doc, addDoc, getDocs, getDoc, deleteDoc, updateDoc,
@@ -94,7 +95,8 @@ export async function addComment(kind, id, author, text) {
   if (!text) throw new Error("Write something first.");
   if (text.length > 300) throw new Error("Comments max out at 300 characters.");
   const ref = await addDoc(collection(db, "comments"), {
-    kind, target: String(id), author, text, createdAt: serverTimestamp()
+    kind, target: String(id), author, authorUid: auth.currentUser?.uid || null,
+    text, createdAt: serverTimestamp()
   });
   return ref.id;
 }

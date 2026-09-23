@@ -3,7 +3,7 @@
 // your inventory, insert it into any game fully editable, sell it for free or coins.
 
 import { db } from "./firebase.js";
-import { userDocId } from "./auth.js";
+import { userDocId, auth } from "./auth.js";
 import {
   collection, doc, addDoc, getDocs, updateDoc, deleteDoc, getDoc,
   query, where, serverTimestamp, runTransaction
@@ -18,6 +18,7 @@ export async function saveModel({ name, owner, objects, description = "", thumb 
   if (!objects || objects.length === 0) throw new Error("Select at least one object to save.");
   const ref = await addDoc(collection(db, MODELS), {
     version: 1,
+    ownerUid: auth.currentUser?.uid || null,
     name: name.trim(),
     owner,
     creator: owner,               // original creator, kept through sales
@@ -54,7 +55,7 @@ export async function listMarket() {
 // List / unlist on the market. price 0 = free.
 export async function setListing(modelId, listed, price = 0) {
   price = Math.max(0, Math.floor(Number(price) || 0));
-  await updateDoc(doc(db, MODELS, modelId), { listed: !!listed, price });
+  await updateDoc(doc(db, MODELS, modelId), { listed: !!listed, price, ownerUid: auth.currentUser?.uid || null });
 }
 
 export async function deleteModel(modelId) {
@@ -74,6 +75,7 @@ export async function acquireModel(modelId, buyer) {
 
   const copy = {
     version: 1,
+    ownerUid: auth.currentUser?.uid || null,
     name: model.name,
     owner: buyer,
     creator: model.creator || model.owner,

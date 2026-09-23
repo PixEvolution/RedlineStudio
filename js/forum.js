@@ -1,6 +1,7 @@
 // forum.js — the Forums: threads and replies. Simple, honest, modular.
 
 import { db } from "./firebase.js";
+import { auth } from "./auth.js";
 import {
   collection, doc, addDoc, getDoc, getDocs, updateDoc, deleteDoc,
   query, where, serverTimestamp, increment
@@ -28,11 +29,11 @@ export async function createThread(author, title, body) {
   if (!body) throw new Error("Write the first post.");
   if (body.length > 1000) throw new Error("Posts max out at 1000 characters.");
   const t = await addDoc(collection(db, "threads"), {
-    title, author, replies: 0,
+    title, author, authorUid: auth.currentUser?.uid || null, replies: 0,
     createdAt: serverTimestamp(), lastAt: serverTimestamp()
   });
   await addDoc(collection(db, "posts"), {
-    thread: t.id, author, text: body, createdAt: serverTimestamp()
+    thread: t.id, author, authorUid: auth.currentUser?.uid || null, text: body, createdAt: serverTimestamp()
   });
   return t.id;
 }
@@ -51,7 +52,7 @@ export async function replyToThread(threadId, author, text) {
   if (!text) throw new Error("Write something first.");
   if (text.length > 1000) throw new Error("Posts max out at 1000 characters.");
   await addDoc(collection(db, "posts"), {
-    thread: threadId, author, text, createdAt: serverTimestamp()
+    thread: threadId, author, authorUid: auth.currentUser?.uid || null, text, createdAt: serverTimestamp()
   });
   await updateDoc(doc(db, "threads", threadId), {
     replies: increment(1), lastAt: serverTimestamp()

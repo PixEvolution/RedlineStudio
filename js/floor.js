@@ -16,7 +16,7 @@
 // Firestore transactions just apply it.
 
 import { db } from "./firebase.js";
-import { userDocId } from "./auth.js";
+import { userDocId, auth } from "./auth.js";
 import {
   doc, onSnapshot, runTransaction, updateDoc, setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -110,7 +110,7 @@ export function createFloor(gameId, me, { hogMs = HOG_MS } = {}) {
           const block = sitBlocker(data, me);
           if (block) return block;
           if (elsewhere && elsewhere.otherRef) tx.set(elsewhere.otherRef, releaseFrom(elsewhere.otherData, me));
-          if (presRef) tx.set(presRef, { user: me, game: gameId, kind: "seat", at: Date.now() });
+          if (presRef) tx.set(presRef, { user: me, uid: auth.currentUser?.uid || null, game: gameId, kind: "seat", at: Date.now() });
           const pruned = pruneLine(data);
           delete pruned.qbeat[me];
           delete pruned.qsince[me];
@@ -161,7 +161,7 @@ export function createFloor(gameId, me, { hogMs = HOG_MS } = {}) {
           if (!s.exists() || s.data().player !== me) return;
           tx.update(ref, { player: null, snap: null, snapAt: 0, kickvotes: [] });
           if (presRef && p?.exists() && p.data().game === gameId) {
-            tx.set(presRef, { user: me, game: null, at: Date.now() });
+            tx.set(presRef, { user: me, uid: auth.currentUser?.uid || null, game: null, at: Date.now() });
           }
         });
       } catch {}
@@ -185,7 +185,7 @@ export function createFloor(gameId, me, { hogMs = HOG_MS } = {}) {
       }
       if (Object.keys(upd).length) {
         updateDoc(ref, upd).catch(() => {});
-        if (presRef) setDoc(presRef, { user: me, game: null, at: Date.now() }).catch(() => {});
+        if (presRef) setDoc(presRef, { user: me, uid: auth.currentUser?.uid || null, game: null, at: Date.now() }).catch(() => {});
       }
     },
 
@@ -197,7 +197,7 @@ export function createFloor(gameId, me, { hogMs = HOG_MS } = {}) {
           const s = await tx.get(ref);
           const data = s.exists() ? s.data() : {};
           if (elsewhere && elsewhere.otherRef) tx.set(elsewhere.otherRef, releaseFrom(elsewhere.otherData, me));
-          if (presRef) tx.set(presRef, { user: me, game: gameId, kind: "line", at: Date.now() });
+          if (presRef) tx.set(presRef, { user: me, uid: auth.currentUser?.uid || null, game: gameId, kind: "line", at: Date.now() });
           const pruned = pruneLine(data);
           const queue = pruned.queue.filter(u => u !== me).slice(0, 19);
           queue.push(me);
@@ -223,7 +223,7 @@ export function createFloor(gameId, me, { hogMs = HOG_MS } = {}) {
           delete pruned.qsince[me];
           tx.update(ref, { queue: pruned.queue.filter(u => u !== me), qbeat: pruned.qbeat, qsince: pruned.qsince });
           if (presRef && p?.exists() && p.data().game === gameId) {
-            tx.set(presRef, { user: me, game: null, at: Date.now() });
+            tx.set(presRef, { user: me, uid: auth.currentUser?.uid || null, game: null, at: Date.now() });
           }
         });
       } catch {}
@@ -285,7 +285,7 @@ export function createFloor(gameId, me, { hogMs = HOG_MS } = {}) {
           const qbeat = { ...pruned.qbeat, [me]: Date.now() };
           const qsince = { ...pruned.qsince, [me]: Date.now() };
           tx.set(ref, { ...data, player: null, snap: null, snapAt: 0, kickvotes: [], nudgeAt: 0, queue, qbeat, qsince });
-          if (presRef) tx.set(presRef, { user: me, game: gameId, kind: "line", at: Date.now() });
+          if (presRef) tx.set(presRef, { user: me, uid: auth.currentUser?.uid || null, game: gameId, kind: "line", at: Date.now() });
           return true;
         });
       } catch { return false; }

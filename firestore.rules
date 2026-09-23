@@ -1,0 +1,171 @@
+rules_version = '2';
+
+// RedlineStudio security rules — replaces the expiring test-mode rules.
+// PASTE THIS ENTIRE FILE into Firebase console → Firestore Database → Rules
+// → Publish. Deploy the matching site update (uid stamps) FIRST.
+//
+// The philosophy, matching the site: everything is public to READ; writing is
+// tied to the Firebase login (Opus's auth v2). What these rules guarantee:
+//   · nobody can edit or delete another player's games, models, comments,
+//     threads, posts, profile or page
+//   · identity is frozen: username and login binding can never be rewritten
+//   · other players can only ever ADD coins to your account, never take
+//   · new accounts start with exactly 100 coins; new machines with an empty pool
+//   · the arcade floor (seats) is shared by design, login required to write
+// Known, accepted limit of a serverless design: a technical user can still
+// inflate their OWN coin balance. Coins are free and can't cash out.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+    function changedKeys() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    // ------------------------------------------------------------- users
+    match /users/{userId} {
+      allow read: if true;
+
+      // new accounts: bound to this login, standard starting coins
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.username is string
+        && request.resource.data.username.size() >= 1
+        && request.resource.data.username.size() <= 10
+        && request.resource.data.coins == 100;
+
+      allow update: if signedIn() && (
+        // the account owner — identity fields stay frozen
+        (resource.data.uid == request.auth.uid
+          && request.resource.data.uid == resource.data.uid
+          && request.resource.data.username == resource.data.username)
+        // a v1 account upgrading itself: no uid yet, gains this login's
+        || (!('uid' in resource.data)
+            && request.resource.data.uid == request.auth.uid)
+        // everyone else: paying coins and voting ONLY — coins only go up
+        || (changedKeys().hasOnly(['coins', 'votes', 'likes', 'dislikes'])
+            && request.resource.data.coins >= resource.data.coins)
+      );
+
+      allow delete: if false;
+    }
+
+    // ------------------------------------------------------------- games
+    match /games/{gameId} {
+      allow read: if true;
+
+      // publishing binds the game to this login; machines start with ◎0 pools
+      allow create: if signedIn()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.get('pool', 0) == 0;
+
+      allow update: if
+        // the play counter: anyone, even logged out
+        changedKeys().hasOnly(['plays'])
+        || (signedIn() && (
+          // the owner
+          (resource.data.ownerUid == request.auth.uid
+            && request.resource.data.ownerUid == request.auth.uid)
+          // a pre-rules game being saved: it gets stamped with this login
+          || (!('ownerUid' in resource.data)
+              && request.resource.data.ownerUid == request.auth.uid)
+          // other players: voting + casino spins (pool moves, never below zero)
+          || (changedKeys().hasOnly(['votes', 'likes', 'dislikes', 'pool'])
+              && request.resource.data.get('pool', 0) >= 0)
+        ));
+
+      allow delete: if signedIn()
+        && (resource.data.ownerUid == request.auth.uid
+            || !('ownerUid' in resource.data));
+    }
+
+    // ------------------------------------------------------------- models
+    match /models/{modelId} {
+      allow read: if true;
+
+      // saving a model — and buying one, which copies it into YOUR inventory
+      allow create: if signedIn()
+        && request.resource.data.ownerUid == request.auth.uid;
+
+      allow update: if signedIn() && (
+        (resource.data.ownerUid == request.auth.uid
+          && request.resource.data.ownerUid == request.auth.uid)
+        || (!('ownerUid' in resource.data)
+            && request.resource.data.ownerUid == request.auth.uid)
+        || changedKeys().hasOnly(['votes', 'likes', 'dislikes'])
+      );
+
+      allow delete: if signedIn()
+        && (resource.data.ownerUid == request.auth.uid
+            || !('ownerUid' in resource.data));
+    }
+
+    // ---------------------------------------------------------- comments
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.authorUid == request.auth.uid
+        && request.resource.data.text is string
+        && request.resource.data.text.size() <= 300;
+      allow update: if false;
+      allow delete: if signedIn()
+        && (resource.data.authorUid == request.auth.uid
+            || !('authorUid' in resource.data));
+    }
+
+    // ------------------------------------------------------------ forums
+    match /threads/{threadId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.authorUid == request.auth.uid;
+      allow update: if signedIn() && (
+        changedKeys().hasOnly(['replies', 'lastAt'])   // reply counters
+        || resource.data.authorUid == request.auth.uid
+        || !('authorUid' in resource.data)
+      );
+      allow delete: if signedIn()
+        && (resource.data.authorUid == request.auth.uid
+            || !('authorUid' in resource.data));
+    }
+
+    match /posts/{postId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.authorUid == request.auth.uid
+        && request.resource.data.text is string
+        && request.resource.data.text.size() <= 1000;
+      allow update: if false;
+      // the post's author — or the thread's author cleaning their thread
+      allow delete: if signedIn() && (
+        resource.data.authorUid == request.auth.uid
+        || !('authorUid' in resource.data)
+        || get(/databases/$(database)/documents/threads/$(resource.data.thread)).data.authorUid == request.auth.uid
+      );
+    }
+
+    // -------------------------------------------- the arcade floor: seats
+    // Shared by design: sitting, lining up, chatting, kicking all rewrite
+    // this doc. Login required; the floor's own heartbeat rules keep order.
+    match /seats/{gameId} {
+      allow read: if true;
+      allow create, update: if signedIn();
+      allow delete: if false;
+    }
+
+    // --------------------------------------- one account, one machine
+    match /present/{presenceId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid;
+      allow update: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && resource.data.get('uid', request.auth.uid) == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // everything else: denied
+  }
+}

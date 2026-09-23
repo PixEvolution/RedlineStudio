@@ -4,6 +4,7 @@
 // field, so the studio can grow new powers later without breaking old games.
 
 import { db } from "./firebase.js";
+import { auth } from "./auth.js";
 import {
   collection, doc, addDoc, getDoc, getDocs, updateDoc, deleteDoc,
   query, where, orderBy, limit, serverTimestamp, increment
@@ -20,6 +21,7 @@ export async function publishGame({ title, owner, data, engine = "v1", descripti
   if (title.length > 40) throw new Error("Title must be 40 characters or less.");
 
   const ref = await addDoc(collection(db, GAMES), {
+    ownerUid: auth.currentUser?.uid || null,   // security rules enforce owner-only edits
     ...(casino ? { casino: true, pool: 0 } : {}),   // casino machines carry a coin pool
     unlisted: !!unlisted,                            // unlisted = saved but off the public pages
     hogmins: Math.max(1, Math.min(120, Math.floor(Number(hogmins) || 15))),   // line patience (minutes)
@@ -41,6 +43,7 @@ export async function publishGame({ title, owner, data, engine = "v1", descripti
 // Overwrite an existing game with new content (republish/update).
 export async function updateGame(gameId, { title, data, engine, description, price, screen, casino, unlisted, hogmins }) {
   await updateDoc(doc(db, GAMES, gameId), {
+    ownerUid: auth.currentUser?.uid || null,   // stamps legacy games on their next save
     ...(title !== undefined ? { title: title.trim() } : {}),
     ...(data !== undefined ? { data } : {}),
     ...(engine !== undefined ? { engine } : {}),
