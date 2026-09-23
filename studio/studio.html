@@ -95,6 +95,7 @@
           <button class="btn btn-small btn-ghost" data-add="text">+ Text</button>
           <button class="btn btn-small btn-ghost" data-add="tri">+ Ship</button>
         </div>
+        <input type="search" id="obj-search" class="filter-search obj-search" placeholder="Search objects…">
         <div id="obj-list"></div>
         <button class="btn btn-small btn-ghost" id="btn-save-model" style="width:100%;margin-top:10px">
           💾 Save checked as Model
@@ -249,11 +250,23 @@
     }
 
     // ------------------------------------------------------------ explorer
+    let objFilter = "";
+    $("#obj-search").addEventListener("input", () => {
+      objFilter = $("#obj-search").value.trim().toLowerCase();
+      renderExplorer();
+    });
+
     function renderExplorer() {
       const list = $("#obj-list");
       list.innerHTML = "";
       if (scene.objects.length === 0) list.innerHTML = `<p class="hint">No objects yet — add one above.</p>`;
-      for (const o of scene.objects) {
+      const shown = objFilter
+        ? scene.objects.filter(o => (o.name || "").toLowerCase().includes(objFilter) || o.type.includes(objFilter))
+        : scene.objects;
+      if (scene.objects.length > 0 && shown.length === 0) {
+        list.innerHTML = `<p class="hint">No objects match "${objFilter}".</p>`;
+      }
+      for (const o of shown) {
         const row = document.createElement("div");
         row.className = "obj-row" + (o.id === selectedId ? " selected" : "");
         const cb = document.createElement("input");

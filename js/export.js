@@ -50,6 +50,16 @@ export async function buildStandaloneHtml({ title, objects }, { rootPath = "", f
                      -webkit-tap-highlight-color: transparent; }
   .overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
              background: rgba(0,0,0,.45); border-radius: 12px; }
+  .fsbtn { position: absolute; top: 8px; right: 8px; z-index: 10; width: 38px; height: 34px;
+           border-radius: 8px; border: 1px solid #1f8f3c; background: rgba(0,0,0,.5);
+           color: #8dffa9; font-size: 16px; cursor: pointer; font-family: inherit; }
+  .fsbtn:hover { background: rgba(57,255,94,.2); }
+  .stage.fs { position: fixed; inset: 0; z-index: 50; max-width: none; background: #0b0b0e;
+              padding: 8px; box-sizing: border-box; }
+  .stage.fs canvas { flex: 1 1 auto; min-height: 0; width: 100%; height: 100%;
+                     aspect-ratio: auto; object-fit: contain; border: none; }
+  .stage.fs .touch-controls, .stage.fs .term-row { flex: 0 0 auto; }
+  body.fslock { overflow: hidden; }
   .coin-btn { font-family: inherit; font-size: 18px; font-weight: 800; padding: 14px 26px; cursor: pointer;
               border-radius: 14px; border: 2px solid #1f8f3c; background: rgba(57,255,94,.12); color: #8dffa9; }
   .coin-btn:hover { background: rgba(57,255,94,.25); }
@@ -87,6 +97,7 @@ export async function buildStandaloneHtml({ title, objects }, { rootPath = "", f
 <h1>${safeTitle}</h1>
 <div class="stage" id="stage">
   <canvas id="screen" width="480" height="360"></canvas>
+  <button class="fsbtn" id="fsbtn" title="Fullscreen">⛶</button>
   <div class="overlay" id="overlay"><button class="coin-btn" id="startbtn">▶ PLAY</button></div>
 </div>
 <p class="credit">Made with <a href="https://redlinestudio.dev" target="_blank" rel="noopener">RedlineStudio</a></p>
@@ -99,6 +110,26 @@ document.title = GAME.title || document.title;
 const _stage = document.getElementById("stage");
 const _canvas = document.getElementById("screen");
 const _overlay = document.getElementById("overlay");
+// fullscreen: real fullscreen where the browser allows it, and the stage
+// fills the window either way (works from file:// and on iPhones)
+const _fsbtn = document.getElementById("fsbtn");
+function _setFs(on) {
+  _stage.classList.toggle("fs", on);
+  document.body.classList.toggle("fslock", on);
+  _fsbtn.textContent = on ? "✕" : "⛶";
+}
+_fsbtn.addEventListener("click", () => {
+  const on = !_stage.classList.contains("fs");
+  _setFs(on);
+  try {
+    if (on && _stage.requestFullscreen) _stage.requestFullscreen().catch(() => {});
+    else if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  } catch {}
+});
+document.addEventListener("fullscreenchange", () => {
+  if (!document.fullscreenElement && _stage.classList.contains("fs")) _setFs(false);
+});
+
 document.getElementById("startbtn").addEventListener("click", () => {
   _overlay.remove();
   const engine = new Engine(_canvas, GAME.objects || []);

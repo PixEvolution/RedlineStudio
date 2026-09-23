@@ -874,3 +874,49 @@ a.nav-username:hover { border-color: var(--red); color: #fff; }
   background: var(--bg-panel);
   color: var(--text);
 }
+
+/* ---------- the arcade floor: seat status, the line, machine chat ---------- */
+.floor-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+.floor-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+.floor-msgs {
+  max-height: 160px;
+  overflow-y: auto;
+  font-size: 13px;
+  color: var(--text-dim);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.floor-msgs b { color: #ff8f8c; font-weight: 700; }
+.floor-chat-row { display: flex; gap: 8px; }
+.floor-chat-row input {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-panel-2);
+  color: var(--text);
+  font-size: 13px;
+}
+.floor-chat-row input:focus { outline: none; border-color: var(--red); }
+
+.floor-note { font-size: 12.5px; color: var(--text-dim); margin: -2px 0 10px; }
+
+.obj-search { width: 100%; box-sizing: border-box; margin-bottom: 8px; padding: 8px 12px; font-size: 13px; }
