@@ -69,12 +69,14 @@ function rocketCode(isRight) {
   // the finish line: score and fall back to the pad
   push(`  if self.y <= ${GOAL} then`);
   push(`    change ${isRight ? "rscore" : "lscore"} by 1`);
+  push("    beep 660 for 0.12");   // crossing chime
   push(`    set self.y to ${PAD}`);
   push("  end");
   // the asteroid field
   for (let i = 1; i <= NDEB; i++) {
     push(`  if dist(self, d${i}) < ${HIT} then`);
     push("    explode self");
+    push("    beep 85 for 0.3");   // the crash
     push(`    set self.y to ${PAD}`);
     push("  end");
   }
@@ -151,6 +153,7 @@ function brainCode() {
   push("  if timeleft <= 0 then");
   push("    set game to 2");
   push("    set endplay to 1");        // the quarter is spent — arcade contract
+  push("    beep 150 for 0.5");        // time-up buzzer
   push("    if lscore > rscore then");
   push('      set self.text to "GREEN ROCKET WINS — CLICK FOR ATTRACT"');
   push("    else");

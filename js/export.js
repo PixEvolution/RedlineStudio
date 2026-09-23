@@ -1,0 +1,117 @@
+// export.js — "⬇ Download": turns a game into ONE standalone HTML file.
+// The engine, the language and the touch controls are bundled in, so the file
+// runs offline by double-click — upload it to itch.io as a playable browser
+// game, or wrap it with Electron/Tauri to ship a desktop build.
+// Built on RedlineStudio, published anywhere.
+
+// Our modules only import each other, so bundling = strip the module plumbing
+// and concatenate in dependency order inside one <script>.
+function stripModules(source) {
+  return source
+    .split("\n")
+    .filter(line => !/^\s*import\s/.test(line) && !/^\}\s*from\s+"/.test(line))
+    .map(line => line.replace(/^export\s+(?=(const|let|var|function|class)\b)/, ""))
+    .join("\n");
+}
+
+const BUNDLE_FILES = ["js/redscript.js", "js/engine.js", "js/touch-controls.js"];
+
+export async function buildStandaloneHtml({ title, objects }, { rootPath = "", fetchText } = {}) {
+  const get = fetchText || (async (path) => {
+    const res = await fetch(rootPath + path);
+    if (!res.ok) throw new Error("Couldn't read " + path);
+    return res.text();
+  });
+
+  const sources = [];
+  for (const f of BUNDLE_FILES) sources.push(stripModules(await get(f)));
+
+  // <, > and the closing script tag must never appear raw inside the JSON
+  const gameJson = JSON.stringify({ title, objects })
+    .replace(/</g, "\\u003c").replace(/>/g, "\\u003e");
+  const safeTitle = String(title || "My Game").replace(/&/g, "&amp;").replace(/</g, "&lt;");
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${safeTitle}</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; min-height: 100vh; min-height: 100dvh; background: #0b0b0e; color: #e8e8ec;
+         font-family: "Courier New", monospace; display: flex; flex-direction: column;
+         align-items: center; justify-content: center; gap: 10px; padding: 12px; box-sizing: border-box; }
+  h1 { font-size: 18px; margin: 0; color: #8dffa9; text-shadow: 0 0 10px rgba(57,255,94,.4); }
+  .stage { position: relative; width: 100%; max-width: 640px; display: flex; flex-direction: column; }
+  canvas { width: 100%; aspect-ratio: 4 / 3; display: block; border: 2px solid #123c24; border-radius: 12px;
+           background: #03110a; object-fit: contain; }
+  .stage, .stage * { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+                     -webkit-tap-highlight-color: transparent; }
+  .overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+             background: rgba(0,0,0,.45); border-radius: 12px; }
+  .coin-btn { font-family: inherit; font-size: 18px; font-weight: 800; padding: 14px 26px; cursor: pointer;
+              border-radius: 14px; border: 2px solid #1f8f3c; background: rgba(57,255,94,.12); color: #8dffa9; }
+  .coin-btn:hover { background: rgba(57,255,94,.25); }
+  .touch-controls { position: relative; display: flex; align-items: flex-end; justify-content: space-between;
+                    gap: 16px; margin-top: 10px; }
+  .touch-cluster { position: relative; z-index: 20; transform-origin: bottom center; touch-action: none; }
+  .touch-controls.editing .touch-cluster { outline: 2px dashed #39ff5e; outline-offset: 6px; border-radius: 10px; }
+  .touch-controls.editing .touch-btn { opacity: .6; }
+  .touch-dpad { display: grid; grid-template-areas: ". up ." "left down right"; gap: 6px; }
+  .touch-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+  .touch-btn { min-width: 58px; min-height: 58px; padding: 8px 14px; border-radius: 14px; border: 2px solid #1f8f3c;
+               background: rgba(57,255,94,.08); color: #8dffa9; font-size: 18px; font-weight: 800;
+               font-family: inherit; cursor: pointer; touch-action: none; }
+  .touch-btn.held { background: rgba(57,255,94,.3); box-shadow: 0 0 14px rgba(57,255,94,.5); }
+  .ctl-edit-btn { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%); z-index: 25;
+                  width: 34px; height: 34px; border-radius: 50%; border: 1px solid #2a2a31;
+                  background: rgba(0,0,0,.45); color: #9aa; font-size: 16px; cursor: pointer; }
+  .ctl-edit-bar { position: absolute; left: 50%; bottom: 42px; transform: translateX(-50%); z-index: 25;
+                  display: flex; gap: 6px; padding: 6px 8px; background: rgba(0,0,0,.7);
+                  border: 1px solid #2a2a31; border-radius: 10px; }
+  .ctl-edit-bar button { font-family: inherit; background: #17171c; color: #e8e8ec; border: 1px solid #2a2a31;
+                         border-radius: 8px; padding: 4px 10px; cursor: pointer; }
+  .credit { font-size: 12px; color: #7a8894; }
+  .credit a { color: #ff8f8c; }
+</style>
+</head>
+<body>
+<h1>${safeTitle}</h1>
+<div class="stage" id="stage">
+  <canvas id="screen" width="480" height="360"></canvas>
+  <div class="overlay" id="overlay"><button class="coin-btn" id="startbtn">▶ PLAY</button></div>
+</div>
+<p class="credit">Made with <a href="https://redlinestudio.dev" target="_blank" rel="noopener">RedlineStudio</a></p>
+<script>
+${sources.join("\n\n")}
+
+// ---- boot -----------------------------------------------------------------
+const GAME = ${gameJson};
+document.title = GAME.title || document.title;
+const _stage = document.getElementById("stage");
+const _canvas = document.getElementById("screen");
+const _overlay = document.getElementById("overlay");
+document.getElementById("startbtn").addEventListener("click", () => {
+  _overlay.remove();
+  const engine = new Engine(_canvas, GAME.objects || []);
+  engine.start();
+  if (isTouchDevice()) createTouchControls(engine, _stage);
+});
+</script>
+</body>
+</html>`;
+}
+
+// Browser-side helper: build the file and hand it to the user as a download.
+export async function downloadStandalone(game, rootPath = "") {
+  const html = await buildStandaloneHtml(game, { rootPath });
+  const blob = new Blob([html], { type: "text/html" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = (String(game.title || "my-game").replace(/[\\/:*?"<>|]/g, "_") || "my-game") + ".html";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}

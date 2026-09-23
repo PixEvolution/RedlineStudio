@@ -34,6 +34,7 @@
           <option value="wumpus">Hunt the Wumpus (1973)</option>
         </select>
         <button class="btn btn-ghost" id="btn-new">New</button>
+        <button class="btn btn-ghost" id="btn-download" title="Download this game as a standalone HTML file — runs offline, uploads to itch.io">⬇ Download</button>
         <button class="btn" id="btn-test">▶ Test</button>
         <button class="btn" id="btn-publish">Publish</button>
       </div>
@@ -118,6 +119,7 @@
     import { createTouchControls, isTouchDevice } from "../js/touch-controls.js";
     import { attachFullscreenButton } from "../js/fullscreen.js";
     import { setupPanel } from "../js/studio-panels.js";
+    import { downloadStandalone } from "../js/export.js";
     import { buildCrtExample } from "./example-crt.js";
     import { buildBertieExample } from "./example-bertie.js";
     import { buildNimrodExample } from "./example-nimrod.js";
@@ -395,6 +397,20 @@
           }
           loadMyGames();
         }
+      } catch (err) { toast(err.message, true); }
+      btn.disabled = false;
+    });
+
+    $("#btn-download").addEventListener("click", async () => {
+      if (scenes.game.objects.length === 0) { toast("Nothing to download — build something first!", true); return; }
+      const btn = $("#btn-download");
+      btn.disabled = true;
+      try {
+        await downloadStandalone({
+          title: titleInput.value.trim() || "My Game",
+          objects: JSON.parse(JSON.stringify(scenes.game.objects))
+        }, "../");
+        toast("Downloaded! One file, runs offline — upload it to itch.io as an HTML game.");
       } catch (err) { toast(err.message, true); }
       btn.disabled = false;
     });

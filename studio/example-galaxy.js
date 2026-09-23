@@ -67,6 +67,7 @@ function rocketCode() {
   push("    set fire1 to 1");
   push("    set taken1 to 0");
   push("    set self.cool to 15");
+  push("    beep 880 for 0.05");   // torpedo away
   push("  end");
   push("else");
   push("  set self.visible to 0");
@@ -265,6 +266,7 @@ function brainCode() {
   push("    set killrocket to 0");
   push("    if ralive == 1 then");
   push("      explode rocket");
+  push("      beep 90 for 0.35");   // the explosion the cabinet bragged about
   push("      set ralive to 0");
   push("      set sscore to sscore + 1");
   push("      set rresp to 55");
@@ -274,6 +276,7 @@ function brainCode() {
   push("    set killsaucer1 to 0");
   push("    if s1alive == 1 then");
   push("      explode saucer1");
+  push("      beep 140 for 0.25");
   push("      set s1alive to 0");
   push("      set pscore to pscore + 1");
   push("      set s1resp to 65");
@@ -283,6 +286,7 @@ function brainCode() {
   push("    set killsaucer2 to 0");
   push("    if s2alive == 1 then");
   push("      explode saucer2");
+  push("      beep 140 for 0.25");
   push("      set s2alive to 0");
   push("      set pscore to pscore + 1");
   push("      set s2resp to 65");

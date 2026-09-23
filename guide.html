@@ -17,7 +17,7 @@
       a list of <b>events</b> ("when the game starts", "every frame", "when clicked", "when a key is pressed") filled with
       <b>actions</b>. You build scripts with blocks — and a <b>📜 Code block</b> is the exact same language typed as text,
       so anything blocks can do, code can do, and the two mix freely.</p>
-      <p>Fastest way to learn: in the Studio, use <b>Load example…</b> to open any of the historic games (1947–1971),
+      <p>Fastest way to learn: in the Studio, use <b>Load example…</b> to open any of the historic games (1947–1973),
       click its objects, and read their scripts. Every one is built from the pieces on this page.</p>
     </div>
 
@@ -35,13 +35,14 @@ text        what a Text object says</pre>
       <p>Scripts read and write these as <span class="code">self.x</span>, <span class="code">ball.y</span>,
       <span class="code">hud.text</span> — any object, by name. You can also invent <b>custom properties</b>:
       <span class="code">set self.hp to 3</span> just works, and other objects can read
-      <span class="code">enemy.hp</span>.</p>
+      <span class="code">enemy.hp</span>. A property (or variable) that was never set reads as <b>0</b> —
+      so <span class="code">set self.velx to self.velx + 1</span> is safe on the very first frame.</p>
     </div>
 
     <div class="panel">
       <h2>Events</h2>
       <pre class="codeblock">when start          runs once, when the game begins
-when tick           runs every frame (~60 times a second) — physics lives here
+when tick           runs exactly 60 times a second on EVERY screen — physics lives here
 when click          runs on every tap/click; read mousex() and mousey()
 when key "ArrowUp"  runs when that key is pressed (works with gamepads too)</pre>
     </div>
@@ -53,16 +54,19 @@ change self.y by -2          add to it
 if score > 5 then … else … end
 repeat 10 … end              loop (use a counter variable to count)
 say "HIT!" for 1.5           big message on screen
-explode target1              CRT blast effect at that object</pre>
+explode target1              CRT blast effect at that object
+beep 440 for 0.1             a square-wave tone: frequency (Hz) + seconds —
+                             the whole 1972 sound chip (load Pong to hear it)</pre>
     </div>
 
     <div class="panel">
       <h2>Expressions — the same everywhere</h2>
       <p>Every value field in every block accepts a full expression:</p>
-      <pre class="codeblock">Math        + - * / %   (% is remainder)
+      <pre class="codeblock">Math        + - * / %   (% is remainder) · unary minus works: -vy
 Compare     &lt; &gt; &lt;= &gt;= == !=      combine with: and, or, not
 rand(10, 90)          random number in a range
-dist(self, target1)   distance between two objects
+dist(self, target1)   distance between two objects (center to center)
+touching(self, wall1) 1 while two objects overlap — knows each shape's size
 keydown("w")          1 while that key/button is held
 mousex()  mousey()    where the pointer is
 abs(x)  min(a,b)  max(a,b)  floor(x)  round(x)
@@ -110,13 +114,16 @@ change self.y by self.vely
 end</pre>
       <p><b>Gravity + bounce</b>:</p>
       <pre class="codeblock">when tick
-set vy to vy + 0.13
-change self.y by vy
+set self.vy to self.vy + 0.13
+change self.y by self.vy
 if self.y >= 300 then
   set self.y to 300
-  set vy to 0 - vy * 0.7
+  set self.vy to -self.vy * 0.7
 end
 end</pre>
+      <p class="hint">Why <span class="code">self.vy</span> and not a bare <span class="code">vy</span>?
+      Variables are shared by every object — two bouncing balls would fight over one velocity.
+      A property is the ball's own. One object, one job.</p>
       <p><b>A clickable button</b> (any object):</p>
       <pre class="codeblock">when click
 if abs(mousex() - self.x) < 20 and abs(mousey() - self.y) < 20 then
@@ -152,7 +159,11 @@ end</pre>
       insert into any game fully editable, and can be sold on the Market for free or coins. The <b>Page Studio</b>
       (from your profile: 🎨 Edit my page) is the same editor pointed at your profile page.</p>
       <p>Controls come free: keyboards work everywhere, phones get on-screen buttons generated from whatever keys your
-      scripts use, and gamepads just work (press a button on the pad once so the browser wakes it up).</p>
+      scripts use (the ✥ button lets players move and resize them), and gamepads just work — press a button on the
+      pad once to wake it up (that press is what tells us it's a controller and not a sim wheel or pedal set).</p>
+      <p><b>⬇ Download</b> — every game you make can be downloaded as a single standalone HTML file: the engine and
+      your game in one file that runs offline by double-click. Upload it to itch.io as a playable browser game, or
+      wrap it with Electron/Tauri to ship it as a desktop app — built on RedlineStudio, published anywhere.</p>
     </div>
 
     <div class="panel">

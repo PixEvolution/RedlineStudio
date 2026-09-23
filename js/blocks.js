@@ -18,6 +18,7 @@ const STMT_DEFS = {
   repeat:  { label: "Repeat",  make: () => ({ k: "repeat", times: "10", body: [] }) },
   say:     { label: "Say",     make: () => ({ k: "say", value: '"Hello"', seconds: "2" }) },
   explode: { label: "Explode", make: () => ({ k: "explode", target: "self" }) },
+  beep:    { label: "Beep",    make: () => ({ k: "beep", value: "440", seconds: "0.1" }) },
   code:    { label: "📜 Code block", make: () => ({ k: "code", source: 'set self.x to self.x + 1' }) }
 };
 
@@ -105,6 +106,11 @@ export function createBlockEditor(container, script, { onChange = () => {} } = {
         break;
       case "explode":
         head.append(el("span", "blk-kw", "explode"), exprInput(s, "target", "self or object name", "blk-in blk-lhs"));
+        break;
+      case "beep":
+        head.append(el("span", "blk-kw", "beep"), exprInput(s, "value", "frequency (Hz)", "blk-in blk-lhs"),
+          el("span", "blk-kw", "for"), exprInput(s, "seconds", "seconds", "blk-in blk-lhs"),
+          el("span", "blk-kw", "sec"));
         break;
       case "code": {
         head.append(el("span", "blk-kw", "📜 code"));

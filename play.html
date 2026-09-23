@@ -92,7 +92,7 @@
           if (engine.errors.length) console.warn("Script issues:", engine.errors);
           if (isTouchDevice()) controls = createTouchControls(engine, stage);
           engine.start();
-          countPlay(game.id);
+          if (me !== game.owner) countPlay(game.id);   // your own plays don't count
           hint.textContent = isTouchDevice()
             ? "Tap the screen and buttons to play."
             : "Click the screen, then use your keyboard / mouse.";
@@ -180,7 +180,7 @@
 
       const render = renderers[game.engine] || renderers.v0;
       render(game, frame);
-      if (game.engine !== "v1") countPlay(id);   // v1 counts when the game actually starts
+      if (game.engine !== "v1" && currentUser() !== game.owner) countPlay(id);   // v1 counts when the game actually starts
 
       renderVotes(document.getElementById("game-votes"), "games", id, game, currentUser());
       renderComments(document.getElementById("game-comments"), "games", id, currentUser());

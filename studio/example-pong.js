@@ -90,6 +90,7 @@ function ballCode() {
   };
   const scoreBlock = (who, pad) => {
     push(`${pad}set ${who}score to ${who}score + 1`);
+    push(`${pad}beep 490 for 0.25`);   // the miss "boop" — Pong's third tone
     push(`${pad}explode self`);
     push(`${pad}if ${who}score >= ${WIN} then`);
     push(`${pad}  set game to 2`);
@@ -161,11 +162,13 @@ function ballCode() {
   push("    change self.y by vy");
   push(`    if self.y < ${TOP} then`);
   push(`      set self.y to ${TOP}`);
-  push("      set vy to 0 - vy");
+  push("      set vy to -vy");
+  push("      beep 226 for 0.04");    // wall tone — straight off the 1972 board
   push("    end");
   push(`    if self.y > ${BOT} then`);
   push(`      set self.y to ${BOT}`);
-  push("      set vy to 0 - vy");
+  push("      set vy to -vy");
+  push("      beep 226 for 0.04");
   push("    end");
   // THE PONG MECHANIC: where you catch it decides where it goes —
   // and every return is faster than the last
@@ -173,11 +176,13 @@ function ballCode() {
   push(`      set speed to min(${SPD_MAX}, speed + ${SPD_UP})`);
   push("      set vx to speed");
   push(`      set vy to max(-4.5, min(4.5, (self.y - lpad.y) * ${DEFLECT} + vy * 0.25))`);
+  push("      beep 459 for 0.04");    // paddle tone
   push("    end");
   push(`    if vx > 0 and abs(self.x - rpad.x) < 12 and abs(self.y - rpad.y) < 26 then`);
   push(`      set speed to min(${SPD_MAX}, speed + ${SPD_UP})`);
-  push("      set vx to 0 - speed");
+  push("      set vx to -speed");
   push(`      set vy to max(-4.5, min(4.5, (self.y - rpad.y) * ${DEFLECT} + vy * 0.25))`);
+  push("      beep 459 for 0.04");
   push("    end");
   push("    if self.x > 486 then");
   scoreBlock("l", "      ");

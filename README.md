@@ -2,14 +2,14 @@
 
 A game platform by Redline Digital — players make accounts, build games in the Studio, and publish them for everyone to play.
 
-**Live site:** https://pixevolution.github.io/RedlineStudio/
+**Live site:** https://redlinestudio.dev
 
 ## How it's organized (keep it modular!)
 
 | File | Job |
 |---|---|
 | `js/firebase.js` | Database connection — nothing else |
-| `js/auth.js` | Accounts, login, sessions |
+| `js/auth.js` | Accounts via Firebase Authentication (v2) — login, sessions |
 | `js/games.js` | Publish, list, load, update games |
 | `js/engine.js` | The game engine — compiles + runs scripts on a CRT-style canvas |
 | `js/redscript.js` | RedScript — the text scripting language (blocks compile to the same thing) |
@@ -24,6 +24,8 @@ A game platform by Redline Digital — players make accounts, build games in the
 | (engine) | Gamepad support: 1 controller drives any game, 2 controllers = P1/P2 |
 | `js/fullscreen.js` | Optional fullscreen for testing and playing |
 | `js/studio-panels.js` | Studio panels: collapsible headers + floatable windows (desktop) |
+| `js/filterbar.js` | Search + sort bar for the Games, Market and Players lists |
+| `js/export.js` | ⬇ Download: bundles a game into one standalone offline HTML file |
 | `js/ui.js` | Shared nav bar, toasts, helpers |
 | `css/style.css` | All styling |
 | `index.html` | Home — the public games list |
@@ -48,7 +50,7 @@ Blocks and text are the **same language** (RedScript):
 - A 📜 Code block holds full RedScript and compiles into the same structure
 - One interpreter (`engine.js`) runs everything
 
-Events: `when start`, `when tick`, `when click`, `when key "..."` · Actions: `set`, `change`, `if/else`, `repeat`, `say`, `explode` · Math: `+ - * / %`, `xor(a,b)`, `sin(deg)` `cos(deg)`, comparisons, `and or not` · Lists: `board[i]` read/write anywhere · Objects: dot, ring, box, text, tri (ship) with angle/rotation and x/y/size/color/glow/visible/text.
+Events: `when start`, `when tick`, `when click`, `when key "..."` (tick is a fixed 60Hz on every screen) · Actions: `set`, `change`, `if/else`, `repeat`, `say`, `explode`, `beep freq for secs` · Math: `+ - * / %`, `xor(a,b)`, `sin(deg)` `cos(deg)`, comparisons, `and or not`, unary minus, `touching(a,b)` · Lists: `board[i]` read/write anywhere · Objects: dot, ring, box, text, tri (ship) with angle/rotation and x/y/size/color/glow/visible/text.
 
 ## Models & Market (v1)
 
@@ -60,4 +62,4 @@ Events: `when start`, `when tick`, `when click`, `when key "..."` · Actions: `s
 
 - Username: 1–10 characters, any character, caps matter, must be unique
 - Password: 1–10 characters, any character, caps matter
-- No email. Passwords are hashed (SHA-256) before saving — never stored readable.
+- No email. Logins go through Firebase Authentication (v2) — passwords are stored only by Firebase Auth, never in our database. Old v1 accounts upgrade themselves on their next login.

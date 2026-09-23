@@ -63,6 +63,8 @@ function compileStmtList(list, errors, where) {
           out.push({ k: "say", value: parseExpr(s.value), seconds: parseExpr(s.seconds || "2") }); break;
         case "explode":
           out.push({ k: "explode", target: s.target || "self" }); break;
+        case "beep":
+          out.push({ k: "beep", value: parseExpr(s.value || "440"), seconds: parseExpr(s.seconds || "0.1") }); break;
         case "code":
           out.push(...compileStmtList(compileStmts(s.source || ""), errors, where)); break;
         default:
@@ -118,6 +120,8 @@ export class Engine {
     this.lists = {};   // name -> {index: value} — RedScript lists (board[i])
     this.keys = {};
     this.gpKeys = {};   // keys held via gamepads (merged with the keyboard)
+    this._pads = {};    // per-gamepad activation state (see pollGamepads)
+    this.beeps = [];    // sounds played this session (tests read this)
     this.mouse = { x: CANVAS_W / 2, y: CANVAS_H / 2 };
     this.messages = [];
     this.effects = [];
@@ -167,10 +171,23 @@ export class Engine {
       }
     }
     this.runEvents("start");
+    // FIXED 60Hz TIMESTEP: the game advances by real time, not by monitor
+    // refresh — physics is identical on 60, 120 and 144Hz screens.
+    const STEP_MS = 1000 / 60;
+    this._acc = 0;
+    this._lastT = performance.now();
     const loop = () => {
       if (!this.running) return;
+      const t = performance.now();
+      this._acc += t - this._lastT;
+      this._lastT = t;
+      if (this._acc > 250) this._acc = 250;   // coming back from a hidden tab
       if (this.inputEnabled) this.pollGamepads();
-      this.step();
+      while (this._acc >= STEP_MS) {
+        this.step();
+        this._acc -= STEP_MS;
+        if (!this.running) break;
+      }
       this.render();
       this._raf = requestAnimationFrame(loop);
     };
@@ -218,6 +235,12 @@ export class Engine {
   // One pad connected: it drives BOTH key clusters (any 1-player game just works).
   // Two pads: pad 1 = the WASD cluster (player 1), pad 2 = the arrows cluster.
   // Sticks/D-pad -> directions; face buttons A/B/X/Y -> the cluster's action keys.
+  // A device only counts as a controller after you PRESS A BUTTON on it —
+  // sim wheels, pedals, flight sticks and RGB software all register as
+  // "gamepads" with axes resting at full deflection, which used to hold a
+  // direction key down forever (the phantom S bug). And each axis is trusted
+  // only after it has been seen near center once, so a pedal idling at -1
+  // can never drive a game.
   pollGamepads(padsOverride) {
     let pads = padsOverride;
     if (!pads) {
@@ -225,16 +248,36 @@ export class Engine {
       catch { return; }
     }
     if (!pads) return;
-    const live = [];
-    for (const p of pads) if (p && p.connected !== false) live.push(p);
+
+    const active = [];
+    let idx = 0;
+    for (const pad of pads) {
+      if (!pad || pad.connected === false) continue;
+      const key = pad.index ?? idx;
+      idx++;
+      const st = this._pads[key] || (this._pads[key] = { active: false, centered: {}, prev: {} });
+      const buttons = pad.buttons || [];
+      for (let i = 0; i < buttons.length; i++) {
+        const p = !!(buttons[i] && buttons[i].pressed);
+        if (p && !st.prev[i]) st.active = true;   // a real press wakes the pad
+        st.prev[i] = p;
+      }
+      if (st.active) active.push({ pad, st });
+    }
+
     const next = {};
     const CLUSTERS = {
       wasd:   { up: "w", down: "s", left: "a", right: "d", a: "s", b: "d", x: "q", y: "w" },
       arrows: { up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight",
                 a: " ", b: "Enter", x: "ArrowDown", y: "ArrowUp" }
     };
-    const apply = (pad, c) => {
-      const ax = Number(pad.axes?.[0]) || 0, ay = Number(pad.axes?.[1]) || 0;
+    const apply = ({ pad, st }, c) => {
+      const axis = (i) => {
+        const v = Number(pad.axes?.[i]) || 0;
+        if (Math.abs(v) < 0.3) st.centered[i] = true;   // proven it can rest
+        return st.centered[i] ? v : 0;
+      };
+      const ax = axis(0), ay = axis(1);
       const btn = (i) => !!pad.buttons?.[i]?.pressed;
       if (ay < -0.4 || btn(12)) next[c.up] = true;
       if (ay > 0.4 || btn(13)) next[c.down] = true;
@@ -245,8 +288,8 @@ export class Engine {
       if (btn(2)) next[c.x] = true;
       if (btn(3)) next[c.y] = true;
     };
-    if (live.length === 1) { apply(live[0], CLUSTERS.wasd); apply(live[0], CLUSTERS.arrows); }
-    else if (live.length >= 2) { apply(live[0], CLUSTERS.wasd); apply(live[1], CLUSTERS.arrows); }
+    if (active.length === 1) { apply(active[0], CLUSTERS.wasd); apply(active[0], CLUSTERS.arrows); }
+    else if (active.length >= 2) { apply(active[0], CLUSTERS.wasd); apply(active[1], CLUSTERS.arrows); }
     for (const k in next) if (!this.gpKeys[k]) this.fireKey(k);   // rising edge -> "when key"
     this.gpKeys = next;
   }
@@ -353,8 +396,41 @@ export class Engine {
           if (o) this.effects.push({ x: o.x, y: o.y, start: performance.now(), color: o.color });
           break;
         }
+        case "beep": {
+          const freq = Math.max(30, Math.min(4000, Number(this.evalExpr(s.value, self)) || 440));
+          const secs = Math.max(0.02, Math.min(2, Number(this.evalExpr(s.seconds, self)) || 0.1));
+          this.beeps.push({ freq, secs });
+          if (this.beeps.length > 64) this.beeps.shift();
+          this.playBeep(freq, secs);
+          break;
+        }
       }
     }
+  }
+
+  // The 1971 sound chip: a square wave with a fast fade — thruster rumbles,
+  // paddle blips and explosion buzzes are all just frequency + duration.
+  // Attract engines (live cards, the coin-slot screen) stay silent.
+  playBeep(freq, secs) {
+    if (!this.canvas || !this.inputEnabled) return;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      if (!Engine._audio) Engine._audio = new AC();
+      const ctx = Engine._audio;
+      if (ctx.state === "suspended") ctx.resume().catch(() => {});
+      const t = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "square";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.07, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + secs);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + secs + 0.02);
+    } catch { /* no audio — the game plays on silently */ }
   }
 
   truthy(v) { return v !== 0 && v !== false && v !== "" && v != null; }
@@ -404,6 +480,18 @@ export class Engine {
             const a = this.resolveObj(String(args[0]), self), b = this.resolveObj(String(args[1]), self);
             if (!a || !b) return 99999;
             return Math.hypot(a.x - b.x, a.y - b.y);
+          }
+          case "touching": {
+            // shape-aware overlap: boxes/text use their real half-size,
+            // dots/rings/ships use their radius — no more dist() guessing
+            const a = this.resolveObj(String(args[0]), self), b = this.resolveObj(String(args[1]), self);
+            if (!a || !b) return 0;
+            const ext = (o) => {
+              const s = Number(o.size) || 0;
+              return (o.type === "box" || o.type === "text") ? s / 2 : s;
+            };
+            const r = ext(a) + ext(b);
+            return (Math.abs(a.x - b.x) < r && Math.abs(a.y - b.y) < r) ? 1 : 0;
           }
           case "keydown": {
             const k = args[0];

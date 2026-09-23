@@ -13,12 +13,14 @@
 //   repeat 10 ... end
 //   say "HIT!" for 1
 //   explode target1
+//   beep 440 for 0.1
 //   # comments start with # or //
 //
 //   Expressions: numbers, "strings", variables, object.props (self.x, target1.y),
-//   + - * / ( ), comparisons < > <= >= == !=, and or not,
-//   functions: rand(a,b) dist(a,b) keydown("k") abs(x) min(a,b) max(a,b)
-//              floor(x) round(x) mousex() mousey() time()
+//   + - * / ( ), unary minus (-vy), comparisons < > <= >= == !=, and or not,
+//   functions: rand(a,b) dist(a,b) touching(a,b) keydown("k") abs(x) min(a,b)
+//              max(a,b) floor(x) round(x) mousex() mousey() time() xor(a,b)
+//              sin(deg) cos(deg)
 
 // ---------------------------------------------------------------------------
 // Tokenizer
@@ -60,9 +62,9 @@ function tokenize(src) {
 // ---------------------------------------------------------------------------
 
 // Functions whose arguments name OBJECTS (bare names become strings)
-const OBJECT_ARG_FNS = new Set(["dist", "explode"]);
+const OBJECT_ARG_FNS = new Set(["dist", "touching", "explode"]);
 const KNOWN_FNS = new Set([
-  "rand", "dist", "keydown", "abs", "min", "max", "floor", "round",
+  "rand", "dist", "touching", "keydown", "abs", "min", "max", "floor", "round",
   "mousex", "mousey", "time", "xor", "sin", "cos"
 ]);
 
@@ -240,6 +242,14 @@ function parseStmtLine(line) {
   }
   if ((r = m(/^explode\s+([A-Za-z_][A-Za-z0-9_]*)$/i))) {
     return { k: "explode", target: r[1] };
+  }
+  if ((r = m(/^beep\s+(.+?)\s+for\s+(.+)$/i))) {
+    parseExpr(r[1]); parseExpr(r[2]);
+    return { k: "beep", value: r[1].trim(), seconds: r[2].trim() };
+  }
+  if ((r = m(/^beep\s+(.+)$/i))) {
+    parseExpr(r[1]);
+    return { k: "beep", value: r[1].trim(), seconds: "0.1" };
   }
   throw new Error(`can't understand: "${line}"`);
 }

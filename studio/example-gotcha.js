@@ -77,6 +77,8 @@ function chaserCode() {
   push("  if dist(self, runner) < 15 then");
   push("    change catches by 1");
   push("    explode runner");
+  push("    beep 523 for 0.08");
+  push("    beep 784 for 0.18");   // the two-tone GOTCHA
   push('    say "GOTCHA!" for 1');
   push(`    set self.x to ${CHX}`);
   push(`    set self.y to ${CHY}`);
@@ -182,6 +184,7 @@ function brainCode() {
   push("  if timeleft <= 0 then");
   push("    set game to 2");
   push("    set endplay to 1");        // the quarter is spent — arcade contract
+  push("    beep 150 for 0.5");        // time-up buzzer
   push('    set self.text to "" + catches + " CATCHES — CLICK FOR ATTRACT"');
   push("  end");
   push("end");

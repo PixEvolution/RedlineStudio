@@ -10,6 +10,7 @@
   <main class="page">
     <h1 class="page-title">Games</h1>
     <p class="page-sub">Made by players, published in the Studio.</p>
+    <div id="filter-mount"></div>
     <div id="games" class="games-grid">
       <p class="empty-note">Loading games…</p>
     </div>
@@ -19,6 +20,7 @@
     import { renderNav, toast } from "./js/ui.js";
     import { listGames } from "./js/games.js";
     import { gameCard, resetLiveCardBudget } from "./js/cards.js";
+    import { createFilterBar, applyFilter } from "./js/filterbar.js";
 
     renderNav("");
 
@@ -26,14 +28,31 @@
 
     try {
       const games = await listGames();
-      grid.innerHTML = "";
-      resetLiveCardBudget();
 
-      if (games.length === 0) {
-        grid.innerHTML = `<p class="empty-note">No games published yet.<br>Be the first — open the Studio!</p>`;
-      }
+      const render = (search, sort) => {
+        grid.innerHTML = "";
+        resetLiveCardBudget();
+        const shown = applyFilter(games, search, sort, ["title", "owner", "description"]);
+        if (shown.length === 0) {
+          grid.innerHTML = games.length === 0
+            ? `<p class="empty-note">No games published yet.<br>Be the first — open the Studio!</p>`
+            : `<p class="empty-note">No games match that search.</p>`;
+          return;
+        }
+        for (const g of shown) grid.appendChild(gameCard(g, { rootPath: "", showOwner: true }));
+      };
 
-      for (const g of games) grid.appendChild(gameCard(g, { rootPath: "", showOwner: true }));
+      createFilterBar(document.getElementById("filter-mount"), {
+        placeholder: "Search games…",
+        sorts: [
+          ["recent", "Most recent"],
+          ["rated", "Top rated"],
+          ["played", "Top played"],
+          ["cheapest", "Cheapest"]
+        ],
+        onChange: render
+      });
+      render("", "recent");
     } catch (err) {
       grid.innerHTML = "";
       toast("Couldn't load games: " + err.message, true);

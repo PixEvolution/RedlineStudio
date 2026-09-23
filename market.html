@@ -24,6 +24,7 @@
       <div class="tab" id="tab-inv">My Models</div>
     </div>
 
+    <div id="market-filter"></div>
     <div id="market-list" class="games-grid"><p class="empty-note">Loading…</p></div>
     <div id="inv-list" style="display:none"></div>
   </main>
@@ -34,6 +35,7 @@
     import { getCoins, claimDaily, DAILY_COINS } from "./js/economy.js";
     import { listMarket, listMyModels, acquireModel, setListing, deleteModel } from "./js/models.js";
     import { renderVotes, renderComments } from "./js/social.js";
+    import { createFilterBar, applyFilter } from "./js/filterbar.js";
 
     renderNav("");
     const user = currentUser();
@@ -69,12 +71,18 @@
       const grid = $("#market-list");
       try {
         const models = await listMarket();
+        const mount = $("#market-filter");
+        mount.innerHTML = "";
+        const render = (search, sort) => {
         grid.innerHTML = "";
-        if (models.length === 0) {
-          grid.innerHTML = `<p class="empty-note">Nothing for sale yet.<br>Save a model in the Studio, then list it from My Models.</p>`;
+        const shown = applyFilter(models, search, sort, ["name", "owner", "description"]);
+        if (shown.length === 0) {
+          grid.innerHTML = models.length === 0
+            ? `<p class="empty-note">Nothing for sale yet.<br>Save a model in the Studio, then list it from My Models.</p>`
+            : `<p class="empty-note">No models match that search.</p>`;
           return;
         }
-        for (const m of models) {
+        for (const m of shown) {
           const card = document.createElement("div");
           card.className = "game-card";
 
@@ -153,6 +161,17 @@
           card.append(meta, priceRow, social, cpanel);
           grid.appendChild(card);
         }
+        };
+        createFilterBar(mount, {
+          placeholder: "Search models…",
+          sorts: [
+            ["recent", "Most recent"],
+            ["rated", "Top rated"],
+            ["cheapest", "Cheapest"]
+          ],
+          onChange: render
+        });
+        render("", "recent");
       } catch (err) {
         grid.innerHTML = "";
         toast("Couldn't load the market: " + err.message, true);
