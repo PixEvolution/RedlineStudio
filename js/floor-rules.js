@@ -5,6 +5,7 @@
 
 export const STALE_MS = 25000;
 export const BEAT_MS = 3000;
+export const QBEAT_MS = 10000;   // line members prove they're still here every 10s
 
 
 // ---------------------------------------------------------------- pure rules
@@ -15,12 +16,20 @@ export function seatTakenBy(data, now = Date.now()) {
   return data.player;
 }
 
+// THE LIVE LINE: you're only in line while a page is open on this machine —
+// line members heartbeat (qbeat), and a silent member's spot evaporates.
+// Every rule below sees only the live line, so ghosts never block anyone.
+export function liveQueue(data, now = Date.now()) {
+  const qbeat = data?.qbeat || {};
+  return (data?.queue || []).filter(u => now - (Number(qbeat[u]) || 0) <= STALE_MS);
+}
+
 // Why can't I sit? null = you can. "occupied" / "line" otherwise.
-// A free seat with a line only accepts the FRONT of the line.
+// A free seat with a line only accepts the FRONT of the (live) line.
 export function sitBlocker(data, me, now = Date.now()) {
   const holder = seatTakenBy(data, now);
   if (holder && holder !== me) return { reason: "occupied", by: holder };
-  const queue = data?.queue || [];
+  const queue = liveQueue(data, now);
   if (!holder && queue.length > 0 && queue[0] !== me) return { reason: "line", next: queue[0] };
   return null;
 }
@@ -55,39 +64,80 @@ export function snapToObjects(snap) {
 
 
 // ------------------------------------------------------------- the hog clock
-// A game with no proper ending lets you sit as long as you like — but after
-// 15 minutes, the people waiting IN LINE can vote to skip you. No line, no
-// vote: hogging an empty machine bothers nobody.
+// A game with no proper ending lets you sit as long as you like — but the
+// line has rights, earned by WAITING:
+//   · wait 15 minutes under the current player and you may ASK them to wrap
+//     up (a warning — the machine announces it in chat)
+//   · kicking is a GROUP EFFORT: it takes at least TWO people who've each
+//     waited 15+ minutes, and EVERY one of them must vote — unanimous or
+//     nothing. One grumpy waiter can never kick alone.
+//   · your wait counts under the CURRENT player only (seat changes hands →
+//     the clock restarts), so a player who just fairly got their turn can't
+//     be insta-kicked by a line that waited through someone else.
 
 export const HOG_MS = 15 * 60 * 1000;
+export const NUDGE_COOLDOWN_MS = 3 * 60 * 1000;   // one "wrap it up" per 3 min
 
 export function seatAgeMs(data, now = Date.now()) {
   if (!seatTakenBy(data, now)) return 0;
   return Math.max(0, now - (Number(data.since) || Number(data.beat) || now));
 }
 
-// May `me` vote to kick right now? (standing: you must be in the line)
+// How long has `user` waited under the CURRENT player?
+export function waitedMs(data, user, now = Date.now()) {
+  const qsince = Number(data?.qsince?.[user]) || 0;
+  if (!qsince) return 0;
+  const clockStart = Math.max(qsince, Number(data?.since) || 0);
+  return Math.max(0, now - clockStart);
+}
+
+// The live line members who have earned floor rights (15+ min waited).
+export function eligibleKickers(data, now = Date.now()) {
+  if (!seatTakenBy(data, now)) return [];
+  return liveQueue(data, now).filter(u => waitedMs(data, u, now) >= HOG_MS);
+}
+
+// May `me` ask the player to wrap up? (any eligible waiter, rate-limited)
+export function canNudge(data, me, now = Date.now()) {
+  const holder = seatTakenBy(data, now);
+  if (!holder || !me || holder === me) return false;
+  if (!eligibleKickers(data, now).includes(me)) return false;
+  return now - (Number(data?.nudgeAt) || 0) >= NUDGE_COOLDOWN_MS;
+}
+
+// May `me` cast a kick vote? Only when kicking is even possible (2+ eligible).
 export function canVoteKick(data, me, now = Date.now()) {
   const holder = seatTakenBy(data, now);
   if (!holder || !me || holder === me) return false;
-  if (!(data.queue || []).includes(me)) return false;
-  return seatAgeMs(data, now) >= HOG_MS;
+  const el = eligibleKickers(data, now);
+  return el.length >= 2 && el.includes(me);
 }
 
-// Votes needed: half the line, rounded up — one waiter alone can carry it.
-export function kickThreshold(queueLength) {
-  return Math.max(1, Math.ceil((Number(queueLength) || 0) / 2));
+// Votes needed = EVERY eligible waiter (and there must be at least 2).
+export function kickThreshold(eligibleCount) {
+  return Math.max(2, Number(eligibleCount) || 0);
 }
 
-// Only votes from people still in line count (leave the line, lose your vote).
-export function countKickVotes(data) {
-  const queue = data?.queue || [];
-  return (data?.kickvotes || []).filter(v => queue.includes(v)).length;
+// Only eligible waiters' votes count.
+export function countKickVotes(data, now = Date.now()) {
+  const el = eligibleKickers(data, now);
+  return (data?.kickvotes || []).filter(v => el.includes(v)).length;
 }
 
 export function voteCarries(data, now = Date.now()) {
-  const queue = data?.queue || [];
-  if (queue.length === 0) return false;
-  if (seatAgeMs(data, now) < HOG_MS) return false;
-  return countKickVotes(data) >= kickThreshold(queue.length);
+  const el = eligibleKickers(data, now);
+  if (el.length < 2) return false;                          // never a solo kick
+  const votes = data?.kickvotes || [];
+  return el.every(u => votes.includes(u));                  // unanimous or nothing
+}
+
+// Housekeeping applied inside every write: drop ghosts from the stored doc.
+export function pruneLine(data, now = Date.now()) {
+  const live = liveQueue(data, now);
+  const qbeat = {}, qsince = {};
+  for (const u of live) {
+    qbeat[u] = Number(data?.qbeat?.[u]) || 0;
+    qsince[u] = Number(data?.qsince?.[u]) || 0;
+  }
+  return { queue: live, qbeat, qsince };
 }

@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RedlineStudio — Coding Guide</title>
+  <meta name="description" content="The full guide to building games on RedlineStudio: objects, events, RedScript, sound, text adventures, arcade coin slots and casino machines — blocks and code are the same language.">
+  <link rel="canonical" href="https://redlinestudio.dev/guide.html">
+  <meta property="og:site_name" content="RedlineStudio">
+  <meta property="og:title" content="RedlineStudio Coding Guide — RedScript reference">
+  <meta property="og:description" content="The full guide to building games on RedlineStudio: objects, events, RedScript, sound, text adventures, arcade coin slots and casino machines — blocks and code are the same language.">
+  <meta property="og:url" content="https://redlinestudio.dev/guide.html">
+  <meta property="og:type" content="website">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -176,9 +183,12 @@ end</pre>
       <p><b>Turns.</b> On a game with a proper ending (the coin slot comes back when your play is over),
       finishing your play while people are waiting sends you to the <b>back of the line</b> — one play
       per turn, like a real cabinet. On endless games and casino machines you can sit as long as you
-      like… until the <b>hog clock</b>: after 15 minutes, the people in line can <b>vote to skip you</b>
-      (half the line, rounded up — one waiter alone can carry it). No line, no vote — hogging an empty
-      machine bothers nobody.</p>
+      like — but the line has rights, <b>earned by waiting</b>: stand in line 15 minutes under the
+      current player and you can <b>ask them to wrap up</b> (the machine announces it in chat). Kicking
+      is a <b>group effort</b>: it takes at least TWO people who've each waited 15+ minutes, and every
+      one of them must vote — unanimous or nothing. One grumpy waiter can never kick alone, a fresh
+      player can't be insta-kicked (the clocks restart when the seat changes hands), and no line means
+      no vote — hogging an empty machine bothers nobody.</p>
     </div>
 
     <div class="panel">

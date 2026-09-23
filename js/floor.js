@@ -21,12 +21,14 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 export {
-  STALE_MS, BEAT_MS, HOG_MS, seatTakenBy, sitBlocker, snapFromEngine, snapToObjects,
-  seatAgeMs, canVoteKick, kickThreshold, countKickVotes, voteCarries
+  STALE_MS, BEAT_MS, QBEAT_MS, HOG_MS, NUDGE_COOLDOWN_MS, seatTakenBy, sitBlocker,
+  liveQueue, snapFromEngine, snapToObjects, seatAgeMs, waitedMs, eligibleKickers,
+  canNudge, canVoteKick, kickThreshold, countKickVotes, voteCarries, pruneLine
 } from "./floor-rules.js";
 import {
-  BEAT_MS, seatTakenBy, sitBlocker,
-  seatAgeMs, canVoteKick, kickThreshold, countKickVotes, voteCarries
+  BEAT_MS, QBEAT_MS, seatTakenBy, sitBlocker, liveQueue,
+  seatAgeMs, waitedMs, eligibleKickers, canNudge, canVoteKick,
+  kickThreshold, countKickVotes, voteCarries, pruneLine
 } from "./floor-rules.js";
 
 const seatRef = (gameId) => doc(db, "seats", gameId);
@@ -39,13 +41,37 @@ export function createFloor(gameId, me) {
   let ready = false;      // true once the first snapshot has arrived
   let listeners = [];
   let beatTimer = null;
+  let lineTimer = null;   // while in line, this page proves you're still here
   let unsub = null;
 
   const emit = () => { for (const fn of listeners) { try { fn(state); } catch {} } };
 
+  // being in line is AUTOMATIC presence: the spot lives only while a page on
+  // this machine keeps beating for it — close the tab and it evaporates
+  const lineBeatOnce = async () => {
+    try {
+      await runTransaction(db, async (tx) => {
+        const s = await tx.get(ref);
+        const data = s.exists() ? s.data() : {};
+        if (!(data.queue || []).includes(me)) return;
+        const { queue, qbeat, qsince } = pruneLine({ ...data, qbeat: { ...(data.qbeat || {}), [me]: Date.now() } });
+        tx.set(ref, { ...data, queue, qbeat, qsince }, { merge: false });
+      });
+    } catch {}
+  };
+  const startLineBeat = () => {
+    if (lineTimer) return;
+    lineBeatOnce();
+    lineTimer = setInterval(lineBeatOnce, QBEAT_MS);
+  };
+  const stopLineBeat = () => { if (lineTimer) { clearInterval(lineTimer); lineTimer = null; } };
+
   unsub = onSnapshot(ref, (s) => {
     state = s.exists() ? s.data() : null;
     ready = true;
+    // keep my spot alive while I'm on this page — and only then
+    if (me && state && (state.queue || []).includes(me) && seatTakenBy(state) !== me) startLineBeat();
+    else stopLineBeat();
     emit();
   }, () => {});   // a broken listener just means no live floor — playable anyway
 
@@ -53,7 +79,7 @@ export function createFloor(gameId, me) {
     get state() { return state; },
     holder() { return seatTakenBy(state); },
     mine() { return seatTakenBy(state) === me; },
-    line() { return (state?.queue || []); },
+    line() { return liveQueue(state); },
     onChange(fn) { listeners.push(fn); if (ready) { try { fn(state); } catch {} } },
 
     // take the seat (atomically). Returns null on success, or the blocker.
@@ -65,13 +91,19 @@ export function createFloor(gameId, me) {
           const data = s.exists() ? s.data() : {};
           const block = sitBlocker(data, me);
           if (block) return block;
+          const pruned = pruneLine(data);
+          delete pruned.qbeat[me];
+          delete pruned.qsince[me];
           tx.set(ref, {
             ...data,
             player: me,
             beat: Date.now(),
-            since: Date.now(),        // the hog clock starts
+            since: Date.now(),        // the hog clock starts fresh for me
             kickvotes: [],
-            queue: (data.queue || []).filter(u => u !== me),
+            nudgeAt: 0,
+            queue: pruned.queue.filter(u => u !== me),
+            qbeat: pruned.qbeat,
+            qsince: pruned.qsince,
             snap: null,
             snapAt: 0
           });
@@ -111,12 +143,23 @@ export function createFloor(gameId, me) {
       } catch {}
     },
 
-    // best-effort on tab close (transactions can't run in pagehide)
+    // best-effort on tab close (transactions can't run in pagehide) —
+    // and even if this write is lost, the missing heartbeats clean up in ~25s
     leaveBeacon() {
       floor.stopBeating();
-      if (state && state.player === me) {
-        updateDoc(ref, { player: null, snap: null, snapAt: 0, kickvotes: [] }).catch(() => {});
+      stopLineBeat();
+      if (!state || !me) return;
+      const upd = {};
+      if (state.player === me) Object.assign(upd, { player: null, snap: null, snapAt: 0, kickvotes: [] });
+      if ((state.queue || []).includes(me)) {
+        const pruned = pruneLine(state);
+        delete pruned.qbeat[me];
+        delete pruned.qsince[me];
+        upd.queue = pruned.queue.filter(u => u !== me);
+        upd.qbeat = pruned.qbeat;
+        upd.qsince = pruned.qsince;
       }
+      if (Object.keys(upd).length) updateDoc(ref, upd).catch(() => {});
     },
 
     async joinLine() {
@@ -125,25 +168,52 @@ export function createFloor(gameId, me) {
         await runTransaction(db, async (tx) => {
           const s = await tx.get(ref);
           const data = s.exists() ? s.data() : {};
-          const queue = (data.queue || []).filter(u => u !== me).slice(0, 19);
+          const pruned = pruneLine(data);
+          const queue = pruned.queue.filter(u => u !== me).slice(0, 19);
           queue.push(me);
-          tx.set(ref, { ...data, queue }, { merge: true });
+          const qbeat = { ...pruned.qbeat, [me]: Date.now() };
+          const qsince = { ...pruned.qsince, [me]: pruned.qsince[me] || Date.now() };
+          tx.set(ref, { ...data, queue, qbeat, qsince }, { merge: true });
         });
+        startLineBeat();
       } catch {}
     },
 
     async leaveLine() {
+      stopLineBeat();
       if (!me) return;
       try {
         await runTransaction(db, async (tx) => {
           const s = await tx.get(ref);
           if (!s.exists()) return;
-          tx.update(ref, { queue: (s.data().queue || []).filter(u => u !== me) });
+          const data = s.data();
+          const pruned = pruneLine(data);
+          delete pruned.qbeat[me];
+          delete pruned.qsince[me];
+          tx.update(ref, { queue: pruned.queue.filter(u => u !== me), qbeat: pruned.qbeat, qsince: pruned.qsince });
         });
       } catch {}
     },
 
-    // the hog clock: line members vote; a carried vote frees the seat
+    // waited 15+ minutes? ask the player to wrap up — the machine says it
+    // out loud in chat, so the warning is public and on the record
+    async nudge() {
+      if (!me) return false;
+      try {
+        return await runTransaction(db, async (tx) => {
+          const s = await tx.get(ref);
+          const data = s.exists() ? s.data() : {};
+          if (!canNudge(data, me)) return false;
+          const chat = [...(data.chat || []),
+            { a: "🕹 machine", t: `${me} has been waiting 15+ minutes and asks for a turn — wrap it up when you can!`, at: Date.now() }
+          ].slice(-50);
+          tx.set(ref, { ...data, chat, nudgeAt: Date.now(), nudgeBy: me }, { merge: true });
+          return true;
+        });
+      } catch { return false; }
+    },
+
+    // the hog clock: eligible waiters vote; UNANIMOUS (2+ of them) frees the seat
     async voteKick() {
       if (!me) return { ok: false };
       try {
@@ -158,7 +228,7 @@ export function createFloor(gameId, me) {
             return { ok: true, kicked: true };
           }
           tx.set(ref, next);
-          return { ok: true, kicked: false, votes: countKickVotes(next), need: kickThreshold((next.queue || []).length) };
+          return { ok: true, kicked: false, votes: countKickVotes(next), need: eligibleKickers(next).length };
         });
       } catch { return { ok: false }; }
     },
@@ -173,10 +243,13 @@ export function createFloor(gameId, me) {
           const s = await tx.get(ref);
           if (!s.exists() || s.data().player !== me) return false;
           const data = s.data();
-          const queue = (data.queue || []).filter(u => u !== me);
+          const pruned = pruneLine(data);
+          const queue = pruned.queue.filter(u => u !== me);
           if (queue.length === 0) return false;      // nobody waiting — keep the seat
           queue.push(me);
-          tx.set(ref, { ...data, player: null, snap: null, snapAt: 0, kickvotes: [], queue });
+          const qbeat = { ...pruned.qbeat, [me]: Date.now() };
+          const qsince = { ...pruned.qsince, [me]: Date.now() };
+          tx.set(ref, { ...data, player: null, snap: null, snapAt: 0, kickvotes: [], nudgeAt: 0, queue, qbeat, qsince });
           return true;
         });
       } catch { return false; }
@@ -197,6 +270,7 @@ export function createFloor(gameId, me) {
 
     stop() {
       floor.stopBeating();
+      stopLineBeat();
       if (unsub) { unsub(); unsub = null; }
       listeners = [];
     }
@@ -227,6 +301,9 @@ export function renderFloorPanel(mount, floor, me) {
   btns.append(kickBtn, lineBtn);
   statusRow.append(statusTx, btns);
 
+  const note = document.createElement("p");
+  note.className = "floor-note";
+
   const chatBox = document.createElement("div");
   chatBox.className = "floor-chat";
   const msgs = document.createElement("div");
@@ -245,7 +322,7 @@ export function renderFloorPanel(mount, floor, me) {
   chatRow.append(input, send);
   chatBox.append(msgs, chatRow);
 
-  panel.append(statusRow, chatBox);
+  panel.append(statusRow, note, chatBox);
   mount.appendChild(panel);
 
   const doSend = () => { floor.chat(input.value); input.value = ""; input.focus(); };
@@ -255,30 +332,43 @@ export function renderFloorPanel(mount, floor, me) {
   let lastChatLen = -1;
   floor.onChange((data) => {
     const holder = seatTakenBy(data);
-    const queue = (data?.queue || []);
+    const queue = liveQueue(data);
     const inLine = me && queue.includes(me);
+    const myPos = inLine ? queue.indexOf(me) + 1 : 0;
+    const lineTx = queue.length ? ` · in line: ${queue.join(" → ")}` : "";
 
+    note.textContent = "";
     if (holder && holder !== me) {
       const mins = Math.floor(seatAgeMs(data) / 60000);
-      statusTx.textContent = `🕹 ${holder} is playing` + (mins >= 1 ? ` (${mins}m)` : "") +
-        (queue.length ? ` · line: ${queue.join(" → ")}` : "");
+      statusTx.textContent = `🕹 ${holder} is playing` + (mins >= 1 ? ` (${mins} min)` : "") + lineTx;
+      if (inLine) note.textContent = `You're #${myPos} in line. Stay on this page to keep your spot — leaving gives it up. The screen above shows their game live.`;
+      else note.textContent = "You can watch their screen above, chat below, or get in line for your turn.";
     } else if (holder === me && me) {
-      statusTx.textContent = "🕹 You're at the machine" + (queue.length ? ` · line: ${queue.join(" → ")}` : "");
+      statusTx.textContent = "🕹 You're at the machine" + lineTx;
+      if (queue.length) note.textContent = "People are waiting — when your play ends, you'll head to the back of the line.";
     } else if (queue.length) {
-      statusTx.textContent = `Machine free · line: ${queue.join(" → ")}` + (me && queue[0] === me ? " — YOUR TURN" : "");
+      if (me && queue[0] === me) {
+        statusTx.textContent = `✅ YOUR TURN — press PLAY!` + (queue.length > 1 ? ` · behind you: ${queue.slice(1).join(" → ")}` : "");
+      } else {
+        statusTx.textContent = `Machine free — ${queue[0]}'s turn` + lineTx;
+        if (inLine) note.textContent = `You're #${myPos} in line. Stay on this page to keep your spot.`;
+      }
     } else {
-      statusTx.textContent = "Machine free";
+      statusTx.textContent = "🟢 Machine free — walk right up";
     }
 
-    lineBtn.style.display = (!me || holder === me) ? "none" : "";
+    lineBtn.style.display = (!me || holder === me || (queue[0] === me && !holder)) ? "none" : "";
     lineBtn.textContent = inLine ? "Leave line" : "Get in line";
     lineBtn.onclick = () => (inLine ? floor.leaveLine() : floor.joinLine());
 
-    // the hog clock: after 15 minutes, the line can vote to skip
+    // floor rights, earned by waiting under the current player:
+    // 1 eligible waiter → ASK them to wrap up; 2+ → a unanimous vote kicks
+    const eligible = eligibleKickers(data);
     if (canVoteKick(data, me)) {
       const votes = countKickVotes(data);
-      const need = kickThreshold(queue.length);
+      const need = eligible.length;
       const voted = (data.kickvotes || []).includes(me);
+      note.textContent = `${need} of you have waited 15+ minutes — if ALL ${need} vote, the player is skipped.`;
       kickBtn.style.display = "";
       kickBtn.disabled = voted;
       kickBtn.textContent = voted ? `Kick vote cast (${votes}/${need})` : `Vote to skip (${votes}/${need})`;
@@ -286,8 +376,24 @@ export function renderFloorPanel(mount, floor, me) {
         const r = await floor.voteKick();
         if (r && r.kicked) kickBtn.style.display = "none";
       };
+    } else if (eligible.length === 1 && me && eligible[0] === me) {
+      note.textContent = "You've waited 15+ minutes. One person can't kick — but you can ask them to wrap it up.";
+      kickBtn.style.display = "";
+      kickBtn.disabled = !canNudge(data, me);
+      kickBtn.textContent = canNudge(data, me) ? "Ask them to wrap up" : "Asked — give them a minute";
+      kickBtn.onclick = () => floor.nudge();
     } else {
       kickBtn.style.display = "none";
+    }
+
+    // the seated player sees the warnings, plainly
+    if (holder === me && me) {
+      const votes = countKickVotes(data);
+      if (eligible.length >= 2 && votes > 0) {
+        note.textContent = `⚠ The line is voting to skip you (${votes}/${eligible.length}) — a unanimous vote ends your turn.`;
+      } else if (data?.nudgeAt && Date.now() - data.nudgeAt < 5 * 60 * 1000 && data.nudgeBy) {
+        note.textContent = `⏰ ${data.nudgeBy} has been waiting 15+ minutes and asked for a turn — wrap it up when you can.`;
+      }
     }
 
     const chat = data?.chat || [];
