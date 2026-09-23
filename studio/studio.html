@@ -38,7 +38,7 @@
         <button class="btn btn-ghost" id="btn-new">New</button>
         <button class="btn btn-ghost" id="btn-download" title="Download this game as a standalone HTML file — runs offline, uploads to itch.io">⬇ Download</button>
         <button class="btn" id="btn-test">▶ Test</button>
-        <button class="btn" id="btn-publish">Publish</button>
+        <button class="btn" id="btn-publish">💾 Save</button>
       </div>
     </div>
 
@@ -51,12 +51,22 @@
         <label for="g-type">Publish to</label>
         <select id="g-type" class="blk-add" style="margin:0; width:100%">
           <option value="game">Games page</option>
-          <option value="casino">Casino floor (must use the casino loop)</option>
+          <option value="casino">Casino floor</option>
         </select>
+        <p class="hint" id="type-hint" style="margin:6px 0 0">Arcade &amp; regular games.</p>
       </div>
       <div>
+        <label for="g-public">Visibility</label>
+        <select id="g-public" class="blk-add" style="margin:0; width:100%">
+          <option value="public">Public — on the site</option>
+          <option value="unlisted">Unlisted — saved, hidden</option>
+        </select>
+        <p class="hint" style="margin:6px 0 0">Unlisted = keep working on it.</p>
+      </div>
+      <div id="price-cell">
         <label for="g-price">Price per play (◎, 0 = free)</label>
         <input type="number" id="g-price" min="0" value="0">
+        <p class="hint" style="margin:6px 0 0">Paid straight to you.</p>
       </div>
       <div>
         <label for="g-screenmode">Arcade screen</label>
@@ -154,6 +164,17 @@
     const user = requireLogin("../login.html");
     if (!user) throw new Error("redirecting");
 
+    // casino machines have no per-play price — the bet is the price
+    const typeSel = $("#g-type");
+    const syncTypeUi = () => {
+      const isC = typeSel.value === "casino";
+      $("#price-cell").style.display = isC ? "none" : "";
+      $("#type-hint").textContent = isC
+        ? "Needs the casino loop (bet/spin/result) to go public — load Redline Slots."
+        : "Arcade & regular games.";
+    };
+    typeSel.addEventListener("change", syncTypeUi);
+
     // panels: collapsible everywhere, floatable on desktop
     setupPanel($("#game-settings"), { key: "settings", title: "Game settings", float: false });
     setupPanel(document.querySelector(".explorer"), { key: "explorer" });
@@ -207,6 +228,19 @@
     function redraw() {
       if (engine) return; // engine owns the canvas while testing
       drawFrame(canvas.getContext("2d"), scene.objects, { selectedIds: selectedId ? [selectedId] : [] });
+      if (scene.objects.length === 0) {
+        // a blank screen shouldn't be a mystery
+        const ctx = canvas.getContext("2d");
+        ctx.save();
+        ctx.font = '14px "Courier New", monospace';
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#3f7a52";
+        ctx.fillText(editTarget === "screen" ? "THIS IS YOUR ARCADE SCREEN" : "THIS IS YOUR GAME SCREEN", 240, 150);
+        ctx.font = '12px "Courier New", monospace';
+        ctx.fillText("← add objects in the Explorer,", 240, 180);
+        ctx.fillText("or pick Load example… above and read how it works", 240, 198);
+        ctx.restore();
+      }
     }
 
     // ------------------------------------------------------------ explorer
@@ -394,8 +428,11 @@
         // quick compile check so broken scripts get flagged before publishing
         const check = new Engine(null, scene.objects);
         const isCasino = !pageMode && $("#g-type").value === "casino";
-        if (isCasino && !new Engine(null, scenes.game.objects).usesCasino()) {
-          throw new Error("A casino machine must use the casino loop: set bet, set spin to 1, and read result. Load Redline Slots to see the pattern.");
+        const isUnlisted = !pageMode && $("#g-public").value === "unlisted";
+        // an unfinished machine can always be SAVED unlisted —
+        // but the casino loop is required to go PUBLIC on the floor
+        if (isCasino && !isUnlisted && !new Engine(null, scenes.game.objects).usesCasino()) {
+          throw new Error("To go PUBLIC on the Casino floor a machine must use the casino loop: set bet, set spin to 1, and read result. Save it Unlisted to keep working, or load Redline Slots to see the pattern.");
         }
         if (pageMode) {
           await savePageScene(user, JSON.parse(JSON.stringify(scene)));
@@ -410,6 +447,7 @@
             description: $("#g-desc").value,
             price: isCasino ? 0 : $("#g-price").value,
             casino: isCasino,
+            unlisted: isUnlisted,
             screen: { mode: $("#g-screenmode").value, objects: JSON.parse(JSON.stringify(scenes.screen.objects)) }
           };
           if (check.errors.length) toast("Published, but check scripts:\n" + check.errors.slice(0, 3).join("\n"), true);
@@ -450,6 +488,9 @@
         $("#g-desc").value = "";
         $("#g-price").value = "0";
         $("#g-screenmode").value = "none";
+        $("#g-type").value = "game";
+        $("#g-public").value = "public";
+        syncTypeUi();
       }
       setTarget("game");
     });
@@ -483,7 +524,7 @@
       scenes[editTarget] = { objects: ex.objects };
       scene = scenes[editTarget];
       if (editTarget === "game") { editingId = null; titleInput.value = ex.title; }
-      if (editTarget === "game" && !pageMode) $("#g-type").value = EXAMPLES[pick].casino ? "casino" : "game";
+      if (editTarget === "game" && !pageMode) { $("#g-type").value = EXAMPLES[pick].casino ? "casino" : "game"; syncTypeUi(); }
       if (editTarget === "game" && !pageMode) {
         // every example ships with its arcade screen pre-made: a static snapshot
         // by default; the Atari coin-ops (Computer Space, Pong, Space Race)
@@ -570,7 +611,10 @@
           t.textContent = g.title;
           const meta = document.createElement("span");
           meta.className = "hint";
-          meta.textContent = `  ${g.engine || "v0"} · ${g.plays || 0} plays · ${fmtDate(g.createdAt)}`;
+          const tags = [];
+          if (g.casino) tags.push("🎰 CASINO" + (Number(g.pool) ? ` ◎${g.pool}` : ""));
+          if (g.unlisted) tags.push("UNLISTED");
+          meta.textContent = `  ${tags.length ? tags.join(" · ") + " · " : ""}${g.plays || 0} plays · ${fmtDate(g.createdAt)}`;
           info.append(t, meta);
 
           const actions = document.createElement("div");
@@ -593,10 +637,13 @@
             $("#g-desc").value = g.description || "";
             $("#g-price").value = String(g.price || 0);
             $("#g-screenmode").value = g.screen?.mode || "none";
+            $("#g-type").value = g.casino ? "casino" : "game";
+            $("#g-public").value = g.unlisted ? "unlisted" : "public";
+            syncTypeUi();
             setTarget("game");
             select(scene.objects[0]?.id || null);
             window.scrollTo({ top: 0, behavior: "smooth" });
-            toast(`Editing "${g.title}" — Publish saves your changes.`);
+            toast(`Editing "${g.title}" — 💾 Save stores your changes.`);
           });
 
           const play = document.createElement("a");

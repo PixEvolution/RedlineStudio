@@ -16,7 +16,10 @@
       <p>A game is a set of <b>objects</b> (dots, rings, boxes, text, ships). Each object can carry a <b>script</b>:
       a list of <b>events</b> ("when the game starts", "every frame", "when clicked", "when a key is pressed") filled with
       <b>actions</b>. You build scripts with blocks — and a <b>📜 Code block</b> is the exact same language typed as text,
-      so anything blocks can do, code can do, and the two mix freely.</p>
+      so anything blocks can do, code can do, and the two mix freely. That works in both directions:
+      <b>every action on this page is also a block</b> (set, change, if, repeat, say, explode, beep, print, clear),
+      and every event — including <span class="code">when answer</span> for text games — is in the block editor's
+      event menu. Nothing needs typed code.</p>
       <p>Fastest way to learn: in the Studio, use <b>Load example…</b> to open any of the historic games (1947–1973),
       click its objects, and read their scripts. Every one is built from the pieces on this page.</p>
     </div>
@@ -184,9 +187,15 @@ win                       coins paid out this spin
 coins   pool              live balances for your readouts
 casino                    1 on the floor, 0 in Studio test (free play)</pre>
       <p>Your script never computes a payout — it reads <span class="code">result</span> and dresses the
-      reels. Bets go into the machine's <b>pool</b>; winnings come out of it. Owners fund the pool to
-      offer bigger payouts and collect the take from the machine's page. In the Studio, ▶ Test plays
-      with pretend coins on the same odds. Load <b>Redline Slots</b> and reskin it into anything.</p>
+      reels. Bets go into the machine's <b>pool</b>; winnings come out of it — and the bet joins the pool
+      <b>before</b> the payout, so there is always something in the till: on an empty machine the first
+      player can only ever win their own coin back. Nobody wants to be that player, which is exactly why
+      owners fund the pool — a fat pool is what makes a machine worth sitting at. Owners collect the take
+      from the machine's page. In the Studio, ▶ Test plays with pretend coins on the same odds. Load
+      <b>Redline Slots</b> and reskin it into anything.</p>
+      <p>Machines (and games) can be saved <b>Unlisted</b> — stored under My Games, hidden from the public
+      pages — so you can build over many sessions. A machine only needs the casino loop when you flip it
+      to <b>Public</b>.</p>
       <p class="hint">Coins can't be bought and can't be cashed out — the casino is for fun, bragging
       rights and pool-sized jackpots, not for keeps.</p>
     </div>
@@ -197,7 +206,8 @@ casino                    1 on the floor, 0 in Studio test (free play)</pre>
       <b>▶ Test</b> plays your game right there · <b>Properties</b> — tune the selected object ·
       <b>Script</b> — the block editor for whatever's selected.</p>
       <p><b>📺 Screen</b> — a second scene that plays on your game's card in the Games list (the arcade "attract screen").
-      Pick Static or Live in the settings row, where the description and the <b>price per play</b> also live —
+      Pick Static or Live in the settings row, where the description, the <b>Visibility</b> switch
+      (Public, or Unlisted while you're still building) and the <b>price per play</b> also live —
       set a price and players insert coins to play, paid straight to you. Loading any historic example fills the
       Screen automatically (Computer Space and Pong come with live attract reels — steal their setup).</p>
       <p><b>Arcade games</b> — the platform runs the coin slot for you, and two reserved variables wire your game
