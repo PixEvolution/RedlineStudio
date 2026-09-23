@@ -21,12 +21,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 export {
-  STALE_MS, BEAT_MS, QBEAT_MS, HOG_MS, NUDGE_COOLDOWN_MS, seatTakenBy, sitBlocker,
-  liveQueue, snapFromEngine, snapToObjects, seatAgeMs, waitedMs, eligibleKickers,
-  canNudge, canVoteKick, kickThreshold, countKickVotes, voteCarries, pruneLine
+  STALE_MS, BEAT_MS, QBEAT_MS, HOG_MS, NUDGE_COOLDOWN_MS, clampHogMins, seatTakenBy,
+  sitBlocker, liveQueue, snapFromEngine, snapToObjects, seatAgeMs, waitedMs,
+  eligibleKickers, canNudge, canVoteKick, kickThreshold, countKickVotes, voteCarries, pruneLine
 } from "./floor-rules.js";
 import {
-  BEAT_MS, QBEAT_MS, seatTakenBy, sitBlocker, liveQueue,
+  BEAT_MS, QBEAT_MS, HOG_MS, seatTakenBy, sitBlocker, liveQueue,
   seatAgeMs, waitedMs, eligibleKickers, canNudge, canVoteKick,
   kickThreshold, countKickVotes, voteCarries, pruneLine
 } from "./floor-rules.js";
@@ -35,7 +35,7 @@ const seatRef = (gameId) => doc(db, "seats", gameId);
 
 // ------------------------------------------------------------- the client
 
-export function createFloor(gameId, me) {
+export function createFloor(gameId, me, { hogMs = HOG_MS } = {}) {
   const ref = seatRef(gameId);
   let state = null;
   let ready = false;      // true once the first snapshot has arrived
@@ -76,6 +76,7 @@ export function createFloor(gameId, me) {
   }, () => {});   // a broken listener just means no live floor — playable anyway
 
   const floor = {
+    hogMs,
     get state() { return state; },
     holder() { return seatTakenBy(state); },
     mine() { return seatTakenBy(state) === me; },
@@ -203,9 +204,10 @@ export function createFloor(gameId, me) {
         return await runTransaction(db, async (tx) => {
           const s = await tx.get(ref);
           const data = s.exists() ? s.data() : {};
-          if (!canNudge(data, me)) return false;
+          if (!canNudge(data, me, Date.now(), hogMs)) return false;
+          const mins = Math.round(hogMs / 60000);
           const chat = [...(data.chat || []),
-            { a: "🕹 machine", t: `${me} has been waiting 15+ minutes and asks for a turn — wrap it up when you can!`, at: Date.now() }
+            { a: "🕹 machine", t: `${me} has been waiting ${mins}+ minutes and asks for a turn — wrap it up when you can!`, at: Date.now() }
           ].slice(-50);
           tx.set(ref, { ...data, chat, nudgeAt: Date.now(), nudgeBy: me }, { merge: true });
           return true;
@@ -220,15 +222,15 @@ export function createFloor(gameId, me) {
         return await runTransaction(db, async (tx) => {
           const s = await tx.get(ref);
           const data = s.exists() ? s.data() : {};
-          if (!canVoteKick(data, me)) return { ok: false };
+          if (!canVoteKick(data, me, Date.now(), hogMs)) return { ok: false };
           const kickvotes = [...new Set([...(data.kickvotes || []), me])];
           const next = { ...data, kickvotes };
-          if (voteCarries(next)) {
+          if (voteCarries(next, Date.now(), hogMs)) {
             tx.set(ref, { ...next, player: null, snap: null, snapAt: 0, kickvotes: [] });
             return { ok: true, kicked: true };
           }
           tx.set(ref, next);
-          return { ok: true, kicked: false, votes: countKickVotes(next), need: eligibleKickers(next).length };
+          return { ok: true, kicked: false, votes: countKickVotes(next, Date.now(), hogMs), need: eligibleKickers(next, Date.now(), hogMs).length };
         });
       } catch { return { ok: false }; }
     },
@@ -330,6 +332,7 @@ export function renderFloorPanel(mount, floor, me) {
   input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); doSend(); } e.stopPropagation(); });
 
   let lastChatLen = -1;
+  const hogMins = Math.round((floor.hogMs || HOG_MS) / 60000);
   floor.onChange((data) => {
     const holder = seatTakenBy(data);
     const queue = liveQueue(data);
@@ -363,12 +366,12 @@ export function renderFloorPanel(mount, floor, me) {
 
     // floor rights, earned by waiting under the current player:
     // 1 eligible waiter → ASK them to wrap up; 2+ → a unanimous vote kicks
-    const eligible = eligibleKickers(data);
-    if (canVoteKick(data, me)) {
-      const votes = countKickVotes(data);
+    const eligible = eligibleKickers(data, Date.now(), floor.hogMs);
+    if (canVoteKick(data, me, Date.now(), floor.hogMs)) {
+      const votes = countKickVotes(data, Date.now(), floor.hogMs);
       const need = eligible.length;
       const voted = (data.kickvotes || []).includes(me);
-      note.textContent = `${need} of you have waited 15+ minutes — if ALL ${need} vote, the player is skipped.`;
+      note.textContent = `${need} of you have waited ${hogMins}+ minutes — if ALL ${need} vote, the player is skipped.`;
       kickBtn.style.display = "";
       kickBtn.disabled = voted;
       kickBtn.textContent = voted ? `Kick vote cast (${votes}/${need})` : `Vote to skip (${votes}/${need})`;
@@ -377,10 +380,11 @@ export function renderFloorPanel(mount, floor, me) {
         if (r && r.kicked) kickBtn.style.display = "none";
       };
     } else if (eligible.length === 1 && me && eligible[0] === me) {
-      note.textContent = "You've waited 15+ minutes. One person can't kick — but you can ask them to wrap it up.";
+      note.textContent = `You've waited ${hogMins}+ minutes. One person can't kick — but you can ask them to wrap it up.`;
       kickBtn.style.display = "";
-      kickBtn.disabled = !canNudge(data, me);
-      kickBtn.textContent = canNudge(data, me) ? "Ask them to wrap up" : "Asked — give them a minute";
+      const may = canNudge(data, me, Date.now(), floor.hogMs);
+      kickBtn.disabled = !may;
+      kickBtn.textContent = may ? "Ask them to wrap up" : "Asked — give them a minute";
       kickBtn.onclick = () => floor.nudge();
     } else {
       kickBtn.style.display = "none";
@@ -388,11 +392,11 @@ export function renderFloorPanel(mount, floor, me) {
 
     // the seated player sees the warnings, plainly
     if (holder === me && me) {
-      const votes = countKickVotes(data);
+      const votes = countKickVotes(data, Date.now(), floor.hogMs);
       if (eligible.length >= 2 && votes > 0) {
         note.textContent = `⚠ The line is voting to skip you (${votes}/${eligible.length}) — a unanimous vote ends your turn.`;
       } else if (data?.nudgeAt && Date.now() - data.nudgeAt < 5 * 60 * 1000 && data.nudgeBy) {
-        note.textContent = `⏰ ${data.nudgeBy} has been waiting 15+ minutes and asked for a turn — wrap it up when you can.`;
+        note.textContent = `⏰ ${data.nudgeBy} has been waiting ${hogMins}+ minutes and asked for a turn — wrap it up when you can.`;
       }
     }
 

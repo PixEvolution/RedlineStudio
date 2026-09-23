@@ -75,8 +75,15 @@ export function snapToObjects(snap) {
 //     the clock restarts), so a player who just fairly got their turn can't
 //     be insta-kicked by a line that waited through someone else.
 
-export const HOG_MS = 15 * 60 * 1000;
+export const HOG_MS = 15 * 60 * 1000;             // the default — devs set their own
 export const NUDGE_COOLDOWN_MS = 3 * 60 * 1000;   // one "wrap it up" per 3 min
+
+// Each game chooses its own line patience (minutes) in the Studio.
+export function clampHogMins(mins) {
+  const m = Math.floor(Number(mins));
+  if (!m || m < 1) return 15;
+  return Math.min(120, m);
+}
 
 export function seatAgeMs(data, now = Date.now()) {
   if (!seatTakenBy(data, now)) return 0;
@@ -91,25 +98,25 @@ export function waitedMs(data, user, now = Date.now()) {
   return Math.max(0, now - clockStart);
 }
 
-// The live line members who have earned floor rights (15+ min waited).
-export function eligibleKickers(data, now = Date.now()) {
+// The live line members who have earned floor rights (waited long enough).
+export function eligibleKickers(data, now = Date.now(), hogMs = HOG_MS) {
   if (!seatTakenBy(data, now)) return [];
-  return liveQueue(data, now).filter(u => waitedMs(data, u, now) >= HOG_MS);
+  return liveQueue(data, now).filter(u => waitedMs(data, u, now) >= hogMs);
 }
 
 // May `me` ask the player to wrap up? (any eligible waiter, rate-limited)
-export function canNudge(data, me, now = Date.now()) {
+export function canNudge(data, me, now = Date.now(), hogMs = HOG_MS) {
   const holder = seatTakenBy(data, now);
   if (!holder || !me || holder === me) return false;
-  if (!eligibleKickers(data, now).includes(me)) return false;
+  if (!eligibleKickers(data, now, hogMs).includes(me)) return false;
   return now - (Number(data?.nudgeAt) || 0) >= NUDGE_COOLDOWN_MS;
 }
 
 // May `me` cast a kick vote? Only when kicking is even possible (2+ eligible).
-export function canVoteKick(data, me, now = Date.now()) {
+export function canVoteKick(data, me, now = Date.now(), hogMs = HOG_MS) {
   const holder = seatTakenBy(data, now);
   if (!holder || !me || holder === me) return false;
-  const el = eligibleKickers(data, now);
+  const el = eligibleKickers(data, now, hogMs);
   return el.length >= 2 && el.includes(me);
 }
 
@@ -119,13 +126,13 @@ export function kickThreshold(eligibleCount) {
 }
 
 // Only eligible waiters' votes count.
-export function countKickVotes(data, now = Date.now()) {
-  const el = eligibleKickers(data, now);
+export function countKickVotes(data, now = Date.now(), hogMs = HOG_MS) {
+  const el = eligibleKickers(data, now, hogMs);
   return (data?.kickvotes || []).filter(v => el.includes(v)).length;
 }
 
-export function voteCarries(data, now = Date.now()) {
-  const el = eligibleKickers(data, now);
+export function voteCarries(data, now = Date.now(), hogMs = HOG_MS) {
+  const el = eligibleKickers(data, now, hogMs);
   if (el.length < 2) return false;                          // never a solo kick
   const votes = data?.kickvotes || [];
   return el.every(u => votes.includes(u));                  // unanimous or nothing

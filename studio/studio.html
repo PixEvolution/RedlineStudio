@@ -69,6 +69,11 @@
         <p class="hint" style="margin:6px 0 0">Paid straight to you.</p>
       </div>
       <div>
+        <label for="g-hogmins">Line patience (min)</label>
+        <input type="number" id="g-hogmins" min="1" max="120" value="15">
+        <p class="hint" style="margin:6px 0 0">Waited this long? The line can vote to skip.</p>
+      </div>
+      <div>
         <label for="g-screenmode">Arcade screen</label>
         <select id="g-screenmode" class="blk-add" style="margin:0; width:100%">
           <option value="none">None</option>
@@ -448,6 +453,7 @@
             price: isCasino ? 0 : $("#g-price").value,
             casino: isCasino,
             unlisted: isUnlisted,
+            hogmins: $("#g-hogmins").value,
             screen: { mode: $("#g-screenmode").value, objects: JSON.parse(JSON.stringify(scenes.screen.objects)) }
           };
           if (check.errors.length) toast("Published, but check scripts:\n" + check.errors.slice(0, 3).join("\n"), true);
@@ -490,6 +496,7 @@
         $("#g-screenmode").value = "none";
         $("#g-type").value = "game";
         $("#g-public").value = "public";
+        $("#g-hogmins").value = "15";
         syncTypeUi();
       }
       setTarget("game");
@@ -639,6 +646,7 @@
             $("#g-screenmode").value = g.screen?.mode || "none";
             $("#g-type").value = g.casino ? "casino" : "game";
             $("#g-public").value = g.unlisted ? "unlisted" : "public";
+            $("#g-hogmins").value = String(g.hogmins || 15);
             syncTypeUi();
             setTarget("game");
             select(scene.objects[0]?.id || null);

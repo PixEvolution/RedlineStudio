@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RedlineStudio — Play</title>
+  <meta name="description" content="Play a player-built game on RedlineStudio — one player per machine, get in line, watch and chat.">
+  <link rel="canonical" href="https://redlinestudio.dev/play.html">
+  <meta property="og:site_name" content="RedlineStudio">
+  <meta property="og:title" content="Play — RedlineStudio">
+  <meta property="og:description" content="Play a player-built game on RedlineStudio — one player per machine, get in line, watch and chat.">
+  <meta property="og:url" content="https://redlinestudio.dev/play.html">
+  <meta property="og:type" content="website">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -31,7 +38,7 @@
     import { attachTerminalInput } from "./js/terminal.js";
     import { attachCasinoLoop } from "./js/casino-odds.js";
     import { spinMachine, fundMachine, collectPool } from "./js/casino.js";
-    import { createFloor, renderFloorPanel, seatTakenBy, snapFromEngine, snapToObjects } from "./js/floor.js";
+    import { createFloor, renderFloorPanel, seatTakenBy, snapFromEngine, snapToObjects, clampHogMins } from "./js/floor.js";
 
     renderNav("");
 
@@ -392,6 +399,7 @@
 
       const game = await getGame(id);
       titleEl.textContent = game.title;
+      document.title = `${game.title} by ${game.owner} — RedlineStudio`;
       metaEl.textContent = "by ";
       const ownerLink = document.createElement("a");
       ownerLink.href = "profile.html?u=" + encodeURIComponent(game.owner);
@@ -401,7 +409,8 @@
       metaEl.appendChild(document.createTextNode(
         ` · ${game.plays || 0} plays · published ${fmtDate(game.createdAt)}` +
         (Number(game.price) > 0 ? ` · ◎ ${game.price} per play` : "") +
-        (game.casino ? ` · 🎰 pool ◎ ${Number(game.pool) || 0}` : "")));
+        (game.casino ? ` · 🎰 pool ◎ ${Number(game.pool) || 0}` : "") +
+        (game.engine === "v1" || game.casino ? ` · ⏳ line patience: ${clampHogMins(game.hogmins)} min` : "")));
       if (game.description) {
         const d = document.createElement("p");
         d.className = "page-sub";
@@ -411,7 +420,7 @@
       }
 
       if (game.engine === "v1" || game.casino) {
-        floorCtl = createFloor(id, currentUser());
+        floorCtl = createFloor(id, currentUser(), { hogMs: clampHogMins(game.hogmins) * 60000 });
         renderFloorPanel(document.getElementById("game-floor"), floorCtl, currentUser());
         window.addEventListener("pagehide", () => floorCtl.leaveBeacon());
       }

@@ -15,13 +15,14 @@ const GAMES = "games";
 // `price` = coins to insert per play (0 = free, arcade style).
 // `screen` = the attract screen shown on the card and before playing:
 //            { mode: "none"|"static"|"live", objects: [...] }
-export async function publishGame({ title, owner, data, engine = "v1", description = "", price = 0, screen = null, casino = false, unlisted = false }) {
+export async function publishGame({ title, owner, data, engine = "v1", description = "", price = 0, screen = null, casino = false, unlisted = false, hogmins = 15 }) {
   if (!title || title.trim().length === 0) throw new Error("Your game needs a title.");
   if (title.length > 40) throw new Error("Title must be 40 characters or less.");
 
   const ref = await addDoc(collection(db, GAMES), {
     ...(casino ? { casino: true, pool: 0 } : {}),   // casino machines carry a coin pool
     unlisted: !!unlisted,                            // unlisted = saved but off the public pages
+    hogmins: Math.max(1, Math.min(120, Math.floor(Number(hogmins) || 15))),   // line patience (minutes)
     version: 1,           // game format version — bump when the studio evolves
     engine,               // which engine/player understands this game
     title: title.trim(),
@@ -38,13 +39,14 @@ export async function publishGame({ title, owner, data, engine = "v1", descripti
 }
 
 // Overwrite an existing game with new content (republish/update).
-export async function updateGame(gameId, { title, data, engine, description, price, screen, casino, unlisted }) {
+export async function updateGame(gameId, { title, data, engine, description, price, screen, casino, unlisted, hogmins }) {
   await updateDoc(doc(db, GAMES, gameId), {
     ...(title !== undefined ? { title: title.trim() } : {}),
     ...(data !== undefined ? { data } : {}),
     ...(engine !== undefined ? { engine } : {}),
     ...(casino !== undefined ? { casino: !!casino } : {}),
     ...(unlisted !== undefined ? { unlisted: !!unlisted } : {}),
+    ...(hogmins !== undefined ? { hogmins: Math.max(1, Math.min(120, Math.floor(Number(hogmins) || 15))) } : {}),
     ...(description !== undefined ? { description: String(description || "").slice(0, 200) } : {}),
     ...(price !== undefined ? { price: cleanPrice(price) } : {}),
     ...(screen !== undefined ? { screen: cleanScreen(screen) } : {}),
