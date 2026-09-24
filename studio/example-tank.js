@@ -22,7 +22,7 @@ const RECTS = [
   [130, 260, 40, 20], [350, 110, 40, 20],
   [70, 185, 20, 60],  [410, 185, 20, 60],
   [200, 70, 60, 20],  [280, 300, 60, 20],
-  [190, 220, 20, 40], [290, 150, 20, 40]
+  [130, 185, 20, 40], [350, 185, 20, 40]   // side stubs — the center lane stays clear for the marquee
 ];
 const MINES = [[240, 90], [240, 150], [240, 220], [240, 280]];
 
@@ -377,6 +377,22 @@ export function buildTankExample() {
     });
   };
 
+  // THE BATTLEFIELD GOES DOWN FIRST — walls are the bottom layer, so tanks,
+  // mines and the marquee always draw ON TOP of them. One thick continuous
+  // frame, flush with the collision bounds (faces at 44 / 436 / 60 / 310):
+  for (let x = 20; x <= 460; x += 40) { block(x, 40, 40); block(x, 330, 40); }
+  for (let y = 80; y <= 280; y += 40) { block(24, y, 40); block(456, y, 40); }
+  block(24, 300, 40); block(456, 300, 40);   // seal the bottom corners
+  // ...and the blocks, each rectangle laid from squares
+  for (const [cx, cy, rw, rh] of RECTS) {
+    const s = Math.min(rw, rh);
+    for (let i = 0; i < rw / s; i++) {
+      for (let j = 0; j < rh / s; j++) {
+        block(cx - rw / 2 + s / 2 + i * s, cy - rh / 2 + s / 2 + j * s, s);
+      }
+    }
+  }
+
   // the mines, down the middle — drawn as the original's little crosses
   MINES.forEach(([x, y], i) => {
     objects.push({
@@ -443,25 +459,13 @@ export function buildTankExample() {
     x: 240, y: 180, size: 11, color: AMBER, glow: 10, visible: 0, text: "", script: []
   });
 
+  // the controls, printed straight onto the cabinet's bottom rail
   objects.push({
     id: "tk_help", name: "help", type: "text",
-    x: 240, y: 350, size: 10, color: DIM, glow: 3, visible: 1,
+    x: 240, y: 334, size: 10, color: "#0e3018", glow: 0, visible: 1,
     text: "KEE GAMES 1974 · A/D TURN · W/S DRIVE · SPACE FIRE · P2: ARROWS + ENTER",
     script: []
   });
-
-  // the battlefield, in solid ROM-chip chunks: the border...
-  for (let x = 24; x <= 456; x += 24) { block(x, 40, 24); block(x, 330, 24); }
-  for (let y = 64; y <= 306; y += 24) { block(24, y, 24); block(456, y, 24); }
-  // ...and the blocks, each rectangle laid from squares
-  for (const [cx, cy, rw, rh] of RECTS) {
-    const s = Math.min(rw, rh);
-    for (let i = 0; i < rw / s; i++) {
-      for (let j = 0; j < rh / s; j++) {
-        block(cx - rw / 2 + s / 2 + i * s, cy - rh / 2 + s / 2 + j * s, s);
-      }
-    }
-  }
 
   return { title: "Tank (1974)", objects };
 }
