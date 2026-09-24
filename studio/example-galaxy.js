@@ -211,8 +211,7 @@ function brainCode() {
     push(`${pad}set endplay to 0`);
     push(`${pad}set pscore to 0`);
     push(`${pad}set sscore to 0`);
-    push(`${pad}set basep to 0`);
-    push(`${pad}set bases to 0`);
+    push(`${pad}set score to 0`);   // a new coin = a clean leaderboard run
     push(`${pad}set ticksleft to ${ROUND_TICKS}`);
     push(`${pad}set ralive to 1`);
     push(`${pad}set rocket.x to 240`);
@@ -322,15 +321,18 @@ function brainCode() {
   push("  end");
   // the coin timer
   push("  set ticksleft to ticksleft - 1");
-  push("  set score to pscore");   // the reserved var → the HIGH SCORES table
+  // the HIGH SCORES table records your BEST single round — free games chain
+  // fresh rounds, they don't stack one giant score
+  push("  set score to max(score, pscore)");
   push('  set self.text to "YOU " + pscore + " — " + sscore + " SAUCERS     TIME " + floor(ticksleft / 60)');
   push("  if ticksleft <= 0 then");
-  // 1971's masterstroke: beat the machine, get a free game
-  push("    if pscore - basep > sscore - bases then");
+  // 1971's masterstroke: beat the machine, get a free game — and the free
+  // game starts at 0–0, a brand new round
+  push("    if pscore > sscore then");
   push('      say "HIGH SCORE — FREE GAME!" for 3');
   push(`      set ticksleft to ${ROUND_TICKS}`);
-  push("      set basep to pscore");
-  push("      set bases to sscore");
+  push("      set pscore to 0");
+  push("      set sscore to 0");
   push("    else");
   push("      set game to 2");
   push("      set endplay to 1");   // play spent — the platform re-arms the coin slot

@@ -87,8 +87,24 @@ function brainCode() {
     push(`${pad}end`);
   };
 
+  // a kill or a mine resets the ROUND: both tanks back to their corners
+  // (no spawn camping — the victim can never be farmed at their corner),
+  // shells cleared, the victim stunned a beat longer than the killer
+  const roundReset = (victimStun, otherStun, pad) => {
+    respawn("tank1", P1, pad);
+    respawn("tank2", P2, pad);
+    push(`${pad}set s1live to 0`);
+    push(`${pad}set shot1.visible to 0`);
+    push(`${pad}set s2live to 0`);
+    push(`${pad}set shot2.visible to 0`);
+    push(`${pad}set ${victimStun} to 40`);
+    push(`${pad}set ${otherStun} to 20`);
+    push(`${pad}set av1 to 0`);
+    push(`${pad}set av2 to 0`);
+  };
+
   // a shell in flight: walls kill it, the enemy tank ends the story
-  const shellFly = (slive, sa, shot, victim, killerScore, victimSpawn, victimStun, pad) => {
+  const shellFly = (slive, sa, shot, victim, killerScore, victimStun, pad) => {
     push(`${pad}if ${slive} == 1 then`);
     push(`${pad}  change ${shot}.x by cos(${sa}) * ${SHELL}`);
     push(`${pad}  change ${shot}.y by sin(${sa}) * ${SHELL}`);
@@ -105,8 +121,7 @@ function brainCode() {
     push(`${pad}    explode ${victim}`);
     push(`${pad}    beep 80 for 0.35`);
     push(`${pad}    change ${killerScore} by 1`);
-    respawn(victim, victimSpawn, pad + "    ");
-    push(`${pad}    set ${victimStun} to 40`);
+    roundReset(victimStun, victimStun === "stun1" ? "stun2" : "stun1", pad + "    ");
     push(`${pad}    set sdead to 1`);
     push(`${pad}  end`);
     push(`${pad}  if sdead == 1 then`);
@@ -248,8 +263,8 @@ function brainCode() {
   push("  end");
 
   // shells in flight
-  shellFly("s1live", "s1a", "shot1", "tank2", "p1s", P2, "stun2", "  ");
-  shellFly("s2live", "s2a", "shot2", "tank1", "p2s", P1, "stun1", "  ");
+  shellFly("s1live", "s1a", "shot1", "tank2", "p1s", "stun2", "  ");
+  shellFly("s2live", "s2a", "shot2", "tank1", "p2s", "stun1", "  ");
 
   // the minefield: drive over one and the ENEMY takes the point
   MINES.forEach((m, i) => {
@@ -257,15 +272,13 @@ function brainCode() {
     push("    explode tank1");
     push("    beep 80 for 0.35");
     push("    change p2s by 1");
-    respawn("tank1", P1, "    ");
-    push("    set stun1 to 40");
+    roundReset("stun1", "stun2", "    ");
     push("  end");
     push(`  if stun2 == 0 and dist(tank2, mine${i + 1}) < 12 then`);
     push("    explode tank2");
     push("    beep 80 for 0.35");
     push("    change p1s by 1");
-    respawn("tank2", P2, "    ");
-    push("    set stun2 to 40");
+    roundReset("stun2", "stun1", "    ");
     push("  end");
   });
   push("end");
