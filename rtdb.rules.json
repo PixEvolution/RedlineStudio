@@ -1,0 +1,18 @@
+{
+  "rules": {
+    "live": {
+      "$gameId": {
+        ".read": true,
+        ".write": "auth != null"
+      }
+    },
+    "rooms": {
+      "$gameId": {
+        ".read": true,
+        "$slot": {
+          ".write": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid || !data.child('at').exists() || (now - data.child('at').val()) > 15000) && (!newData.exists() || newData.child('uid').val() === auth.uid)"
+        }
+      }
+    }
+  }
+}

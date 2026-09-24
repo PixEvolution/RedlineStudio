@@ -31,6 +31,9 @@ A game platform by Redline Digital — players make accounts, build games in the
 | `js/casino-odds.js` | THE HOUSE RULES — fixed public odds (92% RTP) + the casino loop |
 | `js/casino.js` | Casino money: atomic spin/fund/collect transactions on machine pools |
 | `js/scores.js` | ★ High scores: personal-best leaderboards on games with points + an end |
+| `js/rtdb.js` | The FAST database connection (Realtime Database) — the live wire |
+| `js/live.js` | 🔴 LIVE watching: the player broadcasts frames, watchers see near-live |
+| `js/duel.js` | ⚔ Online duels: the net contract (net1-6/foe1-6/netev/duel/netslot) |
 | `js/floor-rules.js` | The arcade floor's pure rules: seats, staleness, the line, snapshots |
 | `js/floor.js` | The arcade floor live: one player per machine, queue, watch window, chat |
 | `js/ui.js` | Shared nav bar, toasts, helpers |

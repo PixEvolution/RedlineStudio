@@ -3,8 +3,13 @@
 // you are IN the maze, seeing down a wireframe corridor, and the things
 // hunting you are giant eyeballs. It was also the first networked multiplayer
 // game — machines wired together so the eyeball was another human. Here the
-// eyeballs are ROBOT players (MIT's Maze War grew those too); true
-// player-vs-player needs realtime plumbing the platform doesn't have yet.
+// eyeballs are ROBOT players (MIT's Maze War grew those too) — UNLESS a
+// second human joins: this game speaks the platform's NET contract, so its
+// page has a ⚔ DUEL button. When a challenger connects (duel == 1), eyeball
+// #1 BECOMES them, live over the wire, while robot #2 keeps prowling.
+// It sets net1..net4 (position, facing, score) and reads foe1..foe4 back;
+// a hit is a netev pulse. Load this and read the duel block — any game can
+// speak net the same way.
 //
 // This machine taught the engine a permanent new trick: the LINE object —
 // a vector segment (from x/y, along its angle, `size` long). The entire
@@ -156,9 +161,9 @@ function brainCode() {
     push(`${pad}  if ${AIM} >= 45 then`);
     push(`${pad}    explode self`);
     push(`${pad}    beep 70 for 0.3`);
-    push(`${pad}    set px to ${SPAWN.x}`);
-    push(`${pad}    set py to ${SPAWN.y}`);
-    push(`${pad}    set face to ${SPAWN.f}`);
+    push(`${pad}    set px to spx`);
+    push(`${pad}    set py to spy`);
+    push(`${pad}    set face to spf`);
     push(`${pad}    set stall to 25`);
     push(`${pad}    set e1aim to 0`);
     push(`${pad}    set e2aim to 0`);
@@ -178,6 +183,11 @@ function brainCode() {
   push(`set py to ${SPAWN.y}`);
   push(`set face to ${SPAWN.f}`);
   push("set atk to 10");
+  push("set lastev to 0");
+  push("set dueled to 0");
+  push("set spx to 1");
+  push("set spy to 1");
+  push("set spf to 1");
   // the maze (only walls need setting — unset cells read 0)
   MAZE_ROWS.forEach((row, r) => {
     [...row].forEach((ch, c) => {
@@ -244,12 +254,47 @@ function brainCode() {
   push("  if stall > 0 then");
   push("    set stall to stall - 1");
   push("  end");
+  // your corner depends on which side of the wire you're on
+  push("  if netslot == 2 then");
+  push("    set spx to 9");
+  push("    set spy to 7");
+  push("    set spf to 3");
+  push("  else");
+  push("    set spx to 1");
+  push("    set spy to 1");
+  push("    set spf to 1");
+  push("  end");
+  // ⚔ THE DUEL: eyeball #1 becomes the human on the other end
+  push("  if duel == 1 and dueled == 0 then");
+  push("    set dueled to 1");
+  push("    set lastev to foeev");   // never inherit an old session's hits
+  push("  end");
+  push("  if duel == 0 then");
+  push("    set dueled to 0");
+  push("  end");
+  push("  if duel == 1 then");
+  push("    set e1x to foe1");
+  push("    set e1y to foe2");
+  push("    set e1aim to 0");
+  push("    if foeev != lastev then");   // their pulse = they shot you
+  push("      set lastev to foeev");
+  push("      explode self");
+  push("      beep 70 for 0.3");
+  push("      set px to spx");
+  push("      set py to spy");
+  push("      set face to spf");
+  push("      set stall to 25");
+  push("    end");
+  push('    set killtx.text to "KILLS " + score + " · THEM " + foe4');
+  push("  end");
   // the attract reel pilots YOU through the maze
   push("  if game == 9 and stall == 0 then");
   walk("px", "py", "face", "atk", 13, 0.2, "    ");
   push("  end");
-  // the robot eyeballs
-  drone(1, "  ");
+  // the robot eyeballs (robot #1 stands down while a human wears its eye)
+  push("  if duel == 0 then");
+  drone(1, "    ");
+  push("  end");
   drone(2, "  ");
 
   // ---- THE FIRST-PERSON VIEW ----
@@ -331,6 +376,11 @@ function brainCode() {
   push(`  set foe1.y to ${MY} + e1y * ${MC}`);
   push(`  set foe2.x to ${MX} + e2x * ${MC}`);
   push(`  set foe2.y to ${MY} + e2y * ${MC}`);
+  // the net contract: what the other side sees of me
+  push("  set net1 to px");
+  push("  set net2 to py");
+  push("  set net3 to face");
+  push("  set net4 to score");
   push("end");
 
   // the quarter runs out
@@ -390,7 +440,7 @@ function brainCode() {
     push("    else");
     push("      set hx to hx + dxs[face]");
     push("      set hy to hy + dys[face]");
-    push("      if e1x == hx and e1y == hy then");
+    push("      if duel == 0 and e1x == hx and e1y == hy then");
     push("        explode foe1");
     push("        beep 620 for 0.1");
     push("        change score by 1");
@@ -398,6 +448,12 @@ function brainCode() {
     push("        set e1y to rys[rk]");
     push("        set e1aim to 0");
     push("        set rk to rk % 4 + 1");
+    push("        set hdone to 1");
+    push("      end");
+    push("      if hdone == 0 and duel == 1 and foe1 == hx and foe2 == hy then");
+    push("        beep 620 for 0.1");
+    push("        change score by 1");
+    push("        change netev by 1");   // tell them they're hit
     push("        set hdone to 1");
     push("      end");
     push("      if hdone == 0 and e2x == hx and e2y == hy then");
@@ -425,9 +481,9 @@ function brainCode() {
   push("    set score to 0");
   push("    set stall to 0");
   push(`    set timeleft to ${T}`);
-  push(`    set px to ${SPAWN.x}`);
-  push(`    set py to ${SPAWN.y}`);
-  push(`    set face to ${SPAWN.f}`);
+  push("    set px to spx");
+  push("    set py to spy");
+  push("    set face to spf");
   push(`    set e1x to ${DRONE1.x}`);
   push(`    set e1y to ${DRONE1.y}`);
   push(`    set e1f to ${DRONE1.f}`);
@@ -441,9 +497,9 @@ function brainCode() {
   push("else");
   push("  if game == 2 then");
   push("    set game to 9");
-  push(`    set px to ${SPAWN.x}`);
-  push(`    set py to ${SPAWN.y}`);
-  push(`    set face to ${SPAWN.f}`);
+  push("    set px to spx");
+  push("    set py to spy");
+  push("    set face to spf");
   push("  end");
   push("end");
   push("end");

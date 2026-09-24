@@ -35,7 +35,9 @@
     import { Engine, drawFrame, CANVAS_W, CANVAS_H } from "./js/engine.js";
     import { createTouchControls, isTouchDevice } from "./js/touch-controls.js";
     import { attachFullscreenButton } from "./js/fullscreen.js";
-    import { currentUser } from "./js/auth.js";
+    import { currentUser, auth } from "./js/auth.js";
+    import { createLivePublisher, watchLive } from "./js/live.js";
+    import { attachDuel, guestSlotOpen, duelAvailable } from "./js/duel.js";
     import { transferCoins, getCoins } from "./js/economy.js";
     import { renderVotes, renderComments } from "./js/social.js";
     import { attachTerminalInput } from "./js/terminal.js";
@@ -107,7 +109,8 @@
         const me = currentUser();
         let cachedCoins = 0, cachedPool = Number(game.pool) || 0;
         let attract = null, engine = null, controls = null, term = null, loop = null;
-        let gateBtn = null;
+        let gateBtn = null, liveUn = null;
+        const livePub = createLivePublisher(game.id, me);   // 🔴 LIVE for the watchers
 
         function startAttract() {
           if (attract || engine) return;
@@ -128,6 +131,7 @@
           // voted off: the machine takes itself back
           if (engine && me && data && data.player !== me) {
             engine.stop(); engine = null;
+            livePub.stop();
             if (loop) { loop.destroy(); loop = null; }
             if (controls) { controls.destroy(); controls = null; }
             if (term) { term.destroy(); term = null; }
@@ -142,13 +146,21 @@
             else if (gateBtn.dataset.busy !== "1") { gateBtn.disabled = false; gateBtn.textContent = me ? "🎰 SIT DOWN" : "LOG IN TO PLAY"; }
           }
           if (!engine) {
-            if (occupied && data.snap) {
-              if (attract) { attract.stop(); attract = null; }
-              drawFrame(canvas.getContext("2d"), snapToObjects(data.snap), { terminal: data.snap.term || [], w: W, h: H });
-            } else if (!occupied) {
+            if (occupied) {
+              if (!liveUn) liveUn = watchLive(game.id, (f) => {
+                if (engine || !f) return;
+                if (attract) { attract.stop(); attract = null; }
+                drawFrame(canvas.getContext("2d"), snapToObjects(f), { terminal: f.term || [], w: W, h: H });
+              });
+              if (data.snap) {
+                if (attract) { attract.stop(); attract = null; }
+                drawFrame(canvas.getContext("2d"), snapToObjects(data.snap), { terminal: data.snap.term || [], w: W, h: H });
+              }
+            } else {
+              if (liveUn) { liveUn(); liveUn = null; }
               startAttract();
             }
-          }
+          } else if (liveUn) { liveUn(); liveUn = null; }
         });
 
         // the owner's till: load the machine, collect the take
@@ -199,6 +211,8 @@
           term = attachTerminalInput(engine, stage);
           engine.start();
           if (floorCtl) floorCtl.startBeating(() => engine ? snapFromEngine(engine) : null);
+          livePub.start(() => engine ? snapFromEngine(engine) : null);
+          if (liveUn) { liveUn(); liveUn = null; }
           if (me !== game.owner) countPlay(game.id);
           hint.textContent = "Real coins. The odds are the platform's — every machine returns 92% long-run. Bet 1–10.";
         }
@@ -258,11 +272,16 @@
 
         const bar = document.createElement("div");
         bar.className = "stage-bar";
+        const duelBtn = document.createElement("button");
+        duelBtn.className = "btn btn-small";
+        duelBtn.textContent = "⚔ DUEL";
+        duelBtn.title = "Join the current player's game as the second human";
+        duelBtn.style.display = "none";
         const szBtn = document.createElement("button");
         szBtn.className = "btn btn-small btn-ghost";
         const fsBtn = document.createElement("button");
         fsBtn.className = "btn btn-small btn-ghost";
-        bar.append(szBtn, fsBtn);
+        bar.append(duelBtn, szBtn, fsBtn);
         stage.appendChild(bar);
         attachScreenSizeButton(szBtn, stage);
         attachFullscreenButton(fsBtn, stage);
@@ -277,8 +296,19 @@
         const screen = game.screen;
         const hasScreen = screen && screen.mode !== "none" && screen.objects?.length > 0;
 
+        // the live wire: fast frames out (playing) and in (watching),
+        // and duels for games that speak the net contract
+        const livePub = createLivePublisher(game.id, me);
+        const duelable = (() => {
+          try {
+            const probe = new Engine(null, game.data?.objects || []);
+            return typeof probe.usesDuel === "function" && probe.usesDuel();
+          } catch { return false; }
+        })();
+
         let attract = null, engine = null, controls = null, watcher = null, term = null;
-        let gateBtn = null, gateLabel = "";
+        let gateBtn = null, gateLabel = "", gateOverlay = null;
+        let liveUn = null, duelCtl = null, isDuelist = false;
 
         function startAttract() {
           if (attract || engine) return;
@@ -297,9 +327,12 @@
           const holder = seatTakenBy(data);
           const occupied = holder && holder !== me;
           // voted off (or seat lost): the machine takes the game back
-          if (engine && me && data && data.player !== me) {
+          // (a duelist never held the seat, so seat changes don't end them)
+          if (engine && me && !isDuelist && data && data.player !== me) {
             if (watcher) { clearInterval(watcher); watcher = null; }
             engine.stop(); engine = null;
+            livePub.stop();
+            if (duelCtl) { duelCtl.destroy(); duelCtl = null; }
             if (controls) { controls.destroy(); controls = null; }
             if (term) { term.destroy(); term = null; }
             floorCtl.stopBeating();
@@ -311,35 +344,41 @@
             if (occupied) { gateBtn.disabled = true; gateBtn.textContent = `🕹 ${holder} IS PLAYING`; }
             else if (gateBtn.dataset.busy !== "1") { gateBtn.disabled = false; gateBtn.textContent = gateLabel; }
           }
+          // a net-speaking machine with someone playing = a duel on offer
+          duelBtn.style.display =
+            (duelable && duelAvailable() && me && occupied && !engine) ? "" : "none";
           if (!engine) {
-            if (occupied && data.snap) {
-              if (attract) { attract.stop(); attract = null; }
-              drawFrame(canvas.getContext("2d"), snapToObjects(data.snap), { terminal: data.snap.term || [], w: W, h: H });
-            } else if (!occupied) {
+            if (occupied) {
+              // 🔴 LIVE: the fast feed, with the slow snapshot as fallback
+              if (!liveUn) liveUn = watchLive(game.id, (f) => {
+                if (engine || !f) return;
+                if (attract) { attract.stop(); attract = null; }
+                drawFrame(canvas.getContext("2d"), snapToObjects(f), { terminal: f.term || [], w: W, h: H });
+              });
+              if (data.snap) {
+                if (attract) { attract.stop(); attract = null; }
+                drawFrame(canvas.getContext("2d"), snapToObjects(data.snap), { terminal: data.snap.term || [], w: W, h: H });
+              }
+            } else {
+              if (liveUn) { liveUn(); liveUn = null; }
               startAttract();
             }
-          }
+          } else if (liveUn) { liveUn(); liveUn = null; }
         });
 
-        function startGame() {
-          if (attract) { attract.stop(); attract = null; }
-          engine = new Engine(canvas, game.data?.objects || [], { w: W, h: H });
-          engine.vars.arcade = 1;   // the coin door is handled out here
-          if (engine.errors.length) console.warn("Script issues:", engine.errors);
-          if (isTouchDevice()) controls = createTouchControls(engine, stage);
-          term = attachTerminalInput(engine, stage);   // text adventures get their keyboard
-          engine.start();
-          if (floorCtl) floorCtl.startBeating(() => engine ? snapFromEngine(engine) : null);
-          if (me !== game.owner) countPlay(game.id);   // your own plays don't count
-          hint.textContent = isTouchDevice()
-            ? "Tap the screen and buttons to play."
-            : "Click the screen, then use your keyboard / mouse.";
-          // the arcade contract: endplay = 1 means this play is spent
+        // the arcade contract: endplay = 1 means this play is spent
+        // (shared by the seat holder and a duel challenger)
+        function startEndWatcher() {
           watcher = setInterval(() => {
             if (engine && Number(engine.vars.endplay) === 1) {
               const finalScore = Math.floor(Number(engine.vars.score) || 0);
+              const wasDuelist = isDuelist;
               clearInterval(watcher); watcher = null;
               engine.stop(); engine = null;
+              livePub.stop();
+              if (duelCtl) { duelCtl.destroy(); duelCtl = null; }
+              isDuelist = false;
+              duelBtn.disabled = false;
               if (controls) { controls.destroy(); controls = null; }
               if (term) { term.destroy(); term = null; }
               showGate(true);
@@ -352,7 +391,7 @@
               }
               // arcade etiquette: play's over and people are waiting →
               // back of the line (no line = keep your seat, play again)
-              if (floorCtl && floorCtl.line().length > 0) {
+              if (!wasDuelist && floorCtl && floorCtl.line().length > 0) {
                 floorCtl.rotateToBack().then((rotated) => {
                   if (rotated) toast("Play over — people are waiting, so you're at the back of the line.");
                   else floorCtl.startBeating(() => engine ? snapFromEngine(engine) : null);
@@ -361,6 +400,73 @@
             }
           }, 300);
         }
+
+        function startGame() {
+          if (attract) { attract.stop(); attract = null; }
+          if (liveUn) { liveUn(); liveUn = null; }
+          engine = new Engine(canvas, game.data?.objects || [], { w: W, h: H });
+          engine.vars.arcade = 1;   // the coin door is handled out here
+          if (engine.errors.length) console.warn("Script issues:", engine.errors);
+          if (isTouchDevice()) controls = createTouchControls(engine, stage);
+          term = attachTerminalInput(engine, stage);   // text adventures get their keyboard
+          engine.start();
+          if (floorCtl) floorCtl.startBeating(() => engine ? snapFromEngine(engine) : null);
+          livePub.start(() => engine ? snapFromEngine(engine) : null);   // 🔴 LIVE for the watchers
+          if (duelable && me) {
+            attachDuel(engine, game.id, me, auth.currentUser?.uid, "host")
+              .then((c) => { duelCtl = c; }).catch(() => {});
+          }
+          if (me !== game.owner) countPlay(game.id);   // your own plays don't count
+          hint.textContent = isTouchDevice()
+            ? "Tap the screen and buttons to play."
+            : "Click the screen, then use your keyboard / mouse.";
+          startEndWatcher();
+        }
+
+        // ⚔ the challenger's door: join the current player's game as player 2
+        async function startDuel() {
+          if (!me) { window.location.href = "login.html"; return; }
+          duelBtn.disabled = true;
+          try {
+            if (!(await guestSlotOpen(game.id, me))) {
+              toast("Someone's already challenging — get in line for the seat instead.", true);
+              duelBtn.disabled = false;
+              return;
+            }
+            const eng2 = new Engine(canvas, game.data?.objects || [], { w: W, h: H });
+            eng2.vars.arcade = 1;
+            const ctl = await attachDuel(eng2, game.id, me, auth.currentUser?.uid, "guest");
+            if (price > 0) {
+              try {
+                await transferCoins(me, game.owner, price);
+                getCoins(me).then(setNavCoins).catch(() => {});
+              } catch (err) {
+                toast(err.message, true);
+                if (ctl) ctl.destroy();
+                duelBtn.disabled = false;
+                return;
+              }
+            }
+            if (attract) { attract.stop(); attract = null; }
+            if (liveUn) { liveUn(); liveUn = null; }
+            if (gateOverlay) { gateOverlay.remove(); gateOverlay = null; gateBtn = null; }
+            engine = eng2;
+            duelCtl = ctl;
+            isDuelist = true;
+            if (engine.errors.length) console.warn("Script issues:", engine.errors);
+            if (isTouchDevice()) controls = createTouchControls(engine, stage);
+            term = attachTerminalInput(engine, stage);
+            engine.start();
+            if (me !== game.owner) countPlay(game.id);
+            duelBtn.style.display = "none";
+            hint.textContent = "⚔ DUEL — you're the challenger. The machine's player is the other eyeball.";
+            startEndWatcher();
+          } catch (err) {
+            toast(err.message, true);
+            duelBtn.disabled = false;
+          }
+        }
+        duelBtn.addEventListener("click", startDuel);
 
         function showGate(again) {
           // attract mode behind the coin slot (live, but deaf)
@@ -376,6 +482,7 @@
           playBtn.textContent = gateLabel;
           overlay.appendChild(playBtn);
           stage.appendChild(overlay);
+          gateOverlay = overlay;
           gateBtn = playBtn;
           hint.textContent = price > 0
             ? `This is a coin game — ${price} coins per play. Earn coins on the Market page.`
@@ -408,6 +515,7 @@
             }
             gateBtn = null;
             overlay.remove();
+            gateOverlay = null;
             startGame();
           });
         }

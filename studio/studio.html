@@ -489,9 +489,11 @@
       testBtn.textContent = "■ Stop";
       $("#ws-hint").textContent = engine.usesCasino()
         ? "Testing in FREE PLAY — pretend coins, the platform's real odds."
-        : engine.usesScoreboard()
-          ? "Testing — this game counts score and ends its plays, so its page gets a ★ HIGH SCORES table."
-          : "Testing — your game is live. Click Stop to go back to editing.";
+        : engine.usesDuel()
+          ? "Testing solo — this game speaks the NET contract, so its page gets a ⚔ DUEL button for a second player online."
+          : engine.usesScoreboard()
+            ? "Testing — this game counts score and ends its plays, so its page gets a ★ HIGH SCORES table."
+            : "Testing — your game is live. Click Stop to go back to editing.";
     });
 
     // ------------------------------------------------------------ publish / new / example

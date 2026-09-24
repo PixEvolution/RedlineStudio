@@ -396,6 +396,25 @@ export class Engine {
     return setsSpin && readsResult;
   }
 
+  // Does this game speak the NET contract? (sets `net1` AND reads `foe1`.)
+  // Its page grows a ⚔ DUEL button so a second human can join over the wire.
+  usesDuel() {
+    let setsNet = false, readsFoe = false;
+    const walkExpr = (x) => {
+      if (!x || typeof x !== "object") return;
+      if (x.e === "var" && x.n === "foe1") readsFoe = true;
+      for (const f of ["a", "b", "i"]) walkExpr(x[f]);
+      (x.args || []).forEach(walkExpr);
+    };
+    const walkStmts = (list) => (list || []).forEach(s => {
+      if ((s.k === "set" || s.k === "change") && s.lhs?.kind === "var" && s.lhs.name === "net1") setsNet = true;
+      for (const f of ["value", "by", "cond", "times", "seconds"]) walkExpr(s[f]);
+      walkStmts(s.then); walkStmts(s.else); walkStmts(s.body);
+    });
+    for (const c of this.compiled) for (const ev of c.events) walkStmts(ev.body);
+    return setsNet && readsFoe;
+  }
+
   // Does this game earn a HIGH SCORES table? (counts the reserved var `score`
   // AND declares its plays over with `endplay`.) Points + an actual end.
   usesScoreboard() {
