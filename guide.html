@@ -303,8 +303,15 @@ pcount          live players in the room, including you
 set nettgt to s + change netev by 1   →   seat s's `hits` var goes up by 1
 hits            how many times other players have hit YOU (respawn on change)</pre>
       <p>Design rule of thumb: simulate <i>your own</i> player, draw the others wherever their
-      <span class="code">f1[s]/f2[s]</span> says, and never move anyone else. In the Studio you always test solo.
-      Load <b>Maze War (1974)</b> for the 2-player duel pattern, <b>Maze War Arena (1974)</b> for the full
+      <span class="code">f1[s]/f2[s]</span> says, and never move anyone else.</p>
+      <p><b>➕ Player (testing multiplayer)</b> — you don't publish to find out if it works. Hit ▶ Test on any
+      game that speaks net (or has 2+ seats) and a <b>➕ Player</b> button appears: each press opens another
+      window that is a REAL player — its own seat, its own keyboard, its own screen — connected to yours over a
+      <b>local wire</b> inside your browser. No login in those windows, no internet, nothing saved: it's the exact
+      same contract as the online wire (netslot, f-lists, pcount, targeted hits), so a game that works across your
+      test windows works online. Stop the test and the player windows end with it; Test again and any you left
+      open reload your latest edits. Alt-Tab between windows to play each seat.</p>
+      <p>Load <b>Maze War (1974)</b> for the 2-player duel pattern, <b>Maze War Arena (1974)</b> for the full
       4-seat, humans-only version, or <b>Spasim (1974)</b> for an 8-seat 3D dogfight (its projection block
       is a working 3D renderer in plain RedScript) — it also shows the ROUND pattern for deathmatches: a match needs 2+
       players, one life per round (no respawns to camp), last one standing wins, late joiners spectate

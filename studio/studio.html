@@ -42,6 +42,8 @@
         </select>
         <button class="btn btn-ghost" id="btn-new">New</button>
         <button class="btn btn-ghost" id="btn-download" title="Download this game as a standalone HTML file — runs offline, uploads to itch.io">⬇ Download</button>
+        <button class="btn btn-ghost" id="btn-player" style="display:none"
+          title="Opens another window that's a REAL player on the local wire — its own seat, its own keyboard. Test multiplayer without publishing.">➕ Player</button>
         <button class="btn" id="btn-test">▶ Test</button>
         <button class="btn" id="btn-publish">💾 Save</button>
       </div>
@@ -170,6 +172,7 @@
     import { downloadStandalone } from "../js/export.js";
     import { attachTerminalInput } from "../js/terminal.js";
     import { attachCasinoLoop, localWallet } from "../js/casino-odds.js";
+    import { attachLocalParty } from "../js/localwire.js";
     import { buildCrtExample } from "./example-crt.js";
     import { buildBertieExample } from "./example-bertie.js";
     import { buildNimrodExample } from "./example-nimrod.js";
@@ -464,6 +467,59 @@
     // ------------------------------------------------------------ test mode
     const testBtn = $("#btn-test");
     let testControls = null, testTerminal = null, testCasino = null;
+
+    // ---- multiplayer testing on the LOCAL wire (like Roblox Studio's
+    // local server): the Studio window is seat 1, and ➕ Player opens more
+    // windows that are real seats — same net contract, no publish, no internet.
+    const playerBtn = $("#btn-player");
+    let testWire = null, testCtl = null, testSeats = 0;
+    const testId = Math.random().toString(36).slice(2, 10);   // this tab's test room
+    const playerWins = {};   // slot -> the opened window
+    const testSeatCount = (eng) => {
+      if (pageMode || editTarget !== "game") return 0;
+      const declared = Math.min(8, Math.max(1, Number($("#g-seats").value) || 1));
+      if (declared > 1) return declared;
+      return eng.usesDuel() ? 2 : 0;   // a duel-contract game tests as a 2-seater
+    };
+    function startLocalWire(eng) {
+      testSeats = testSeatCount(eng);
+      if (!testSeats) return;
+      localStorage.setItem("rl_test:" + testId, JSON.stringify({
+        title: titleInput.value || "Untitled Game",
+        w: scenes.game.w, h: scenes.game.h,
+        objects: scenes.game.objects
+      }));
+      testCtl = testCtl || new BroadcastChannel("rl_test_ctl:" + testId);
+      testCtl.postMessage({ k: "game" });   // open player windows reboot fresh
+      testWire = attachLocalParty(eng, "rl_wire:" + testId, 1, testSeats, user);
+      playerBtn.style.display = "";
+    }
+    function stopLocalWire() {
+      if (testWire) { testWire.destroy(); testWire = null; }
+      if (testCtl) testCtl.postMessage({ k: "end" });
+      for (const s in playerWins) { try { playerWins[s].close(); } catch {} delete playerWins[s]; }
+      localStorage.removeItem("rl_test:" + testId);
+      playerBtn.style.display = "none";
+      testSeats = 0;
+    }
+    playerBtn.addEventListener("click", () => {
+      if (!engine || !testSeats) return;
+      for (let s = 2; s <= testSeats; s++) {
+        if (!playerWins[s] || playerWins[s].closed) {
+          const { w, h } = gameDims();
+          playerWins[s] = window.open(
+            `test.html?t=${testId}&slot=${s}&seats=${testSeats}`,
+            "rl_test_p" + s,
+            `width=${Math.min(w + 60, 1000)},height=${Math.min(h + 170, 900)}`
+          );
+          toast(`Player ${s} is at the machine — that window has its own keyboard.`);
+          return;
+        }
+      }
+      toast(`All ${testSeats} seats are open.`);
+    });
+    window.addEventListener("beforeunload", () => localStorage.removeItem("rl_test:" + testId));
+
     attachFullscreenButton($("#btn-fs"), $("#stage"));
     attachScreenSizeButton($("#btn-size"), $("#stage"));
     applyDims();   // double-resolution glass at the game's own size
@@ -477,6 +533,7 @@
     });
     testBtn.addEventListener("click", () => {
       if (engine) {
+        stopLocalWire();
         engine.stop(); engine = null;
         if (testControls) { testControls.destroy(); testControls = null; }
         if (testTerminal) { testTerminal.destroy(); testTerminal = null; }
@@ -493,16 +550,19 @@
       // casino machines test in FREE PLAY: pretend coins, the real odds
       if (engine.usesCasino()) testCasino = attachCasinoLoop(engine, localWallet(100, 1000));
       engine.start();
+      startLocalWire(engine);   // multiplayer games test with REAL extra players
       if (isTouchDevice()) testControls = createTouchControls(engine, $("#stage"));
       testTerminal = attachTerminalInput(engine, $("#stage"));
       testBtn.textContent = "■ Stop";
       $("#ws-hint").textContent = engine.usesCasino()
         ? "Testing in FREE PLAY — pretend coins, the platform's real odds."
-        : engine.usesDuel()
-          ? "Testing solo — this game speaks the NET contract, so its page gets a ⚔ DUEL button for a second player online."
-          : engine.usesScoreboard()
-            ? "Testing — this game counts score and ends its plays, so its page gets a ★ HIGH SCORES table."
-            : "Testing — your game is live. Click Stop to go back to editing.";
+        : testSeats
+          ? `Testing seat 1 of ${testSeats} — ➕ Player opens another window that's a REAL player (its own seat and keyboard, no publish needed).`
+          : engine.usesDuel()
+            ? "Testing solo — this game speaks the NET contract, so its page gets a ⚔ DUEL button for a second player online."
+            : engine.usesScoreboard()
+              ? "Testing — this game counts score and ends its plays, so its page gets a ★ HIGH SCORES table."
+              : "Testing — your game is live. Click Stop to go back to editing.";
     });
 
     // ------------------------------------------------------------ publish / new / example
@@ -603,8 +663,8 @@
       grantrak: { build: buildGrantrakExample, screen: "live", tip: "Hit ▶ Test, press START. A/D steer, W gas, S brake, Q/E shift — launch in 1st and work up through the box; the high gears just lug from a stop." },
       tank: { build: buildTankExample, screen: "live", tip: "Hit ▶ Test, pick a mode. A/D turn, W/S drive, SPACE fire — one shell in the air, walls block shots, and the mines score for the ENEMY." },
       mazewar: { build: buildMazewarExample, screen: "live", tip: "Hit ▶ Test, press START. You're IN the maze — A/D turn, W/S move, SPACE fire. Red pupil = it's aiming at you. Built entirely from the new Line object." },
-      mazewar2: { build: buildMazewar2Example, screen: "live", seats: 4, tip: "The MULTIPLAYER one — publish with Players = 4 (set for you) and up to four humans hunt each other at one cabinet. Testing is solo: every eyeball is a real player." },
-      spasim: { build: buildSpasimExample, screen: "live", seats: 8, tip: "True 3D, 8 pilots online (Players = 8 set for you). A/D yaw, W/S pitch, hold E to thrust, SPACE phaser — read the projection block: it's all of 3D in 20 lines." },
+      mazewar2: { build: buildMazewar2Example, screen: "live", seats: 4, tip: "The MULTIPLAYER one — hit ▶ Test, then ➕ Player to open real second/third/fourth players in their own windows. Publish with Players = 4 (set for you) for the online cabinet." },
+      spasim: { build: buildSpasimExample, screen: "live", seats: 8, tip: "True 3D, 8 pilots online (Players = 8 set for you) — ▶ Test then ➕ Player to dogfight yourself. A/D yaw, W/S pitch, hold E to thrust, SPACE phaser — the projection block is all of 3D in 20 lines." },
       wumpus:{ build: buildWumpusExample, screen: "static", tip: "Hit ▶ Test. Walk the lit rooms and hunt by ear — smell, drafts, bats. SHOOT mode fires into a tunnel." },
       wumpus2: { build: buildWumpus2Example, screen: "static", tip: "Hit ▶ Test. The 1973 original: type M or S, then a room number. Draw your map on paper!" },
       slots: { build: buildSlotsExample, screen: "live", casino: true, tip: "Hit ▶ Test for FREE PLAY. Publish to the Casino floor and fund the pool to open for business." }

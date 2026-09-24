@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RedlineStudio — Test Player</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    body { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+    .tp-head { display: flex; align-items: center; gap: 12px; margin: 10px 0 8px; }
+    .tp-badge { font-weight: bold; letter-spacing: 1px; color: #0a1408; background: #57ff9a;
+                padding: 3px 10px; border-radius: 4px; font-size: 13px; }
+    .tp-title { color: #b9ffc9; font-size: 14px; }
+    .tp-stage { position: relative; }
+    .tp-hint { margin-top: 8px; }
+    .tp-over { position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+               background: rgba(3,17,10,.88); color: #b9ffc9; font-size: 15px; text-align: center;
+               flex-direction: column; gap: 8px; }
+    .tp-over.on { display: flex; }
+  </style>
+</head>
+<body>
+  <!-- One extra PLAYER for a Studio multiplayer test. The Studio window is
+       seat 1; every one of these windows is another seat on the LOCAL wire —
+       its own keyboard, its own screen, no login, no internet. -->
+  <div class="tp-head">
+    <span class="tp-badge" id="tp-badge">PLAYER ?</span>
+    <span class="tp-title" id="tp-title"></span>
+    <button class="btn btn-small btn-ghost" id="btn-fs">⛶</button>
+  </div>
+  <div class="tp-stage stage" id="stage">
+    <canvas id="glass" class="workspace-canvas"></canvas>
+    <div class="tp-over" id="tp-over">
+      <b>TEST ENDED</b>
+      <span class="hint">The Studio stopped the test — close this window.</span>
+    </div>
+  </div>
+  <p class="hint tp-hint" id="tp-hint">Click the screen, then play — this window is its own player.</p>
+
+  <script type="module">
+    import { Engine } from "../js/engine.js";
+    import { attachLocalParty } from "../js/localwire.js";
+    import { sharpenCanvas } from "../js/screen-size.js";
+    import { attachTerminalInput } from "../js/terminal.js";
+    import { createTouchControls, isTouchDevice } from "../js/touch-controls.js";
+    import { attachFullscreenButton } from "../js/fullscreen.js";
+
+    const q = new URLSearchParams(location.search);
+    const testId = q.get("t") || "";
+    const slot = Math.max(2, Number(q.get("slot")) || 2);
+    const seats = Math.min(8, Math.max(2, Number(q.get("seats")) || 2));
+    document.getElementById("tp-badge").textContent = "PLAYER " + slot;
+
+    const canvas = document.getElementById("glass");
+    const stage = document.getElementById("stage");
+    const over = document.getElementById("tp-over");
+    attachFullscreenButton(document.getElementById("btn-fs"), stage);
+
+    let engine = null, wire = null, controls = null, term = null;
+
+    function stopAll() {
+      if (wire) { wire.destroy(); wire = null; }
+      if (controls) { controls.destroy(); controls = null; }
+      if (term) { term.destroy(); term = null; }
+      if (engine) { engine.stop(); engine = null; }
+    }
+
+    function boot() {
+      stopAll();
+      let game = null;
+      try { game = JSON.parse(localStorage.getItem("rl_test:" + testId) || "null"); } catch {}
+      if (!game || !game.objects) {
+        document.getElementById("tp-hint").textContent =
+          "No test running — start one from the Studio's ▶ Test button.";
+        over.classList.add("on");
+        return;
+      }
+      over.classList.remove("on");
+      document.getElementById("tp-title").textContent = game.title || "Untitled Game";
+      document.title = `RedlineStudio — P${slot} · ${game.title || "Test"}`;
+      const dims = { w: Number(game.w) || undefined, h: Number(game.h) || undefined };
+      engine = new Engine(canvas, JSON.parse(JSON.stringify(game.objects)), dims);
+      sharpenCanvas(canvas, 2, engine.w, engine.h);
+      engine.start();
+      wire = attachLocalParty(engine, "rl_wire:" + testId, slot, seats, "P" + slot);
+      if (isTouchDevice()) controls = createTouchControls(engine, stage);
+      term = attachTerminalInput(engine, stage);
+    }
+
+    // the Studio drives this window: a restarted test re-boots it with the
+    // fresh game, a stopped test ends it
+    const ctl = new BroadcastChannel("rl_test_ctl:" + testId);
+    ctl.onmessage = (e) => {
+      const m = e.data;
+      if (m?.k === "game") boot();
+      if (m?.k === "end") { stopAll(); over.classList.add("on"); }
+    };
+
+    boot();
+  </script>
+</body>
+</html>
