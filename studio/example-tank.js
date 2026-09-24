@@ -128,6 +128,8 @@ function brainCode() {
   push("set cool2 to 0");
   push("set stun1 to 0");
   push("set stun2 to 0");
+  push("set av1 to 0");
+  push("set av2 to 0");
   respawn("tank1", P1, "");
   respawn("tank2", P2, "");
   push("end");
@@ -182,8 +184,16 @@ function brainCode() {
   push(`      set go1 to -${REV}`);
   push("    end");
   push("  end");
+  // wall avoidance: a blocked drone turns until it's free, then drives
+  // AWAY for a moment before it resumes the hunt (otherwise its own aim
+  // steers it straight back into the same wall, forever)
   push("  if ai1 == 1 and stun1 == 0 then");
-  aiDrive("tank1", "tank2", "go1", "s1live", "s1a", "shot1", "cool1", "    ");
+  push("    if av1 > 0 then");
+  push("      set av1 to av1 - 1");
+  push(`      set go1 to ${AI_FWD / FWD}`);
+  push("    else");
+  aiDrive("tank1", "tank2", "go1", "s1live", "s1a", "shot1", "cool1", "      ");
+  push("    end");
   push("  end");
 
   // THEIR treads: the drone, or player 2 on the arrows
@@ -202,7 +212,12 @@ function brainCode() {
   push("    end");
   push("  end");
   push("  if ai2 == 1 and stun2 == 0 then");
-  aiDrive("tank2", "tank1", "go2", "s2live", "s2a", "shot2", "cool2", "    ");
+  push("    if av2 > 0 then");
+  push("      set av2 to av2 - 1");
+  push(`      set go2 to ${AI_FWD / FWD}`);
+  push("    else");
+  aiDrive("tank2", "tank1", "go2", "s2live", "s2a", "shot2", "cool2", "      ");
+  push("    end");
   push("  end");
 
   // tank 1 moves — walls say no
@@ -212,7 +227,8 @@ function brainCode() {
   push(`  change tank1.y by sin(tank1.angle) * go1 * ${FWD}`);
   tankWalls("tank1", "tank2", "  ");
   push("  if ai1 == 1 and go1 != 0 and tank1.x == oldx and tank1.y == oldy then");
-  push("    change tank1.angle by 17");   // the drone noses along a wall
+  push("    set av1 to 40");              // blocked: back off the hunt...
+  push("    change tank1.angle by 9");    // ...and keep turning until free
   push("  end");
 
   // tank 2 moves
@@ -222,7 +238,8 @@ function brainCode() {
   push(`  change tank2.y by sin(tank2.angle) * go2 * ${FWD}`);
   tankWalls("tank2", "tank1", "  ");
   push("  if ai2 == 1 and go2 != 0 and tank2.x == oldx and tank2.y == oldy then");
-  push("    change tank2.angle by 17");
+  push("    set av2 to 40");
+  push("    change tank2.angle by 9");
   push("  end");
 
   // the MOTOR: a live rumble — deeper at idle, harder under way
@@ -305,6 +322,8 @@ function brainCode() {
     push(`${pad}set shot2.visible to 0`);
     push(`${pad}set stun1 to 0`);
     push(`${pad}set stun2 to 0`);
+    push(`${pad}set av1 to 0`);
+    push(`${pad}set av2 to 0`);
     push(`${pad}set timeleft to ${T}`);
     respawn("tank1", P1, pad);
     respawn("tank2", P2, pad);

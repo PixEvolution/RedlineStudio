@@ -93,6 +93,7 @@ export function renderScoreboard(mount, gameId, me) {
       });
     } catch (err) {
       console.warn("scoreboard:", err);
+      list.innerHTML = `<p class="hint">Couldn't load the table — if this is your site, make sure the newest security rules are published in the Firebase console.</p>`;
     }
   }
   refresh();
