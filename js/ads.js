@@ -20,7 +20,7 @@
 // farming is the #1 way arcade sites get banned from AdSense).
 
 export const AD_CONFIG = {
-  client: "",   // ← your AdSense publisher id, e.g. "ca-pub-1234567890123456"
+  client: "ca-pub-2208639648972390",   // RedlineStudio's AdSense publisher id
   slot: ""      // ← your responsive Display ad unit's id, e.g. "1234567890"
 };
 
@@ -30,7 +30,9 @@ let scriptAdded = false;
 export function renderAd(mount) {
   if (!AD_CONFIG.client || !AD_CONFIG.slot || typeof document === "undefined" || !mount) return false;
   try {
-    if (!scriptAdded) {
+    // pages carry the AdSense script in their <head> (that's also how the
+    // site is verified) — only inject it here if a page somehow lacks it
+    if (!scriptAdded && !document.querySelector('script[src*="adsbygoogle.js"]')) {
       scriptAdded = true;
       const s = document.createElement("script");
       s.async = true;
@@ -38,6 +40,7 @@ export function renderAd(mount) {
       s.crossOrigin = "anonymous";
       document.head.appendChild(s);
     }
+    scriptAdded = true;
     const box = document.createElement("div");
     box.className = "ad-box";
     const ins = document.createElement("ins");
