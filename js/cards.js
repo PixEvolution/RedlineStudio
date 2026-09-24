@@ -18,19 +18,22 @@ export function gameCard(g, { rootPath = "", showOwner = true } = {}) {
 
   const screen = g.screen;
   if (screen && screen.mode !== "none" && screen.objects?.length > 0) {
+    // the card's screen matches the game's own world size (default 480×360)
+    const w = Number(g.data?.w) || CANVAS_W;
+    const h = Number(g.data?.h) || CANVAS_H;
     const canvas = document.createElement("canvas");
-    canvas.width = CANVAS_W;
-    canvas.height = CANVAS_H;
+    canvas.width = w;
+    canvas.height = h;
     canvas.className = "card-screen";
     card.appendChild(canvas);
     if (screen.mode === "live" && liveCount < MAX_LIVE_CARDS) {
       liveCount++;
       // attract mode: the screen runs live but hears no input —
       // you can't play a game from its card
-      const eng = new Engine(canvas, screen.objects, { input: false });
+      const eng = new Engine(canvas, screen.objects, { input: false, w, h });
       eng.start();
     } else {
-      drawFrame(canvas.getContext("2d"), screen.objects);
+      drawFrame(canvas.getContext("2d"), screen.objects, { w, h });
     }
   }
 

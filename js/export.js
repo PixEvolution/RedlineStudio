@@ -16,7 +16,7 @@ function stripModules(source) {
 
 const BUNDLE_FILES = ["js/redscript.js", "js/engine.js", "js/touch-controls.js", "js/terminal.js", "js/casino-odds.js"];
 
-export async function buildStandaloneHtml({ title, objects }, { rootPath = "", fetchText } = {}) {
+export async function buildStandaloneHtml({ title, objects, w, h }, { rootPath = "", fetchText } = {}) {
   const get = fetchText || (async (path) => {
     const res = await fetch(rootPath + path);
     if (!res.ok) throw new Error("Couldn't read " + path);
@@ -27,7 +27,7 @@ export async function buildStandaloneHtml({ title, objects }, { rootPath = "", f
   for (const f of BUNDLE_FILES) sources.push(stripModules(await get(f)));
 
   // <, > and the closing script tag must never appear raw inside the JSON
-  const gameJson = JSON.stringify({ title, objects })
+  const gameJson = JSON.stringify({ title, objects, w, h })
     .replace(/</g, "\\u003c").replace(/>/g, "\\u003e");
   const safeTitle = String(title || "My Game").replace(/&/g, "&amp;").replace(/</g, "&lt;");
 
@@ -109,9 +109,12 @@ const GAME = ${gameJson};
 document.title = GAME.title || document.title;
 const _stage = document.getElementById("stage");
 const _canvas = document.getElementById("screen");
-// double-resolution glass: games keep drawing in 480×360, the screen holds 2×
-_canvas.width = 960; _canvas.height = 720;
+// the game's own world size (default = the classic 480×360), rendered at
+// double resolution so the glass stays crisp at any display size
+const _W = Number(GAME.w) || 480, _H = Number(GAME.h) || 360;
+_canvas.width = _W * 2; _canvas.height = _H * 2;
 _canvas.getContext("2d").setTransform(2, 0, 0, 2, 0, 0);
+_canvas.style.aspectRatio = _W + " / " + _H;
 const _overlay = document.getElementById("overlay");
 // fullscreen: real fullscreen where the browser allows it, and the stage
 // fills the window either way (works from file:// and on iPhones)
@@ -135,7 +138,7 @@ document.addEventListener("fullscreenchange", () => {
 
 document.getElementById("startbtn").addEventListener("click", () => {
   _overlay.remove();
-  const engine = new Engine(_canvas, GAME.objects || []);
+  const engine = new Engine(_canvas, GAME.objects || [], { w: _W, h: _H });
   if (engine.usesCasino()) attachCasinoLoop(engine, localWallet(100, 1000));  // offline = free play
   engine.start();
   if (isTouchDevice()) createTouchControls(engine, _stage);

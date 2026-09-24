@@ -115,6 +115,10 @@ export class Engine {
   constructor(canvas, sceneObjects, opts = {}) {
     this.canvas = canvas;
     this.inputEnabled = opts.input !== false;
+    // the game's world size — every game picks its own in the Studio;
+    // omitted = the original 480×360, so old games never change
+    this.w = Math.max(64, Math.round(Number(opts.w)) || CANVAS_W);
+    this.h = Math.max(64, Math.round(Number(opts.h)) || CANVAS_H);
     this.ctx = canvas ? canvas.getContext("2d") : null;
     this.objects = JSON.parse(JSON.stringify(sceneObjects || []));
     this.byName = {};
@@ -128,7 +132,7 @@ export class Engine {
     this.beeps = [];    // sounds played this session (tests read this)
     this.termLines = []; // the teletype: print writes here, drawFrame shows it
     this.lastAnswer = ""; // the last thing the player typed (answer() reads it)
-    this.mouse = { x: CANVAS_W / 2, y: CANVAS_H / 2 };
+    this.mouse = { x: this.w / 2, y: this.h / 2 };
     this.messages = [];
     this.effects = [];
     this.running = false;
@@ -158,9 +162,9 @@ export class Engine {
       if (!this.canvas) return;
       // Maps screen → game coords, including fullscreen letterboxing
       const r = this.canvas.getBoundingClientRect();
-      const scale = Math.min(r.width / CANVAS_W, r.height / CANVAS_H) || 1;
-      const ox = (r.width - CANVAS_W * scale) / 2;
-      const oy = (r.height - CANVAS_H * scale) / 2;
+      const scale = Math.min(r.width / this.w, r.height / this.h) || 1;
+      const ox = (r.width - this.w * scale) / 2;
+      const oy = (r.height - this.h * scale) / 2;
       this.mouse.x = (e.clientX - r.left - ox) / scale;
       this.mouse.y = (e.clientY - r.top - oy) / scale;
     };
@@ -601,7 +605,7 @@ export class Engine {
 
   render() {
     if (!this.ctx) return;
-    drawFrame(this.ctx, this.objects, { effects: this.effects, messages: this.messages, terminal: this.termLines });
+    drawFrame(this.ctx, this.objects, { effects: this.effects, messages: this.messages, terminal: this.termLines, w: this.w, h: this.h });
   }
 }
 
@@ -609,16 +613,16 @@ export class Engine {
 // Drawing (shared by engine + studio edit mode)
 // ---------------------------------------------------------------------------
 
-export function drawFrame(ctx, objects, { effects = [], messages = [], selectedIds = [], terminal = null } = {}) {
+export function drawFrame(ctx, objects, { effects = [], messages = [], selectedIds = [], terminal = null, w = CANVAS_W, h = CANVAS_H } = {}) {
   const now = performance.now();
 
   // CRT background
   ctx.save();
   ctx.fillStyle = "#03110a";
-  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+  ctx.fillRect(0, 0, w, h);
   ctx.globalAlpha = 0.05;
   ctx.fillStyle = "#39ff5e";
-  for (let y = 0; y < CANVAS_H; y += 4) ctx.fillRect(0, y, CANVAS_W, 1);
+  for (let y = 0; y < h; y += 4) ctx.fillRect(0, y, w, 1);
   ctx.globalAlpha = 1;
 
   // objects
@@ -703,12 +707,15 @@ export function drawFrame(ctx, objects, { effects = [], messages = [], selectedI
     ctx.fillStyle = "#b9ffcb";
     ctx.font = '20px "Courier New", monospace';
     ctx.textAlign = "center";
-    ctx.fillText(msg.text, CANVAS_W / 2, 40 + idx * 26);
+    ctx.fillText(msg.text, w / 2, 40 + idx * 26);
   });
 
   // the teletype: print output, latest lines at the bottom — 1973 on phosphor
   if (terminal && terminal.length > 0) {
-    const LINE_H = 15, MAX_LINES = 21, X = 14, Y0 = 26;
+    // the teletype grows with the screen: taller = more lines, wider = longer lines
+    const LINE_H = 15, X = 14, Y0 = 26;
+    const MAX_LINES = Math.max(4, Math.floor((h - 40) / LINE_H));   // 360 → the classic 21
+    const COLS = Math.max(20, Math.floor((w - 16) / 7.2));          // 480 → the classic 64
     const lines = terminal.slice(-MAX_LINES);
     ctx.font = '12px "Courier New", monospace';
     ctx.textAlign = "left";
@@ -716,7 +723,7 @@ export function drawFrame(ctx, objects, { effects = [], messages = [], selectedI
     ctx.shadowBlur = 4;
     ctx.fillStyle = "#8dffa9";
     lines.forEach((line, i) => {
-      ctx.fillText(String(line).slice(0, 64), X, Y0 + i * LINE_H);
+      ctx.fillText(String(line).slice(0, COLS), X, Y0 + i * LINE_H);
     });
     // a blinking cursor under the last line, like the real thing
     if (Math.floor(now / 500) % 2 === 0) {

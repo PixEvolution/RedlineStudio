@@ -18,12 +18,14 @@ const SIZES = [["S", "480px"], ["M", "640px"], ["L", "860px"], ["MAX", "none"]];
 const DEFAULT = "M";
 
 // Double the canvas's real pixels and scale the context to match, so games
-// keep drawing in 480×360 while the glass holds 960×720. setTransform (not
-// scale) keeps this safe to call any number of times on the same canvas.
-export function sharpenCanvas(canvas, k = 2) {
+// keep drawing in their own world coordinates (w×h, default 480×360) while
+// the glass holds twice that. setTransform (not scale) keeps this safe to
+// call any number of times on the same canvas — including when a game's
+// world size changes in the Studio.
+export function sharpenCanvas(canvas, k = 2, w = CANVAS_W, h = CANVAS_H) {
   if (!canvas) return;
-  canvas.width = CANVAS_W * k;
-  canvas.height = CANVAS_H * k;
+  canvas.width = w * k;
+  canvas.height = h * k;
   canvas.getContext("2d").setTransform(k, 0, 0, k, 0, 0);
 }
 

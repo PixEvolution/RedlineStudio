@@ -79,11 +79,12 @@
 
         const stage = document.createElement("div");
         stage.className = "stage";
+        // the game's own world size (older games have none = the classic 480×360)
+        const W = Number(game.data?.w) || CANVAS_W;
+        const H = Number(game.data?.h) || CANVAS_H;
         const canvas = document.createElement("canvas");
-        canvas.width = CANVAS_W;
-        canvas.height = CANVAS_H;
         canvas.className = "workspace-canvas";
-        sharpenCanvas(canvas);           // double-resolution glass — crisp at any size
+        sharpenCanvas(canvas, 2, W, H);  // double-resolution glass — crisp at any size
         stage.appendChild(canvas);
         mount.appendChild(stage);
 
@@ -111,12 +112,12 @@
         function startAttract() {
           if (attract || engine) return;
           if (game.screen && game.screen.mode === "live" && game.screen.objects?.length) {
-            attract = new Engine(canvas, game.screen.objects, { input: false });
+            attract = new Engine(canvas, game.screen.objects, { input: false, w: W, h: H });
             attract.start();
           } else if (game.screen && game.screen.mode !== "none" && game.screen.objects?.length) {
-            drawFrame(canvas.getContext("2d"), game.screen.objects);
+            drawFrame(canvas.getContext("2d"), game.screen.objects, { w: W, h: H });
           } else {
-            drawFrame(canvas.getContext("2d"), []);
+            drawFrame(canvas.getContext("2d"), [], { w: W, h: H });
           }
         }
 
@@ -143,7 +144,7 @@
           if (!engine) {
             if (occupied && data.snap) {
               if (attract) { attract.stop(); attract = null; }
-              drawFrame(canvas.getContext("2d"), snapToObjects(data.snap), { terminal: data.snap.term || [] });
+              drawFrame(canvas.getContext("2d"), snapToObjects(data.snap), { terminal: data.snap.term || [], w: W, h: H });
             } else if (!occupied) {
               startAttract();
             }
@@ -181,7 +182,7 @@
 
         function sitDown() {
           if (attract) { attract.stop(); attract = null; }
-          engine = new Engine(canvas, game.data?.objects || []);
+          engine = new Engine(canvas, game.data?.objects || [], { w: W, h: H });
           if (engine.errors.length) console.warn("Script issues:", engine.errors);
           const wallet = {
             coins: () => cachedCoins,
@@ -246,11 +247,12 @@
 
         const stage = document.createElement("div");
         stage.className = "stage";
+        // the game's own world size (older games have none = the classic 480×360)
+        const W = Number(game.data?.w) || CANVAS_W;
+        const H = Number(game.data?.h) || CANVAS_H;
         const canvas = document.createElement("canvas");
-        canvas.width = CANVAS_W;
-        canvas.height = CANVAS_H;
         canvas.className = "workspace-canvas";
-        sharpenCanvas(canvas);           // double-resolution glass — crisp at any size
+        sharpenCanvas(canvas, 2, W, H);  // double-resolution glass — crisp at any size
         stage.appendChild(canvas);
         mount.appendChild(stage);
 
@@ -281,12 +283,12 @@
         function startAttract() {
           if (attract || engine) return;
           if (hasScreen && screen.mode === "live") {
-            attract = new Engine(canvas, screen.objects, { input: false });
+            attract = new Engine(canvas, screen.objects, { input: false, w: W, h: H });
             attract.start();
           } else if (hasScreen) {
-            drawFrame(canvas.getContext("2d"), screen.objects);
+            drawFrame(canvas.getContext("2d"), screen.objects, { w: W, h: H });
           } else {
-            drawFrame(canvas.getContext("2d"), []);
+            drawFrame(canvas.getContext("2d"), [], { w: W, h: H });
           }
         }
 
@@ -312,7 +314,7 @@
           if (!engine) {
             if (occupied && data.snap) {
               if (attract) { attract.stop(); attract = null; }
-              drawFrame(canvas.getContext("2d"), snapToObjects(data.snap), { terminal: data.snap.term || [] });
+              drawFrame(canvas.getContext("2d"), snapToObjects(data.snap), { terminal: data.snap.term || [], w: W, h: H });
             } else if (!occupied) {
               startAttract();
             }
@@ -321,7 +323,7 @@
 
         function startGame() {
           if (attract) { attract.stop(); attract = null; }
-          engine = new Engine(canvas, game.data?.objects || []);
+          engine = new Engine(canvas, game.data?.objects || [], { w: W, h: H });
           engine.vars.arcade = 1;   // the coin door is handled out here
           if (engine.errors.length) console.warn("Script issues:", engine.errors);
           if (isTouchDevice()) controls = createTouchControls(engine, stage);

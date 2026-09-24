@@ -76,6 +76,17 @@
         <p class="hint" style="margin:6px 0 0">Waited this long? The line can vote to skip.</p>
       </div>
       <div>
+        <label for="g-size">Screen size</label>
+        <select id="g-size" class="blk-add" style="margin:0; width:100%">
+          <option value="480x360">480×360 · classic</option>
+          <option value="640x360">640×360 · wide</option>
+          <option value="800x600">800×600 · large</option>
+          <option value="960x540">960×540 · widescreen</option>
+          <option value="360x480">360×480 · portrait (phones)</option>
+        </select>
+        <p class="hint" style="margin:6px 0 0">Your game's whole world. Old games stay classic.</p>
+      </div>
+      <div>
         <label for="g-screenmode">Arcade screen</label>
         <select id="g-screenmode" class="blk-add" style="margin:0; width:100%">
           <option value="none">None</option>
@@ -209,6 +220,27 @@
     let blockEditor = null;
 
     const canvas = $("#workspace");
+
+    // ---------------------------------------------- the game's world size
+    // Lives on scenes.game (rides inside `data` when published); absent =
+    // the classic 480×360, so every old game keeps its screen forever.
+    const gameDims = () => ({ w: Number(scenes.game.w) || CANVAS_W, h: Number(scenes.game.h) || CANVAS_H });
+    function applyDims() {
+      const { w, h } = gameDims();
+      sharpenCanvas(canvas, 2, w, h);
+      const sel = $("#g-size");
+      if (sel) {
+        const val = w + "x" + h;
+        if (![...sel.options].some(o => o.value === val)) {
+          const opt = document.createElement("option");
+          opt.value = val;
+          opt.textContent = `${w}×${h} · custom`;
+          sel.appendChild(opt);
+        }
+        sel.value = val;
+      }
+      redraw();
+    }
     const titleInput = $("#g-title");
 
     // ------------------------------------------------------------ helpers
@@ -223,6 +255,7 @@
       $("#ws-hint").textContent = t === "screen"
         ? "Editing the ARCADE SCREEN — what players see on the card, before playing."
         : "Click an object to select it · drag to move · ▶ Test to play";
+      applyDims();
       select(null);
       renderExplorer(); redraw();
     }
@@ -238,7 +271,7 @@
 
     function redraw() {
       if (engine) return; // engine owns the canvas while testing
-      drawFrame(canvas.getContext("2d"), scene.objects, { selectedIds: selectedId ? [selectedId] : [] });
+      drawFrame(canvas.getContext("2d"), scene.objects, { selectedIds: selectedId ? [selectedId] : [], ...gameDims() });
       if (scene.objects.length === 0) {
         // a blank screen shouldn't be a mystery
         const ctx = canvas.getContext("2d");
@@ -246,10 +279,11 @@
         ctx.font = '14px "Courier New", monospace';
         ctx.textAlign = "center";
         ctx.fillStyle = "#3f7a52";
-        ctx.fillText(editTarget === "screen" ? "THIS IS YOUR ARCADE SCREEN" : "THIS IS YOUR GAME SCREEN", 240, 150);
+        const { w: hw, h: hh } = gameDims();
+        ctx.fillText(editTarget === "screen" ? "THIS IS YOUR ARCADE SCREEN" : "THIS IS YOUR GAME SCREEN", hw / 2, hh / 2 - 30);
         ctx.font = '12px "Courier New", monospace';
-        ctx.fillText("← add objects in the Explorer,", 240, 180);
-        ctx.fillText("or pick Load example… above and read how it works", 240, 198);
+        ctx.fillText("← add objects in the Explorer,", hw / 2, hh / 2);
+        ctx.fillText("or pick Load example… above and read how it works", hw / 2, hh / 2 + 18);
         ctx.restore();
       }
     }
@@ -303,7 +337,8 @@
     document.querySelectorAll("[data-add]").forEach(btn => {
       btn.addEventListener("click", () => {
         const type = btn.dataset.add;
-        const o = makeObject(type, uniqueName(type), CANVAS_W / 2, CANVAS_H / 2);
+        const d = gameDims();
+        const o = makeObject(type, uniqueName(type), d.w / 2, d.h / 2);
         scene.objects.push(o);
         select(o.id);
         renderExplorer(); redraw();
@@ -383,9 +418,10 @@
     function canvasPos(e) {
       // same letterbox-aware mapping the engine uses
       const r = canvas.getBoundingClientRect();
-      const scale = Math.min(r.width / CANVAS_W, r.height / CANVAS_H) || 1;
-      const ox = (r.width - CANVAS_W * scale) / 2;
-      const oy = (r.height - CANVAS_H * scale) / 2;
+      const d = gameDims();
+      const scale = Math.min(r.width / d.w, r.height / d.h) || 1;
+      const ox = (r.width - d.w * scale) / 2;
+      const oy = (r.height - d.h * scale) / 2;
       return { x: (e.clientX - r.left - ox) / scale, y: (e.clientY - r.top - oy) / scale };
     }
     canvas.addEventListener("pointerdown", (e) => {
@@ -418,7 +454,15 @@
     let testControls = null, testTerminal = null, testCasino = null;
     attachFullscreenButton($("#btn-fs"), $("#stage"));
     attachScreenSizeButton($("#btn-size"), $("#stage"));
-    sharpenCanvas($("#workspace"));   // double-resolution glass — crisp at any size
+    applyDims();   // double-resolution glass at the game's own size
+    $("#g-size").addEventListener("change", () => {
+      if (engine) { toast("Stop the test first.", true); applyDims(); return; }
+      const [w, h] = $("#g-size").value.split("x").map(Number);
+      if (w === CANVAS_W && h === CANVAS_H) { delete scenes.game.w; delete scenes.game.h; }
+      else { scenes.game.w = w; scenes.game.h = h; }
+      applyDims();
+      toast(`Screen is now ${w}×${h} — the whole world, Test to feel it.`);
+    });
     testBtn.addEventListener("click", () => {
       if (engine) {
         engine.stop(); engine = null;
@@ -430,7 +474,7 @@
         redraw();
         return;
       }
-      engine = new Engine(canvas, scene.objects);
+      engine = new Engine(canvas, scene.objects, gameDims());
       if (engine.errors.length) {
         toast("Script problems:\n" + engine.errors.slice(0, 4).join("\n"), true);
       }
@@ -499,6 +543,7 @@
       try {
         await downloadStandalone({
           title: titleInput.value.trim() || "My Game",
+          w: scenes.game.w, h: scenes.game.h,
           objects: JSON.parse(JSON.stringify(scenes.game.objects))
         }, "../");
         toast("Downloaded! One file, runs offline — upload it to itch.io as an HTML game.");
@@ -554,6 +599,7 @@
       // loads into whichever target you're editing — an example makes a great arcade screen too
       scenes[editTarget] = { objects: ex.objects };
       scene = scenes[editTarget];
+      applyDims();
       if (editTarget === "game") { editingId = null; titleInput.value = ex.title; }
       if (editTarget === "game" && !pageMode) { $("#g-type").value = EXAMPLES[pick].casino ? "casino" : "game"; syncTypeUi(); }
       if (editTarget === "game" && !pageMode) {
@@ -580,12 +626,16 @@
       const description = prompt("Describe it for the Market (buyers only see the picture + this):") || "";
       try {
         // snapshot the model — this image is all the Market ever shows of it
+        const { w: fw, h: fh } = gameDims();
         const full = document.createElement("canvas");
-        full.width = CANVAS_W; full.height = CANVAS_H;
-        drawFrame(full.getContext("2d"), objs);
+        full.width = fw; full.height = fh;
+        drawFrame(full.getContext("2d"), objs, { w: fw, h: fh });
         const small = document.createElement("canvas");
         small.width = 240; small.height = 180;
-        small.getContext("2d").drawImage(full, 0, 0, 240, 180);
+        const sctx = small.getContext("2d");
+        sctx.fillStyle = "#03110a"; sctx.fillRect(0, 0, 240, 180);
+        const sc = Math.min(240 / fw, 180 / fh);
+        sctx.drawImage(full, (240 - fw * sc) / 2, (180 - fh * sc) / 2, fw * sc, fh * sc);
         const thumb = small.toDataURL("image/jpeg", 0.75);
         await saveModel({ name, owner: user, objects: objs, description, thumb });
         toast(`Model "${name}" saved to your inventory.`);
