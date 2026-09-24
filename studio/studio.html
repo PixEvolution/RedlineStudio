@@ -34,6 +34,7 @@
           <option value="grantrak">Gran Trak 10 (1974)</option>
           <option value="tank">Tank (1974)</option>
           <option value="mazewar">Maze War (1974)</option>
+          <option value="mazewar2">Maze War Arena (1974, 4P online)</option>
           <option value="wumpus">Hunt the Wumpus (Map)</option>
           <option value="wumpus2">Hunt the Wumpus (Teletype)</option>
           <option value="slots">Redline Slots (casino)</option>
@@ -86,6 +87,11 @@
           <option value="360x480">360×480 · portrait (phones)</option>
         </select>
         <p class="hint" style="margin:6px 0 0">Your game's whole world. Old games stay classic.</p>
+      </div>
+      <div>
+        <label for="g-seats">Players (seats)</label>
+        <input type="number" id="g-seats" min="1" max="8" value="1">
+        <p class="hint" style="margin:6px 0 0">Seats at this machine — 2+ makes it an online multiplayer cabinet.</p>
       </div>
       <div>
         <label for="g-screenmode">Arcade screen</label>
@@ -180,6 +186,7 @@
     import { buildGrantrakExample } from "./example-grantrak.js";
     import { buildTankExample } from "./example-tank.js";
     import { buildMazewarExample } from "./example-mazewar.js";
+    import { buildMazewar2Example } from "./example-mazewar2.js";
     import { buildWumpusExample } from "./example-wumpus.js";
     import { buildWumpus2Example } from "./example-wumpus2.js";
     import { buildSlotsExample } from "./example-slots.js";
@@ -525,6 +532,7 @@
             casino: isCasino,
             unlisted: isUnlisted,
             hogmins: $("#g-hogmins").value,
+            seats: isCasino ? 1 : $("#g-seats").value,
             screen: { mode: $("#g-screenmode").value, objects: JSON.parse(JSON.stringify(scenes.screen.objects)) }
           };
           if (check.errors.length) toast("Published, but check scripts:\n" + check.errors.slice(0, 3).join("\n"), true);
@@ -569,6 +577,7 @@
         $("#g-type").value = "game";
         $("#g-public").value = "public";
         $("#g-hogmins").value = "15";
+        $("#g-seats").value = "1";
         syncTypeUi();
       }
       setTarget("game");
@@ -592,6 +601,7 @@
       grantrak: { build: buildGrantrakExample, screen: "live", tip: "Hit ▶ Test, press START. A/D steer, W gas, S brake, Q/E shift — launch in 1st and work up through the box; the high gears just lug from a stop." },
       tank: { build: buildTankExample, screen: "live", tip: "Hit ▶ Test, pick a mode. A/D turn, W/S drive, SPACE fire — one shell in the air, walls block shots, and the mines score for the ENEMY." },
       mazewar: { build: buildMazewarExample, screen: "live", tip: "Hit ▶ Test, press START. You're IN the maze — A/D turn, W/S move, SPACE fire. Red pupil = it's aiming at you. Built entirely from the new Line object." },
+      mazewar2: { build: buildMazewar2Example, screen: "live", seats: 4, tip: "The MULTIPLAYER one — publish with Players = 4 (set for you) and up to four humans hunt each other at one cabinet. Testing is solo: every eyeball is a real player." },
       wumpus:{ build: buildWumpusExample, screen: "static", tip: "Hit ▶ Test. Walk the lit rooms and hunt by ear — smell, drafts, bats. SHOOT mode fires into a tunnel." },
       wumpus2: { build: buildWumpus2Example, screen: "static", tip: "Hit ▶ Test. The 1973 original: type M or S, then a room number. Draw your map on paper!" },
       slots: { build: buildSlotsExample, screen: "live", casino: true, tip: "Hit ▶ Test for FREE PLAY. Publish to the Casino floor and fund the pool to open for business." }
@@ -607,7 +617,11 @@
       scene = scenes[editTarget];
       applyDims();
       if (editTarget === "game") { editingId = null; titleInput.value = ex.title; }
-      if (editTarget === "game" && !pageMode) { $("#g-type").value = EXAMPLES[pick].casino ? "casino" : "game"; syncTypeUi(); }
+      if (editTarget === "game" && !pageMode) {
+        $("#g-type").value = EXAMPLES[pick].casino ? "casino" : "game";
+        $("#g-seats").value = String(EXAMPLES[pick].seats || 1);
+        syncTypeUi();
+      }
       if (editTarget === "game" && !pageMode) {
         // every example ships with its arcade screen pre-made: a static snapshot
         // by default; the Atari coin-ops (Computer Space, Pong, Space Race)
@@ -727,6 +741,7 @@
             $("#g-type").value = g.casino ? "casino" : "game";
             $("#g-public").value = g.unlisted ? "unlisted" : "public";
             $("#g-hogmins").value = String(g.hogmins || 15);
+            $("#g-seats").value = String(g.seats || 1);
             syncTypeUi();
             setTarget("game");
             select(scene.objects[0]?.id || null);

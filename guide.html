@@ -29,7 +29,7 @@
       <b>every action on this page is also a block</b> (set, change, if, repeat, say, explode, beep, print, clear),
       and every event — including <span class="code">when answer</span> for text games — is in the block editor's
       event menu. Nothing needs typed code.</p>
-      <p>Fastest way to learn: in the Studio, use <b>Load example…</b> to open any of the 19 reference games — the whole prehistory of video
+      <p>Fastest way to learn: in the Studio, use <b>Load example…</b> to open any of the 20 reference games — the whole prehistory of video
       games, 1947–1974, plus Redline Slots for casino machines — click their objects, and read their scripts.
       Every one is built from the pieces on this page.</p>
     </div>
@@ -193,15 +193,19 @@ SPEND  playing coin games · buying Models · betting at the casino ·
 
     <div class="panel">
       <h2>The arcade floor</h2>
-      <p>Machines are physical: <b>one player per machine</b>. If someone's playing, the PLAY button
-      shows who, and you can <b>get in line</b> — when the seat frees, the front of the line sits first.
+      <p>Machines are physical, and every game declares how many <b>seats</b> it has (1–8, set in the Studio).
+      A one-seat game is the classic cabinet; a multi-seat game is a little server in arcade clothes — walk up
+      and take any empty seat, like Roblox with a coin slot. The line only forms once <b>every</b> seat is full,
+      and when one frees, the front of the line sits first.
       While you wait you see a <b>🔴 LIVE window</b> onto their screen — several frames a second over the
       platform's live wire (if the wire hiccups it quietly falls back to a snapshot every few seconds) —
       and every machine has its own <b>chat</b>, so the line can talk trash like a real arcade. Walk away or close the tab and your seat frees itself after a few seconds.
       This works on every game and every casino machine automatically — nothing to build.</p>
       <p><b>Turns.</b> On a game with a proper ending (the coin slot comes back when your play is over),
       finishing your play while people are waiting sends you to the <b>back of the line</b> — one play
-      per turn, like a real cabinet. On endless games and casino machines you can sit as long as you
+      per turn, like a real cabinet. On a full multi-seat machine the vote-to-skip aims at the player
+      who's been seated the <b>longest</b>, and votes evaporate whenever that player changes — so a fresh
+      player can never be ganged up on. On endless games and casino machines you can sit as long as you
       like — but the line has rights, <b>earned by waiting</b>: stand in line long enough under the
       current player and you can <b>ask them to wrap up</b> (the machine announces it in chat). How long
       is "long enough"? <b>The game's maker decides</b> — every game sets its own <b>line patience</b>
@@ -288,11 +292,20 @@ netev          a counter: change it by 1 to send a pulse (a hit, a tag) —
                it arrives on their side as foeev
 duel           1 while an opponent is connected, 0 otherwise
 netslot        1 = the machine's player · 2 = the challenger (pick spawn corners with it)</pre>
-      <p>A game that <b>sets net1</b> and <b>reads foe1</b> "speaks net": its page grows a <b>⚔ DUEL</b> button,
-      and while someone's playing, a second player can pay their coin and join as the challenger. Design rule of
-      thumb: simulate <i>your own</i> player, draw the opponent wherever <span class="code">foe1/foe2</span> says,
-      and when duel is 0 fall back to your robot. In the Studio you always test solo (duel stays 0). Load
-      <b>Maze War (1974)</b> and read its duel block — eyeball #1 becomes the human whenever one connects.</p>
+      <p>A game that <b>sets net1</b> and <b>reads foe1</b> "speaks net": on a 1-seat machine its page grows a
+      <b>⚔ DUEL</b> button so a second player can pay their coin and challenge. Give the game <b>2–8 seats</b>
+      in the Studio instead and it becomes a true multiplayer cabinet: everyone who sits shares one room, and
+      the extended contract carries every seat —</p>
+      <pre class="codeblock">fon[s]          1 while seat s has a live player
+f1[s] … f6[s]   seat s's net1…net6, arriving live
+fev[s]          seat s's event counter
+pcount          live players in the room, including you
+set nettgt to s + change netev by 1   →   seat s's `hits` var goes up by 1
+hits            how many times other players have hit YOU (respawn on change)</pre>
+      <p>Design rule of thumb: simulate <i>your own</i> player, draw the others wherever their
+      <span class="code">f1[s]/f2[s]</span> says, and never move anyone else. In the Studio you always test solo.
+      Load <b>Maze War (1974)</b> for the 2-player duel pattern, or <b>Maze War Arena (1974)</b> for the full
+      4-seat, humans-only version.</p>
       <p><b>Models</b> — check objects → "Save checked as Model." Models keep their scripts, live in your inventory,
       insert into any game fully editable, and can be sold on the Market for free or coins. The <b>Page Studio</b>
       (from your profile: 🎨 Edit my page) is the same editor pointed at your profile page.</p>

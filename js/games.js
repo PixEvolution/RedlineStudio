@@ -16,7 +16,7 @@ const GAMES = "games";
 // `price` = coins to insert per play (0 = free, arcade style).
 // `screen` = the attract screen shown on the card and before playing:
 //            { mode: "none"|"static"|"live", objects: [...] }
-export async function publishGame({ title, owner, data, engine = "v1", description = "", price = 0, screen = null, casino = false, unlisted = false, hogmins = 15 }) {
+export async function publishGame({ title, owner, data, engine = "v1", description = "", price = 0, screen = null, casino = false, unlisted = false, hogmins = 15, seats = 1 }) {
   if (!title || title.trim().length === 0) throw new Error("Your game needs a title.");
   if (title.length > 40) throw new Error("Title must be 40 characters or less.");
 
@@ -25,6 +25,7 @@ export async function publishGame({ title, owner, data, engine = "v1", descripti
     ...(casino ? { casino: true, pool: 0 } : {}),   // casino machines carry a coin pool
     unlisted: !!unlisted,                            // unlisted = saved but off the public pages
     hogmins: Math.max(1, Math.min(120, Math.floor(Number(hogmins) || 15))),   // line patience (minutes)
+    seats: casino ? 1 : Math.max(1, Math.min(8, Math.floor(Number(seats) || 1))),   // players at once (multi-seat machines)
     version: 1,           // game format version — bump when the studio evolves
     engine,               // which engine/player understands this game
     title: title.trim(),
@@ -41,7 +42,7 @@ export async function publishGame({ title, owner, data, engine = "v1", descripti
 }
 
 // Overwrite an existing game with new content (republish/update).
-export async function updateGame(gameId, { title, data, engine, description, price, screen, casino, unlisted, hogmins }) {
+export async function updateGame(gameId, { title, data, engine, description, price, screen, casino, unlisted, hogmins, seats }) {
   await updateDoc(doc(db, GAMES, gameId), {
     ownerUid: auth.currentUser?.uid || null,   // stamps legacy games on their next save
     ...(title !== undefined ? { title: title.trim() } : {}),
@@ -50,6 +51,7 @@ export async function updateGame(gameId, { title, data, engine, description, pri
     ...(casino !== undefined ? { casino: !!casino } : {}),
     ...(unlisted !== undefined ? { unlisted: !!unlisted } : {}),
     ...(hogmins !== undefined ? { hogmins: Math.max(1, Math.min(120, Math.floor(Number(hogmins) || 15))) } : {}),
+    ...(seats !== undefined ? { seats: Math.max(1, Math.min(8, Math.floor(Number(seats) || 1))) } : {}),
     ...(description !== undefined ? { description: String(description || "").slice(0, 200) } : {}),
     ...(price !== undefined ? { price: cleanPrice(price) } : {}),
     ...(screen !== undefined ? { screen: cleanScreen(screen) } : {}),

@@ -43,7 +43,8 @@
     import { attachTerminalInput } from "./js/terminal.js";
     import { attachCasinoLoop } from "./js/casino-odds.js";
     import { spinMachine, fundMachine, collectPool } from "./js/casino.js";
-    import { createFloor, renderFloorPanel, seatTakenBy, snapFromEngine, snapToObjects, clampHogMins } from "./js/floor.js";
+    import { createFloor, renderFloorPanel, seatTakenBy, isSeated, freeSlot, seatedPlayers, snapFromEngine, snapToObjects, clampHogMins, clampSeats } from "./js/floor.js";
+    import { attachParty } from "./js/party.js";
     import { submitScore, renderScoreboard } from "./js/scores.js";
     import { sharpenCanvas, attachScreenSizeButton } from "./js/screen-size.js";
 
@@ -322,13 +323,18 @@
           }
         }
 
-        // the floor: one player per cabinet; everyone else watches the window
+        const seats = clampSeats(game.seats);
+
+        // the floor: N seats per cabinet; everyone not seated watches the window
         if (floorCtl) floorCtl.onChange((data) => {
           const holder = seatTakenBy(data);
-          const occupied = holder && holder !== me;
+          const meSeated = me && isSeated(data, me);
+          const isFull = freeSlot(data, Date.now(), seats) === 0;
+          const nSeated = seatedPlayers(data).length;
+          const occupied = holder && !meSeated;   // someone's playing and it isn't me
           // voted off (or seat lost): the machine takes the game back
           // (a duelist never held the seat, so seat changes don't end them)
-          if (engine && me && !isDuelist && data && data.player !== me) {
+          if (engine && me && !isDuelist && data && !meSeated) {
             if (watcher) { clearInterval(watcher); watcher = null; }
             engine.stop(); engine = null;
             livePub.stop();
@@ -341,12 +347,20 @@
             return;
           }
           if (gateBtn) {
-            if (occupied) { gateBtn.disabled = true; gateBtn.textContent = `🕹 ${holder} IS PLAYING`; }
-            else if (gateBtn.dataset.busy !== "1") { gateBtn.disabled = false; gateBtn.textContent = gateLabel; }
+            if (isFull && !meSeated) {
+              gateBtn.disabled = true;
+              gateBtn.textContent = seats > 1 ? `🕹 FULL — ${nSeated}/${seats} PLAYING` : `🕹 ${holder} IS PLAYING`;
+            } else if (gateBtn.dataset.busy !== "1") {
+              gateBtn.disabled = false;
+              gateBtn.textContent = (seats > 1 && nSeated > 0 && !meSeated)
+                ? `${gateLabel} — JOIN ${nSeated}/${seats}`
+                : gateLabel;
+            }
           }
-          // a net-speaking machine with someone playing = a duel on offer
+          // guest duels are the 1-seat machines' trick; multi-seat games
+          // just have more seats — sit down instead
           duelBtn.style.display =
-            (duelable && duelAvailable() && me && occupied && !engine) ? "" : "none";
+            (seats === 1 && duelable && duelAvailable() && me && occupied && !engine) ? "" : "none";
           if (!engine) {
             if (occupied) {
               // 🔴 LIVE: the fast feed, with the slow snapshot as fallback
@@ -411,10 +425,21 @@
           term = attachTerminalInput(engine, stage);   // text adventures get their keyboard
           engine.start();
           if (floorCtl) floorCtl.startBeating(() => engine ? snapFromEngine(engine) : null);
-          livePub.start(() => engine ? snapFromEngine(engine) : null);   // 🔴 LIVE for the watchers
+          // 🔴 LIVE for the watchers — the cabinet shows the PRIMARY's screen
+          livePub.start(() => {
+            if (!engine) return null;
+            const prim = floorCtl && floorCtl.primary();
+            if (prim && prim !== me) return null;
+            return snapFromEngine(engine);
+          });
           if (duelable && me) {
-            attachDuel(engine, game.id, me, auth.currentUser?.uid, "host")
-              .then((c) => { duelCtl = c; }).catch(() => {});
+            if (seats > 1) {
+              duelCtl = attachParty(engine, game.id, me, auth.currentUser?.uid,
+                (floorCtl && floorCtl.mySlot()) || 1, seats);
+            } else {
+              attachDuel(engine, game.id, me, auth.currentUser?.uid, "host")
+                .then((c) => { duelCtl = c; }).catch(() => {});
+            }
           }
           if (me !== game.owner) countPlay(game.id);   // your own plays don't count
           hint.textContent = isTouchDevice()
@@ -542,7 +567,8 @@
         ` · ${game.plays || 0} plays · published ${fmtDate(game.createdAt)}` +
         (Number(game.price) > 0 ? ` · ◎ ${game.price} per play` : "") +
         (game.casino ? ` · 🎰 pool ◎ ${Number(game.pool) || 0}` : "") +
-        (game.engine === "v1" || game.casino ? ` · ⏳ line patience: ${clampHogMins(game.hogmins)} min` : "")));
+        (game.engine === "v1" || game.casino ? ` · ⏳ line patience: ${clampHogMins(game.hogmins)} min` : "") +
+        (clampSeats(game.seats) > 1 && !game.casino ? ` · 👥 ${clampSeats(game.seats)} seats` : "")));
       if (game.description) {
         const d = document.createElement("p");
         d.className = "page-sub";
@@ -552,7 +578,7 @@
       }
 
       if (game.engine === "v1" || game.casino) {
-        floorCtl = createFloor(id, currentUser(), { hogMs: clampHogMins(game.hogmins) * 60000 });
+        floorCtl = createFloor(id, currentUser(), { hogMs: clampHogMins(game.hogmins) * 60000, seats: clampSeats(game.casino ? 1 : game.seats) });
         renderFloorPanel(document.getElementById("game-floor"), floorCtl, currentUser());
         window.addEventListener("pagehide", () => floorCtl.leaveBeacon());
       }

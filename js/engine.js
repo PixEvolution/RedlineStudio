@@ -396,13 +396,15 @@ export class Engine {
     return setsSpin && readsResult;
   }
 
-  // Does this game speak the NET contract? (sets `net1` AND reads `foe1`.)
-  // Its page grows a ⚔ DUEL button so a second human can join over the wire.
+  // Does this game speak the NET contract? (sets `net1` AND reads the
+  // opponent state — `foe1` for duels, or the `f1`/`fon` lists for
+  // multi-seat rooms.) Net games get other humans wired in when they sit.
   usesDuel() {
     let setsNet = false, readsFoe = false;
     const walkExpr = (x) => {
       if (!x || typeof x !== "object") return;
       if (x.e === "var" && x.n === "foe1") readsFoe = true;
+      if (x.e === "index" && (x.n === "f1" || x.n === "fon")) readsFoe = true;
       for (const f of ["a", "b", "i"]) walkExpr(x[f]);
       (x.args || []).forEach(walkExpr);
     };
