@@ -927,3 +927,22 @@ a.nav-username:hover { border-color: var(--red); color: #fff; }
   -webkit-line-clamp: unset;
   overflow: visible;
 }
+
+/* ★ HIGH SCORES — the leaderboard on games with points and a real end */
+.scoreboard h3 { margin: 0 0 10px; }
+.score-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+.score-row:last-child { border-bottom: none; }
+.score-rank { width: 30px; text-align: center; color: var(--text-dim); }
+.score-row:nth-child(-n+3) .score-rank { font-size: 16px; }
+.score-name { flex: 1; color: var(--text); text-decoration: none; }
+.score-name:hover { color: #ff8f8c; }
+.score-pts { font-weight: 700; letter-spacing: 0.5px; }
+.score-row.mine { background: rgba(229, 50, 45, 0.10); border-radius: 6px; }
+.score-row.mine .score-name { color: #ff8f8c; }

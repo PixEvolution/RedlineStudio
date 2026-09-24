@@ -141,6 +141,7 @@ function brainCode() {
 
   push('set ltx.text to "" + lscore');
   push('set rtx.text to "" + rscore');
+  push("set score to lscore");   // the reserved var → the HIGH SCORES table (left seat)
 
   // THE SPACE RACE MECHANIC: the coin bought time — the center bar IS the
   // quarter draining away, from the top down

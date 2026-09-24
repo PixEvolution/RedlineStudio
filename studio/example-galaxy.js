@@ -322,6 +322,7 @@ function brainCode() {
   push("  end");
   // the coin timer
   push("  set ticksleft to ticksleft - 1");
+  push("  set score to pscore");   // the reserved var → the HIGH SCORES table
   push('  set self.text to "YOU " + pscore + " — " + sscore + " SAUCERS     TIME " + floor(ticksleft / 60)');
   push("  if ticksleft <= 0 then");
   // 1971's masterstroke: beat the machine, get a free game

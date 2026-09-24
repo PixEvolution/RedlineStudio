@@ -392,6 +392,21 @@ export class Engine {
     return setsSpin && readsResult;
   }
 
+  // Does this game earn a HIGH SCORES table? (counts the reserved var `score`
+  // AND declares its plays over with `endplay`.) Points + an actual end.
+  usesScoreboard() {
+    let setsScore = false, setsEnd = false;
+    const walkStmts = (list) => (list || []).forEach(s => {
+      if ((s.k === "set" || s.k === "change") && s.lhs?.kind === "var") {
+        if (s.lhs.name === "score") setsScore = true;
+        if (s.lhs.name === "endplay") setsEnd = true;
+      }
+      walkStmts(s.then); walkStmts(s.else); walkStmts(s.body);
+    });
+    for (const c of this.compiled) for (const ev of c.events) walkStmts(ev.body);
+    return setsScore && setsEnd;
+  }
+
   resolveObj(name, self) {
     if (name === "self") return self;
     return this.byName[name] || null;

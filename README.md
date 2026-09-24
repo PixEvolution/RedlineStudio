@@ -29,6 +29,7 @@ A game platform by Redline Digital — players make accounts, build games in the
 | `js/terminal.js` | The teletype input row for text-adventure games |
 | `js/casino-odds.js` | THE HOUSE RULES — fixed public odds (92% RTP) + the casino loop |
 | `js/casino.js` | Casino money: atomic spin/fund/collect transactions on machine pools |
+| `js/scores.js` | ★ High scores: personal-best leaderboards on games with points + an end |
 | `js/floor-rules.js` | The arcade floor's pure rules: seats, staleness, the line, snapshots |
 | `js/floor.js` | The arcade floor live: one player per machine, queue, watch window, chat |
 | `js/ui.js` | Shared nav bar, toasts, helpers |

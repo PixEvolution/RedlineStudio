@@ -22,6 +22,7 @@
          so old games always work as the studio evolves. -->
     <div class="game-frame" id="frame"></div>
     <div id="game-floor" style="margin-top:14px"></div>
+    <div id="game-scores" style="margin-top:14px"></div>
     <div id="game-votes" style="margin-top:14px"></div>
     <div id="game-comments" style="margin-top:10px"></div>
   </main>
@@ -39,6 +40,7 @@
     import { attachCasinoLoop } from "./js/casino-odds.js";
     import { spinMachine, fundMachine, collectPool } from "./js/casino.js";
     import { createFloor, renderFloorPanel, seatTakenBy, snapFromEngine, snapToObjects, clampHogMins } from "./js/floor.js";
+    import { submitScore, renderScoreboard } from "./js/scores.js";
 
     renderNav("");
 
@@ -47,6 +49,7 @@
     const metaEl = document.getElementById("game-meta");
 
     let floorCtl = null;   // the machine's seat (set once the game loads)
+    let scoreCtl = null;   // the HIGH SCORES table (games with points + an end)
     const blockMsg = (b) => b.reason === "login" ? "Log in to play."
       : b.reason === "occupied" ? `${b.by} is playing this machine — get in line below.`
       : b.reason === "line" ? `There's a line — ${b.next} is up next. Get in line below.`
@@ -321,11 +324,19 @@
           // the arcade contract: endplay = 1 means this play is spent
           watcher = setInterval(() => {
             if (engine && Number(engine.vars.endplay) === 1) {
+              const finalScore = Math.floor(Number(engine.vars.score) || 0);
               clearInterval(watcher); watcher = null;
               engine.stop(); engine = null;
               if (controls) { controls.destroy(); controls = null; }
               if (term) { term.destroy(); term = null; }
               showGate(true);
+              // the HIGH SCORES table: a finished play posts your best
+              if (scoreCtl && me && finalScore > 0) {
+                submitScore(game.id, me, finalScore).then((r) => {
+                  if (r?.improved) toast(`★ New personal best: ${finalScore}`);
+                  scoreCtl.refresh();
+                }).catch(() => {});
+              }
               // arcade etiquette: play's over and people are waiting →
               // back of the line (no line = keep your seat, play again)
               if (floorCtl && floorCtl.line().length > 0) {
@@ -423,6 +434,12 @@
         floorCtl = createFloor(id, currentUser(), { hogMs: clampHogMins(game.hogmins) * 60000 });
         renderFloorPanel(document.getElementById("game-floor"), floorCtl, currentUser());
         window.addEventListener("pagehide", () => floorCtl.leaveBeacon());
+      }
+
+      // HIGH SCORES: any game with points and a real end gets the table
+      if (game.engine === "v1" && !game.casino
+          && new Engine(null, game.data?.objects || []).usesScoreboard()) {
+        scoreCtl = renderScoreboard(document.getElementById("game-scores"), id, currentUser());
       }
 
       const render = game.casino ? renderers.casino : (renderers[game.engine] || renderers.v0);

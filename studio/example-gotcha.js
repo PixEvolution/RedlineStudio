@@ -177,6 +177,7 @@ function brainCode() {
   push("end");
 
   push('set scoretx.text to "CATCHES " + catches');
+  push("set score to catches");   // the reserved var → the HIGH SCORES table
   push('set timetx.text to "TIME " + max(0, floor(timeleft / 60))');
 
   push("if game == 0 then");

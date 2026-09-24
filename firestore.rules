@@ -12,8 +12,14 @@ rules_version = '2';
 //   · other players can only ever ADD coins to your account, never take
 //   · new accounts start with exactly 100 coins; new machines with an empty pool
 //   · the arcade floor (seats) is shared by design, login required to write
-// Known, accepted limit of a serverless design: a technical user can still
-// inflate their OWN coin balance. Coins are free and can't cash out.
+//   · COINS CANNOT BE MINTED: a balance can only rise by the daily +100
+//     (server-checked date), by another player paying you, or by coins that
+//     verifiably LEFT a machine's pool in the same transaction (conservation,
+//     enforced with getAfter). Every coin traces to a legitimate source.
+// Known, accepted limit of a serverless design: a technical user could still
+// cheat the ODDS against a machine's funded pool (coins conserve — it's
+// bounded by what the pool holds and visible to everyone). Closing that
+// needs server-side spins (Cloud Functions) someday.
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -23,6 +29,9 @@ service cloud.firestore {
     }
     function changedKeys() {
       return request.resource.data.diff(resource.data).affectedKeys();
+    }
+    function utcToday() {
+      return string(request.time.year()) + '-' + string(request.time.month()) + '-' + string(request.time.day());
     }
 
     // ------------------------------------------------------------- users
@@ -38,16 +47,35 @@ service cloud.firestore {
         && request.resource.data.coins == 100;
 
       allow update: if signedIn() && (
-        // the account owner — identity fields stay frozen
-        (resource.data.uid == request.auth.uid
-          && request.resource.data.uid == resource.data.uid
-          && request.resource.data.username == resource.data.username)
         // a v1 account upgrading itself: no uid yet, gains this login's
-        || (!('uid' in resource.data)
-            && request.resource.data.uid == request.auth.uid)
-        // everyone else: paying coins and voting ONLY — coins only go up
-        || (changedKeys().hasOnly(['coins', 'votes', 'likes', 'dislikes'])
-            && request.resource.data.coins >= resource.data.coins)
+        (!('uid' in resource.data)
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.username == resource.data.username)
+        // the account owner — identity frozen, and coins NEVER self-minted:
+        || (resource.data.get('uid', '') == request.auth.uid
+          && request.resource.data.uid == resource.data.uid
+          && request.resource.data.username == resource.data.username
+          && (
+            // spending or neutral — a balance may always go down or stay
+            request.resource.data.get('coins', 0) <= resource.data.get('coins', 0)
+            // the daily claim: exactly +100, dated TODAY (server clock), once
+            || (changedKeys().hasOnly(['coins', 'lastDaily'])
+                && request.resource.data.get('coins', 0) == resource.data.get('coins', 0) + 100
+                && request.resource.data.lastDaily == utcToday()
+                && resource.data.get('lastDaily', '') != utcToday())
+            // a casino payout: every coin gained here verifiably LEFT the
+            // machine's pool in this same transaction — conservation
+            || ('lastSpin' in request.resource.data
+                && changedKeys().hasOnly(['coins', 'lastSpin'])
+                && request.resource.data.lastSpin.game is string
+                && getAfter(/databases/$(database)/documents/games/$(request.resource.data.lastSpin.game)).data.pool
+                   == get(/databases/$(database)/documents/games/$(request.resource.data.lastSpin.game)).data.pool
+                      - (request.resource.data.get('coins', 0) - resource.data.get('coins', 0)))
+          ))
+        // everyone else: paying coins IN and voting only — coins only go up
+        || (resource.data.get('uid', '') != request.auth.uid
+            && changedKeys().hasOnly(['coins', 'votes', 'likes', 'dislikes'])
+            && request.resource.data.get('coins', 0) >= resource.data.get('coins', 0))
       );
 
       allow delete: if false;
@@ -66,15 +94,26 @@ service cloud.firestore {
         // the play counter: anyone, even logged out
         changedKeys().hasOnly(['plays'])
         || (signedIn() && (
-          // the owner
+          // the owner — everything EXCEPT conjuring pool coins
           (resource.data.ownerUid == request.auth.uid
-            && request.resource.data.ownerUid == request.auth.uid)
+            && request.resource.data.ownerUid == request.auth.uid
+            && request.resource.data.get('pool', 0) == resource.data.get('pool', 0))
           // a pre-rules game being saved: it gets stamped with this login
           || (!('ownerUid' in resource.data)
-              && request.resource.data.ownerUid == request.auth.uid)
-          // other players: voting + casino spins (pool moves, never below zero)
-          || (changedKeys().hasOnly(['votes', 'likes', 'dislikes', 'pool'])
-              && request.resource.data.get('pool', 0) >= 0)
+              && request.resource.data.ownerUid == request.auth.uid
+              && request.resource.data.get('pool', 0) == resource.data.get('pool', 0))
+          // voting
+          || changedKeys().hasOnly(['votes', 'likes', 'dislikes'])
+          // POOL MOVES (spins, funding, collecting) — conservation only:
+          // every coin entering or leaving this pool verifiably leaves or
+          // enters the named player's balance in this same transaction
+          || ('lastSpin' in request.resource.data
+              && changedKeys().hasOnly(['pool', 'lastSpin'])
+              && request.resource.data.get('pool', 0) >= 0
+              && request.resource.data.lastSpin.user is string
+              && getAfter(/databases/$(database)/documents/users/$(request.resource.data.lastSpin.user)).data.coins
+                 == get(/databases/$(database)/documents/users/$(request.resource.data.lastSpin.user)).data.coins
+                    + (resource.data.get('pool', 0) - request.resource.data.get('pool', 0)))
         ));
 
       allow delete: if signedIn()
@@ -152,6 +191,29 @@ service cloud.firestore {
     match /seats/{gameId} {
       allow read: if true;
       allow create, update: if signedIn();
+      allow delete: if false;
+    }
+
+    // ------------------------------------------------ high-score tables
+    // One row per player per game — their personal best. The row's id must
+    // be the writer's OWN account doc (so one player = one slot), the name
+    // on it must be their real username, and a best can only improve.
+    // (Like the casino odds, the score VALUE is reported by the player's
+    // browser — but nobody can ever touch anyone else's row.)
+    match /scores/{gameId}/entries/{entryId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && get(/databases/$(database)/documents/users/$(entryId)).data.uid == request.auth.uid
+        && request.resource.data.user == get(/databases/$(database)/documents/users/$(entryId)).data.username
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.score is number
+        && request.resource.data.score >= 0;
+      allow update: if signedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.user == resource.data.user
+        && request.resource.data.score is number
+        && request.resource.data.score > resource.data.score;
       allow delete: if false;
     }
 
