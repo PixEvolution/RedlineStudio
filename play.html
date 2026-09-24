@@ -256,7 +256,7 @@
       // and if the game declares the play over (reserved var `endplay` = 1),
       // the coin slot comes back — the next play costs another coin. Games see
       // reserved var `arcade` = 1 so they can skip their own insert-coin screens.
-      v1(game, mount) {
+      async v1(game, mount) {
         mount.innerHTML = "";
         mount.style.display = "block";
 
@@ -545,8 +545,19 @@
           });
         }
 
-        if (!hasScreen && price === 0) startGame();
-        else showGate(false);
+        if (!hasScreen && price === 0) {
+          // even without a coin gate, the seat comes first — the wire hands
+          // out net seats by floor slot, and the floor shows who's playing
+          if (floorCtl && me) {
+            const block = await floorCtl.sit();
+            if (block) { toast(blockMsg(block), true); showGate(false); }
+            else startGame();
+          } else {
+            startGame();
+          }
+        } else {
+          showGate(false);
+        }
       }
     };
 

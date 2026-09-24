@@ -57,6 +57,9 @@ export function createFloor(gameId, me, { hogMs = HOG_MS, seats = 1 } = {}) {
     return os.exists() ? { otherRef, otherData: os.data() } : { otherRef: null, otherData: null };
   };
   let state = null;
+  let mySeatSlot = 0;     // the slot my last successful sit() took — the live
+                          // snapshot lags a beat behind the transaction, and
+                          // the game wires its net seat the instant play starts
   let ready = false;      // true once the first snapshot has arrived
   let listeners = [];
   let beatTimer = null;
@@ -105,7 +108,7 @@ export function createFloor(gameId, me, { hogMs = HOG_MS, seats = 1 } = {}) {
     full() { return freeSlot(state, Date.now(), seats) === 0; },
     mySlot() {
       const p = seatedPlayers(state).find(x => x.user === me);
-      return p ? p.slot : 0;
+      return p ? p.slot : mySeatSlot;   // snapshot first, my own sit() second
     },
     line() { return liveQueue(state); },
     onChange(fn) { listeners.push(fn); if (ready) { try { fn(state); } catch {} } },
@@ -113,8 +116,9 @@ export function createFloor(gameId, me, { hogMs = HOG_MS, seats = 1 } = {}) {
     // take a seat (atomically). Returns null on success, or the blocker.
     async sit() {
       if (!me) return { reason: "login" };
+      let taken = 0;
       try {
-        return await runTransaction(db, async (tx) => {
+        const res = await runTransaction(db, async (tx) => {
           const elsewhere = await readElsewhere(tx);
           const s = await tx.get(ref);
           const data = s.exists() ? s.data() : {};
@@ -130,6 +134,7 @@ export function createFloor(gameId, me, { hogMs = HOG_MS, seats = 1 } = {}) {
             since: already ? already.since : now,   // re-sitting never resets the hog clock
             slot: already ? already.slot : freeSlot(data, now, seats)
           };
+          taken = players[me].slot;
           const pruned = pruneLine(data, now);
           delete pruned.qbeat[me];
           delete pruned.qsince[me];
@@ -141,6 +146,8 @@ export function createFloor(gameId, me, { hogMs = HOG_MS, seats = 1 } = {}) {
           });
           return null;
         });
+        if (res === null) mySeatSlot = taken;   // my seat is known BEFORE the snapshot echoes
+        return res;
       } catch (err) { return { reason: "error", message: err.message }; }
     },
 
@@ -173,6 +180,7 @@ export function createFloor(gameId, me, { hogMs = HOG_MS, seats = 1 } = {}) {
 
     async leave() {
       floor.stopBeating();
+      mySeatSlot = 0;
       if (!me) return;
       try {
         await runTransaction(db, async (tx) => {
@@ -192,6 +200,7 @@ export function createFloor(gameId, me, { hogMs = HOG_MS, seats = 1 } = {}) {
     leaveBeacon() {
       floor.stopBeating();
       stopLineBeat();
+      mySeatSlot = 0;
       if (!state || !me) return;
       if (isSeated(state, me) || (state.queue || []).includes(me)) {
         setDoc(ref, releaseFrom(state, me)).catch(() => {});
@@ -291,6 +300,7 @@ export function createFloor(gameId, me, { hogMs = HOG_MS, seats = 1 } = {}) {
     // your seat frees and you go to the BACK of the line
     async rotateToBack() {
       floor.stopBeating();
+      mySeatSlot = 0;
       if (!me) return false;
       try {
         return await runTransaction(db, async (tx) => {
