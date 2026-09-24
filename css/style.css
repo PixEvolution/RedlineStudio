@@ -946,3 +946,8 @@ a.nav-username:hover { border-color: var(--red); color: #fff; }
 .score-pts { font-weight: 700; letter-spacing: 0.5px; }
 .score-row.mine { background: rgba(229, 50, 45, 0.10); border-radius: 6px; }
 .score-row.mine .score-name { color: #ff8f8c; }
+
+/* ---------- ads (bottom of page only, never near the screen) ---------- */
+.ad-box { margin: 30px auto 0; max-width: 728px; }
+.ad-cap { text-align: center; color: var(--text-dim); font-size: 11px; margin: 4px 0 0; }
+.ad-cap a { color: var(--text-dim); }

@@ -44,6 +44,8 @@ A game platform by Redline Digital — players make accounts, build games in the
 | `profile.html` | One player: stats, games, custom page, likes + comment wall |
 | `forums.html` | Forums — threads and replies |
 | `guide.html` | The Coding Guide — full RedScript + Studio reference |
+| `privacy.html` | Privacy policy (required for ads; linked under every ad) |
+| `js/ads.js` | Advertising, off until AD_CONFIG is filled in — bottom-of-page slots only |
 | `othergames.html` | More Games — Redline Digital's GPS games + future downloads |
 | `about.html` | About the platform |
 | `studio/studio.html` | The Studio (game mode + `?mode=page` Page Studio for profiles) |
