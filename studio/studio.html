@@ -33,6 +33,7 @@
           <option value="gotcha">Gotcha (1973)</option>
           <option value="grantrak">Gran Trak 10 (1974)</option>
           <option value="tank">Tank (1974)</option>
+          <option value="mazewar">Maze War (1974)</option>
           <option value="wumpus">Hunt the Wumpus (Map)</option>
           <option value="wumpus2">Hunt the Wumpus (Teletype)</option>
           <option value="slots">Redline Slots (casino)</option>
@@ -105,6 +106,7 @@
           <button class="btn btn-small btn-ghost" data-add="dot">+ Dot</button>
           <button class="btn btn-small btn-ghost" data-add="ring">+ Ring</button>
           <button class="btn btn-small btn-ghost" data-add="box">+ Box</button>
+          <button class="btn btn-small btn-ghost" data-add="line" title="A vector segment: starts at x/y, runs along its angle for `size` length">+ Line</button>
           <button class="btn btn-small btn-ghost" data-add="text">+ Text</button>
           <button class="btn btn-small btn-ghost" data-add="tri">+ Ship</button>
         </div>
@@ -177,6 +179,7 @@
     import { buildGotchaExample } from "./example-gotcha.js";
     import { buildGrantrakExample } from "./example-grantrak.js";
     import { buildTankExample } from "./example-tank.js";
+    import { buildMazewarExample } from "./example-mazewar.js";
     import { buildWumpusExample } from "./example-wumpus.js";
     import { buildWumpus2Example } from "./example-wumpus2.js";
     import { buildSlotsExample } from "./example-slots.js";
@@ -586,6 +589,7 @@
       gotcha: { build: buildGotchaExample, screen: "live", tip: "Hit ▶ Test, click a mode. Square hunts ring through a maze that never stops moving — the first maze game." },
       grantrak: { build: buildGrantrakExample, screen: "live", tip: "Hit ▶ Test, press START. A/D steer, W gas, S brake, Q/E shift — launch in 1st and work up through the box; the high gears just lug from a stop." },
       tank: { build: buildTankExample, screen: "live", tip: "Hit ▶ Test, pick a mode. A/D turn, W/S drive, SPACE fire — one shell in the air, walls block shots, and the mines score for the ENEMY." },
+      mazewar: { build: buildMazewarExample, screen: "live", tip: "Hit ▶ Test, press START. You're IN the maze — A/D turn, W/S move, SPACE fire. Red pupil = it's aiming at you. Built entirely from the new Line object." },
       wumpus:{ build: buildWumpusExample, screen: "static", tip: "Hit ▶ Test. Walk the lit rooms and hunt by ear — smell, drafts, bats. SHOOT mode fires into a tunnel." },
       wumpus2: { build: buildWumpus2Example, screen: "static", tip: "Hit ▶ Test. The 1973 original: type M or S, then a room number. Draw your map on paper!" },
       slots: { build: buildSlotsExample, screen: "live", casino: true, tip: "Hit ▶ Test for FREE PLAY. Publish to the Casino floor and fund the pool to open for business." }

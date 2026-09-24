@@ -652,6 +652,17 @@ export function drawFrame(ctx, objects, { effects = [], messages = [], selectedI
         }
         break;
       }
+      case "line": {
+        // a vector segment: from (x,y) along its angle, `size` long.
+        // Taught to the engine by Maze War (1974) — wireframe walls need it.
+        const ang = (Number(o.angle) || 0) * Math.PI / 180;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(o.x, o.y);
+        ctx.lineTo(o.x + Math.cos(ang) * s, o.y + Math.sin(ang) * s);
+        ctx.stroke();
+        break;
+      }
       case "tri": {
         // a ship: outline triangle pointing along its angle (PDP-1 vector style)
         const ang = (Number(o.angle) || 0) * Math.PI / 180;
