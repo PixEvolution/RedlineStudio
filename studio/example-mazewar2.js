@@ -415,7 +415,9 @@ function brainCode() {
   push("  set net6 to round");
   push("end");
 
-  push("if game == 0 then");
+  // the coin's clock only runs once a MATCH is running — the lobby and the
+  // waiting-to-be-dealt-in state cost nothing, so there's always time to join
+  push("if game == 0 and round >= 1 and waitjoin == 0 then");
   push("  set timeleft to timeleft - 1");
   push("  if timeleft <= 0 then");
   push("    set game to 2");
