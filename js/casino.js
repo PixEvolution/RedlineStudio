@@ -33,8 +33,10 @@ export async function spinMachine(gameId, username, bet) {
     const s = settleSpin(gameSnap.data().pool, bet, mult);
     const newCoins = coins - bet + s.win;
 
-    tx.update(userRef, { coins: newCoins });
-    tx.update(gameRef, { pool: s.pool });
+    // the lastSpin references let the security rules verify CONSERVATION:
+    // coins gained here == coins that left the pool, in this same transaction
+    tx.update(userRef, { coins: newCoins, lastSpin: { game: gameId } });
+    tx.update(gameRef, { pool: s.pool, lastSpin: { user: userDocId(username) } });
     return { mult, win: s.win, coins: newCoins, pool: s.pool };
   });
 }
@@ -53,8 +55,8 @@ export async function fundMachine(gameId, username, amount) {
     const coins = Number(userSnap.data().coins) || 0;
     if (coins < amount) throw new Error("Not enough coins.");
     const pool = (Number(gameSnap.data().pool) || 0) + amount;
-    tx.update(userRef, { coins: coins - amount });
-    tx.update(gameRef, { pool });
+    tx.update(userRef, { coins: coins - amount, lastSpin: { game: gameId } });
+    tx.update(gameRef, { pool, lastSpin: { user: userDocId(username) } });
     return { coins: coins - amount, pool };
   });
 }
@@ -73,8 +75,8 @@ export async function collectPool(gameId, username, amount) {
     const pool = Number(gameSnap.data().pool) || 0;
     if (pool < amount) throw new Error("The pool only holds ◎ " + pool + ".");
     const coins = (Number(userSnap.data().coins) || 0) + amount;
-    tx.update(userRef, { coins });
-    tx.update(gameRef, { pool: pool - amount });
+    tx.update(userRef, { coins, lastSpin: { game: gameId } });
+    tx.update(gameRef, { pool: pool - amount, lastSpin: { user: userDocId(username) } });
     return { coins, pool: pool - amount };
   });
 }

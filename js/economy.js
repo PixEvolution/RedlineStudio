@@ -9,8 +9,10 @@ import {
 export const DAILY_COINS = 100;
 
 function todayStr() {
+  // UTC on purpose: the security rules verify the claim date server-side,
+  // and the server's clock is UTC
   const d = new Date();
-  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+  return `${d.getUTCFullYear()}-${d.getUTCMonth() + 1}-${d.getUTCDate()}`;
 }
 
 export async function getCoins(username) {
