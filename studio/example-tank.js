@@ -424,17 +424,20 @@ export function buildTankExample() {
   });
 
   // HUD
+  // HUD — printed straight onto the cabinet's top rail in dark ink,
+  // like the control decal on the bottom rail (glowing text on the white
+  // frame was unreadable)
   objects.push({
     id: "tk_p1", name: "p1tx", type: "text",
-    x: 100, y: 22, size: 12, color: GREEN, glow: 8, visible: 0, text: "YOU 0", script: []
+    x: 100, y: 44, size: 13, color: "#14571f", glow: 0, visible: 0, text: "YOU 0", script: []
   });
   objects.push({
     id: "tk_tm", name: "timetx", type: "text",
-    x: 240, y: 22, size: 12, color: WHITE, glow: 8, visible: 0, text: "TIME 60", script: []
+    x: 240, y: 44, size: 13, color: "#22343c", glow: 0, visible: 0, text: "TIME 60", script: []
   });
   objects.push({
     id: "tk_p2", name: "p2tx", type: "text",
-    x: 380, y: 22, size: 12, color: AMBER, glow: 8, visible: 0, text: "DRONE 0", script: []
+    x: 380, y: 44, size: 13, color: "#8a4a12", glow: 0, visible: 0, text: "DRONE 0", script: []
   });
 
   // the marquee
