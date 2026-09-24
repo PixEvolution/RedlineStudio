@@ -2,9 +2,11 @@
 // The buttons are GENERATED from whatever keys the game's scripts actually use
 // (engine.usedKeys()), so every game automatically gets the right controls.
 //
-// Players can make them their own: the ✥ button opens edit mode — drag a
-// cluster anywhere on the screen (even over the game), resize with − / +,
-// and the layout is remembered on this device for every game.
+// Players can make them their own: the ✥ button opens edit mode, where EVERY
+// INDIVIDUAL BUTTON can be dragged anywhere and resized by its ◢ corner
+// handle. − / + scale everything at once, Reset puts the defaults back, and
+// the layout is saved on this device PER CONTROL SET — games that share the
+// same keys share the layout, games with different controls get their own.
 
 const LABELS = {
   ArrowUp: "▲", ArrowDown: "▼", ArrowLeft: "◀", ArrowRight: "▶",
@@ -12,22 +14,50 @@ const LABELS = {
 };
 
 const ARROWS = ["ArrowUp", "ArrowLeft", "ArrowDown", "ArrowRight"];
-const LAYOUT_KEY = "rl_ctl_layout_v1";
 
 export function isTouchDevice() {
   return window.matchMedia?.("(pointer: coarse)").matches || "ontouchstart" in window;
 }
 
-function loadLayout() {
-  try {
-    const raw = localStorage.getItem(LAYOUT_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  return { scale: 1, dpad: { x: 0, y: 0 }, act: { x: 0, y: 0 } };
+// ---- the layout store (pure, testable) ------------------------------------
+
+// One saved layout per SET of controls, so your Tank layout never fights
+// your Pong layout, while every 4-way+fire game shares one.
+export function layoutSlot(keys) {
+  return "rl_ctl_v2:" + [...keys].sort().join(",");
 }
 
-function saveLayout(layout) {
-  try { localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout)); } catch {}
+export function clampBtnScale(s) {
+  const v = Number(s);
+  if (!v || !isFinite(v)) return 1;
+  return Math.max(0.5, Math.min(2.2, Math.round(v * 100) / 100));
+}
+
+export function emptyLayout() {
+  return { scale: 1, btns: {} };
+}
+
+// A button's own transform: its saved offset + size on top of the default spot.
+export function btnTransform(layout, key) {
+  const b = layout?.btns?.[key] || {};
+  const x = Number(b.x) || 0, y = Number(b.y) || 0;
+  const s = clampBtnScale(b.s || 1) * clampBtnScale(layout?.scale || 1);
+  return `translate(${x}px, ${y}px) scale(${s})`;
+}
+
+function loadLayout(slot) {
+  try {
+    const raw = localStorage.getItem(slot);
+    if (raw) {
+      const l = JSON.parse(raw);
+      if (l && typeof l === "object") return { scale: l.scale || 1, btns: l.btns || {} };
+    }
+  } catch {}
+  return emptyLayout();
+}
+
+function saveLayout(slot, layout) {
+  try { localStorage.setItem(slot, JSON.stringify(layout)); } catch {}
 }
 
 // The long-press copy/paste killer. CSS user-select alone doesn't stop every
@@ -56,8 +86,17 @@ export function createTouchControls(engine, container) {
 
   const wrap = document.createElement("div");
   wrap.className = "touch-controls";
-  const layout = loadLayout();
+  const slot = layoutSlot(keys);
+  let layout = loadLayout(slot);
   let editing = false;
+
+  const buttons = [];   // [{ el, key }]
+
+  const place = (el, key) => {
+    el.style.transform = btnTransform(layout, key);
+  };
+  const placeAll = () => { for (const b of buttons) place(b.el, b.key); };
+  const btnState = (key) => (layout.btns[key] = layout.btns[key] || { x: 0, y: 0, s: 1 });
 
   const makeBtn = (key) => {
     const b = document.createElement("button");
@@ -84,59 +123,83 @@ export function createTouchControls(engine, container) {
     b.addEventListener("pointercancel", up);
     b.addEventListener("pointerleave", up);
     muzzle(b, { blockTouch: true });
-    return b;
-  };
 
-  // ---- clusters -------------------------------------------------------
-  const clusters = [];   // [{ el, slot: "dpad"|"act" }]
-
-  const place = (el, slot) => {
-    el.style.transform = `translate(${layout[slot].x}px, ${layout[slot].y}px) scale(${layout.scale})`;
-  };
-
-  const makeDraggable = (el, slot) => {
-    el.addEventListener("pointerdown", (e) => {
+    // ---- edit mode: drag the button itself to MOVE it -------------------
+    b.addEventListener("pointerdown", (e) => {
       if (!editing) return;
       e.preventDefault();
       e.stopPropagation();
-      const sx = e.clientX - layout[slot].x, sy = e.clientY - layout[slot].y;
-      el.setPointerCapture?.(e.pointerId);
+      const st = btnState(key);
+      const sx = e.clientX - st.x, sy = e.clientY - st.y;
+      b.setPointerCapture?.(e.pointerId);
       const move = (ev) => {
-        layout[slot].x = ev.clientX - sx;
-        layout[slot].y = ev.clientY - sy;
-        place(el, slot);
+        st.x = ev.clientX - sx;
+        st.y = ev.clientY - sy;
+        place(b, key);
       };
-      const up = () => {
-        el.removeEventListener("pointermove", move);
-        el.removeEventListener("pointerup", up);
-        el.removeEventListener("pointercancel", up);
-        saveLayout(layout);
+      const up2 = () => {
+        b.removeEventListener("pointermove", move);
+        b.removeEventListener("pointerup", up2);
+        b.removeEventListener("pointercancel", up2);
+        saveLayout(slot, layout);
       };
-      el.addEventListener("pointermove", move);
-      el.addEventListener("pointerup", up);
-      el.addEventListener("pointercancel", up);
+      b.addEventListener("pointermove", move);
+      b.addEventListener("pointerup", up2);
+      b.addEventListener("pointercancel", up2);
     });
+
+    // ---- ...and its ◢ corner handle to RESIZE it -------------------------
+    const rsz = document.createElement("span");
+    rsz.className = "touch-rsz";
+    rsz.textContent = "◢";
+    rsz.addEventListener("pointerdown", (e) => {
+      if (!editing) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const st = btnState(key);
+      const s0 = st.s || 1, ox = e.clientX, oy = e.clientY;
+      rsz.setPointerCapture?.(e.pointerId);
+      const move = (ev) => {
+        const d = (ev.clientX - ox) + (ev.clientY - oy);   // drag out = bigger
+        st.s = clampBtnScale(s0 * (1 + d / 120));
+        place(b, key);
+      };
+      const up2 = () => {
+        rsz.removeEventListener("pointermove", move);
+        rsz.removeEventListener("pointerup", up2);
+        rsz.removeEventListener("pointercancel", up2);
+        saveLayout(slot, layout);
+      };
+      rsz.addEventListener("pointermove", move);
+      rsz.addEventListener("pointerup", up2);
+      rsz.addEventListener("pointercancel", up2);
+    });
+    b.appendChild(rsz);
+
+    buttons.push({ el: b, key });
+    return b;
   };
 
-  // Arrow keys form a D-pad on the left; everything else is an action button on the right.
+  // Arrow keys form a D-pad on the left; everything else is an action button
+  // on the right. Those are just the DEFAULT spots — every button then wears
+  // its own saved offset and size.
   const usedArrows = ARROWS.filter(a => keys.includes(a));
   const others = keys.filter(k => !ARROWS.includes(k));
 
   if (usedArrows.length > 0) {
     const pad = document.createElement("div");
     pad.className = "touch-dpad touch-cluster";
-    const slot = (area, key) => {
-      if (!keys.includes(key)) { const s = document.createElement("span"); s.style.gridArea = area; pad.appendChild(s); return; }
+    const slotBtn = (area, key) => {
+      if (!keys.includes(key)) { const sp = document.createElement("span"); sp.style.gridArea = area; pad.appendChild(sp); return; }
       const b = makeBtn(key);
       b.style.gridArea = area;
       pad.appendChild(b);
     };
-    slot("up", "ArrowUp");
-    slot("left", "ArrowLeft");
-    slot("down", "ArrowDown");
-    slot("right", "ArrowRight");
+    slotBtn("up", "ArrowUp");
+    slotBtn("left", "ArrowLeft");
+    slotBtn("down", "ArrowDown");
+    slotBtn("right", "ArrowRight");
     wrap.appendChild(pad);
-    clusters.push({ el: pad, slot: "dpad" });
   }
 
   if (others.length > 0) {
@@ -144,16 +207,15 @@ export function createTouchControls(engine, container) {
     actions.className = "touch-actions touch-cluster";
     for (const k of others) actions.appendChild(makeBtn(k));
     wrap.appendChild(actions);
-    clusters.push({ el: actions, slot: "act" });
   }
 
-  for (const c of clusters) { place(c.el, c.slot); makeDraggable(c.el, c.slot); }
+  placeAll();
 
   // ---- the ✥ layout editor -------------------------------------------
   const editBtn = document.createElement("button");
   editBtn.className = "ctl-edit-btn";
   editBtn.textContent = "✥";
-  editBtn.title = "Move / resize controls";
+  editBtn.title = "Move / resize the buttons";
   muzzle(editBtn, { blockTouch: false });
 
   const bar = document.createElement("div");
@@ -167,18 +229,23 @@ export function createTouchControls(engine, container) {
     return b;
   };
   const rescale = (d) => {
-    layout.scale = Math.max(0.6, Math.min(1.8, Math.round((layout.scale + d) * 10) / 10));
-    for (const c of clusters) place(c.el, c.slot);
-    saveLayout(layout);
+    layout.scale = clampBtnScale((layout.scale || 1) + d);
+    placeAll();
+    saveLayout(slot, layout);
   };
   mk("−", () => rescale(-0.1));
   mk("+", () => rescale(0.1));
   mk("Reset", () => {
-    layout.scale = 1; layout.dpad = { x: 0, y: 0 }; layout.act = { x: 0, y: 0 };
-    for (const c of clusters) place(c.el, c.slot);
-    saveLayout(layout);
+    layout = emptyLayout();
+    placeAll();
+    saveLayout(slot, layout);
   });
   mk("Done", () => setEditing(false));
+
+  const tip = document.createElement("span");
+  tip.className = "ctl-edit-tip";
+  tip.textContent = "drag a button to move it · drag its ◢ corner to resize";
+  bar.appendChild(tip);
 
   function setEditing(on) {
     editing = on;

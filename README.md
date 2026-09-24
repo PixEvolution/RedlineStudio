@@ -20,7 +20,7 @@ A game platform by Redline Digital — players make accounts, build games in the
 | `js/cards.js` | Game cards with live/static arcade screens + like counts |
 | `js/social.js` | Likes/dislikes + comments (games, players, models) |
 | `js/forum.js` | Forums: threads and replies |
-| `js/touch-controls.js` | Auto-generated on-screen buttons for phones (from each game's keys) |
+| `js/touch-controls.js` | On-screen buttons for phones — each one movable/resizable, layouts saved per control set |
 | (engine) | Gamepad support: 1 controller drives any game, 2 controllers = P1/P2 |
 | `js/fullscreen.js` | Optional fullscreen for testing and playing |
 | `js/screen-size.js` | 🖥 screen size button (S/M/L/MAX, remembered) + double-res crisp canvas |

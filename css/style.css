@@ -951,3 +951,29 @@ a.nav-username:hover { border-color: var(--red); color: #fff; }
 .ad-box { margin: 30px auto 0; max-width: 728px; }
 .ad-cap { text-align: center; color: var(--text-dim); font-size: 11px; margin: 4px 0 0; }
 .ad-cap a { color: var(--text-dim); }
+
+/* per-button editing: drag to move, ◢ corner to resize */
+.touch-btn { position: relative; }
+.touch-rsz {
+  display: none;
+  position: absolute;
+  right: -10px;
+  bottom: -10px;
+  width: 26px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #ff9d4a;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid #ff9d4a;
+  border-radius: 50%;
+  touch-action: none;
+  z-index: 5;
+}
+.touch-controls.editing .touch-rsz { display: flex; }
+.touch-controls.editing .touch-btn {
+  outline: 1px dashed #ff9d4a;
+  outline-offset: 2px;
+}
+.ctl-edit-tip { color: var(--text-dim); font-size: 11px; align-self: center; }
