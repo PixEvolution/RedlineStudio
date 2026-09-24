@@ -1,11 +1,11 @@
 // example-grantrak.js — GRAN TRAK 10 (1974), rebuilt in our studio.
 // Atari's first racing game and the first driving game with the real controls:
 // a STEERING WHEEL, a GAS pedal, a BRAKE, and a FOUR-SPEED SHIFTER. Like the
-// original, the track is a winding road course drawn entirely in white dots —
-// straights, esses, and a chicane — not an oval. One car, one quarter's worth
-// of time: pass the checkpoints in order, dodge the oil, don't kiss the dots.
-// (Famous footnote: an accounting error meant Atari sold every cabinet at a
-// loss. The game still packed arcades.)
+// original, the course is a real closed circuit drawn in white dots — a fast
+// perimeter road plus the signature move: the road dives into the middle of
+// the screen and HAIRPINS back out around a center divider. Every dot is a
+// road edge. (Famous footnote: an accounting error meant Atari sold every
+// cabinet at a loss. The game still packed arcades.)
 //
 //   A/D steer · W gas · S brake · Q/E shift down/up. The gearbox is REAL:
 //   below each gear's power band the engine LUGS (barely pulls at all), so
@@ -16,34 +16,38 @@
 //   stalled engine for a moment. The coin buys ~60 seconds.
 
 const T = 3600;                                    // ~60 seconds per coin
-const SPAWN = { x: 67, y: 220, a: 90 };            // left channel, heading down
+const SPAWN = { x: 82, y: 291, a: 0 };             // bottom-left, heading right
 
-// the racing line the attract car follows (axis-aligned waypoints, clockwise)
+// THE CIRCUIT (all axis-aligned, so the walls read as road edges):
+//   outer border 24..456 × 40..330
+//   the hook: a ∩ shape (top y=114 between x=140..340, arms down to y=252)
+//   the hairpin divider: x=240 from the bottom wall up to y=188
+// Lap: bottom straight → up into the hook → hairpin over the divider →
+// back down and out → right straight → flat-out top straight → left straight.
+
+// the racing line the attract car follows (lane centers, clockwise)
 const WP = [
-  [67, 297], [125, 297], [125, 212], [200, 212], [200, 297], [280, 297],
-  [280, 212], [360, 212], [413, 212], [413, 80], [300, 80], [300, 148],
-  [67, 148], [67, 220]
+  [190, 291], [190, 151], [290, 151], [290, 291],
+  [398, 291], [398, 77], [82, 77], [82, 291]
 ];
 
 // checkpoints, in racing order along the line
 const GATES = [
-  { x: 200, y: 297 },   // 1: deep in the esses
-  { x: 413, y: 140 },   // 2: the right straight
-  { x: 300, y: 115 },   // 3: threading the chicane
-  { x: 67,  y: 185 }    // 4: the left straight
+  { x: 190, y: 291 },   // 1: turning up into the hook
+  { x: 240, y: 151 },   // 2: the hairpin apex, right over the divider
+  { x: 398, y: 184 },   // 3: the right straight
+  { x: 82,  y: 184 }    // 4: the left straight
 ];
-const OILS = [{ x: 390, y: 212 }, { x: 160, y: 148 }, { x: 413, y: 180 }];
+const OILS = [{ x: 190, y: 225 }, { x: 150, y: 77 }, { x: 398, y: 250 }];
 
 // the track, Gran Trak style: every wall is a line of dots
 const WALLS = [
   [24, 40, 456, 40], [24, 330, 456, 330],          // outer border
   [24, 40, 24, 330], [456, 40, 456, 330],
-  [110, 180, 370, 180],                            // the central spine
-  [160, 245, 160, 330],                            // the esses (bottom half)
-  [240, 180, 240, 265],
-  [320, 245, 320, 330],
-  [260, 40, 260, 108],                             // the chicane (top half)
-  [330, 128, 330, 180]
+  [140, 114, 340, 114],                            // the hook: inner top
+  [140, 114, 140, 252],                            //   left arm
+  [340, 114, 340, 252],                            //   right arm
+  [240, 188, 240, 330]                             // the hairpin divider
 ];
 
 // the gearbox: cap, pull, and the bottom of each gear's power band
@@ -190,22 +194,16 @@ function carCode() {
   push("    if self.x < 33 or self.x > 447 or self.y < 49 or self.y > 321 then");
   push("      set hit to 1");
   push("    end");
-  push("    if abs(self.y - 180) < 9 and self.x > 101 and self.x < 379 then");
+  push("    if abs(self.y - 114) < 9 and self.x > 131 and self.x < 349 then");
   push("      set hit to 1");
   push("    end");
-  push("    if abs(self.x - 160) < 9 and self.y > 236 then");
+  push("    if abs(self.x - 140) < 9 and self.y > 105 and self.y < 261 then");
   push("      set hit to 1");
   push("    end");
-  push("    if abs(self.x - 240) < 9 and self.y > 171 and self.y < 274 then");
+  push("    if abs(self.x - 340) < 9 and self.y > 105 and self.y < 261 then");
   push("      set hit to 1");
   push("    end");
-  push("    if abs(self.x - 320) < 9 and self.y > 236 then");
-  push("      set hit to 1");
-  push("    end");
-  push("    if abs(self.x - 260) < 9 and self.y < 117 then");
-  push("      set hit to 1");
-  push("    end");
-  push("    if abs(self.x - 330) < 9 and self.y > 119 and self.y < 189 then");
+  push("    if abs(self.x - 240) < 9 and self.y > 179 then");
   push("      set hit to 1");
   push("    end");
   // crash = towed back to your last checkpoint, engine stalled for a moment
@@ -221,7 +219,7 @@ function carCode() {
 
   // the gates, in order — that's the whole race
   for (let i = 1; i <= 4; i++) {
-    push(`    if next == ${i} and dist(self, g${i}) < 20 then`);
+    push(`    if next == ${i} and dist(self, g${i}) < 22 then`);
     push("      change score by 1");
     push("      beep 523 for 0.06");
     push(`      set lastx to g${i}.x`);
@@ -265,7 +263,7 @@ function carCode() {
 
   push("when click");
   push("if game == 9 then");
-  push("  if abs(mousex() - 240) < 60 and abs(mousey() - 305) < 16 then");
+  push("  if abs(mousex() - 240) < 60 and abs(mousey() - 151) < 16 then");
   push("    set game to 0");
   push("    set endplay to 0");
   push("    set score to 0");
@@ -333,22 +331,22 @@ export function buildGrantrakExample() {
     x: 386, y: 22, size: 12, color: GREEN, glow: 8, visible: 0, text: "GEAR 1", script: []
   });
 
-  // the marquee (over the top half of the course)
+  // the marquee (the top straight is the header lane)
   objects.push({
     id: "gk_big", name: "bigtitle", type: "text",
-    x: 240, y: 132, size: 20, color: WHITE, glow: 16, visible: 1, text: "GRAN TRAK 10", script: []
+    x: 240, y: 68, size: 20, color: WHITE, glow: 16, visible: 1, text: "GRAN TRAK 10", script: []
   });
   objects.push({
     id: "gk_coin", name: "coinline", type: "text",
-    x: 240, y: 156, size: 10, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN ◎", script: []
+    x: 240, y: 92, size: 10, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN ◎", script: []
   });
   objects.push({
     id: "gk_start", name: "startbtn", type: "text",
-    x: 240, y: 305, size: 14, color: GREEN, glow: 12, visible: 1, text: "[ START ]", script: []
+    x: 240, y: 151, size: 13, color: GREEN, glow: 12, visible: 1, text: "[ START ]", script: []
   });
   objects.push({
     id: "gk_status", name: "statusline", type: "text",
-    x: 240, y: 156, size: 11, color: AMBER, glow: 10, visible: 0, text: "", script: []
+    x: 240, y: 92, size: 11, color: AMBER, glow: 10, visible: 0, text: "", script: []
   });
 
   objects.push({
