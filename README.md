@@ -45,7 +45,7 @@ A game platform by Redline Digital — players make accounts, build games in the
 | `othergames.html` | More Games — Redline Digital's GPS games + future downloads |
 | `about.html` | About the platform |
 | `studio/studio.html` | The Studio (game mode + `?mode=page` Page Studio for profiles) |
-|  `studio/example-*.js` | Reference examples: CRT Amusement Device (1947), Bertie the Brain (1950), NIMROD (1951), Draughts (1951), OXO (1952), Tennis for Two (1958), Mouse in the Maze (1959), Tic-Tac-Toe on TX-0 (1959), Spacewar! (1962), Computer Space (1971), Odyssey Table Tennis (1972), Pong (1972), Space Race (1973), Gotcha (1973), Hunt the Wumpus (Map + Teletype, 1973), Redline Slots |
+|  `studio/example-*.js` | Reference examples: CRT Amusement Device (1947), Bertie the Brain (1950), NIMROD (1951), Draughts (1951), OXO (1952), Tennis for Two (1958), Mouse in the Maze (1959), Tic-Tac-Toe on TX-0 (1959), Spacewar! (1962), Computer Space (1971), Odyssey Table Tennis (1972), Pong (1972), Space Race (1973), Gotcha (1973), Hunt the Wumpus (Map + Teletype, 1973), Gran Trak 10 (1974), Redline Slots |
 
 **Rules of the road:** one file, one job. New features get new files. Every game is saved with a `version` and `engine` field so old games keep working as the Studio evolves — each engine version keeps its renderer forever.
 

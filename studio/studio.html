@@ -31,6 +31,7 @@
           <option value="pong">Pong (1972)</option>
           <option value="spacerace">Space Race (1973)</option>
           <option value="gotcha">Gotcha (1973)</option>
+          <option value="grantrak">Gran Trak 10 (1974)</option>
           <option value="wumpus">Hunt the Wumpus (Map)</option>
           <option value="wumpus2">Hunt the Wumpus (Teletype)</option>
           <option value="slots">Redline Slots (casino)</option>
@@ -161,6 +162,7 @@
     import { buildPongExample } from "./example-pong.js";
     import { buildSpaceraceExample } from "./example-spacerace.js";
     import { buildGotchaExample } from "./example-gotcha.js";
+    import { buildGrantrakExample } from "./example-grantrak.js";
     import { buildWumpusExample } from "./example-wumpus.js";
     import { buildWumpus2Example } from "./example-wumpus2.js";
     import { buildSlotsExample } from "./example-slots.js";
@@ -530,6 +532,7 @@
       pong: { build: buildPongExample, screen: "live", tip: "Hit ▶ Test, click a mode. Edges of your paddle = sharp angles. Avoid missing ball for high score." },
       spacerace: { build: buildSpaceraceExample, screen: "live", tip: "Hit ▶ Test, click a mode. Race to the top — the coin buys TIME, and the center bar is it draining." },
       gotcha: { build: buildGotchaExample, screen: "live", tip: "Hit ▶ Test, click a mode. Square hunts ring through a maze that never stops moving — the first maze game." },
+      grantrak: { build: buildGrantrakExample, screen: "live", tip: "Hit ▶ Test, press START. A/D steer, W gas, S brake — and Q/E work the four-speed shifter." },
       wumpus: { build: buildWumpusExample, screen: "static", tip: "Hit ▶ Test. Walk the lit rooms and hunt by ear — smell, drafts, bats. SHOOT mode fires into a tunnel." },
       wumpus2: { build: buildWumpus2Example, screen: "static", tip: "Hit ▶ Test. The 1973 original: type M or S, then a room number. Draw your map on paper!" },
       slots: { build: buildSlotsExample, screen: "live", casino: true, tip: "Hit ▶ Test for FREE PLAY. Publish to the Casino floor and fund the pool to open for business." }

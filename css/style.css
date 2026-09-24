@@ -920,3 +920,10 @@ a.nav-username:hover { border-color: var(--red); color: #fff; }
 .floor-note { font-size: 12.5px; color: var(--text-dim); margin: -2px 0 10px; }
 
 .obj-search { width: 100%; box-sizing: border-box; margin-bottom: 8px; padding: 8px 12px; font-size: 13px; }
+
+/* More Games cards: hand-written descriptions show in full (no 2-line clamp) */
+.game-card .game-desc.full {
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
