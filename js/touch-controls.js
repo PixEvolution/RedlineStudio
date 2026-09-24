@@ -3,10 +3,17 @@
 // (engine.usedKeys()), so every game automatically gets the right controls.
 //
 // Players can make them their own: the ✥ button opens edit mode, where EVERY
-// INDIVIDUAL BUTTON can be dragged anywhere and resized by its ◢ corner
-// handle. − / + scale everything at once, Reset puts the defaults back, and
-// the layout is saved on this device PER CONTROL SET — games that share the
-// same keys share the layout, games with different controls get their own.
+// INDIVIDUAL BUTTON can be dragged anywhere, PINCHED bigger or smaller with
+// two fingers, or resized by its ◢ corner handle. − / + scale everything at
+// once, Reset puts the defaults back, and the layout is saved on this device
+// PER CONTROL SET — games that share the same keys share the layout, games
+// with different controls get their own. Every game calls for its own layout,
+// so nothing here is fixed: any button, any spot, any size.
+//
+// Phone friendliness: the buttons sit ABOVE the phone's home-bar gesture zone
+// (safe-area padding, so dragging a button never swipes the app away), the
+// edit toolbar lives at the TOP of the screen where no controls ever go, and
+// a layout saved on one screen is pulled back into view on a smaller one.
 
 const LABELS = {
   ArrowUp: "▲", ArrowDown: "▼", ArrowLeft: "◀", ArrowRight: "▶",
@@ -43,6 +50,22 @@ export function btnTransform(layout, key) {
   const x = Number(b.x) || 0, y = Number(b.y) || 0;
   const s = clampBtnScale(b.s || 1) * clampBtnScale(layout?.scale || 1);
   return `translate(${x}px, ${y}px) scale(${s})`;
+}
+
+// Two fingers on a button: its size follows the spread of the fingers.
+export function pinchScale(s0, d0, d1) {
+  return clampBtnScale((Number(s0) || 1) * (Math.max(1, Number(d1) || 1) / Math.max(1, Number(d0) || 1)));
+}
+
+// A layout saved on one screen, opened on a smaller one: how far a button's
+// rect must shift to come back into the visible box. Pure, so it's testable.
+export function shiftIntoBox(rect, boxW, boxH, pad = 2) {
+  let dx = 0, dy = 0;
+  if (rect.left < pad) dx = pad - rect.left;
+  else if (rect.right > boxW - pad) dx = (boxW - pad) - rect.right;
+  if (rect.top < pad) dy = pad - rect.top;
+  else if (rect.bottom > boxH - pad) dy = (boxH - pad) - rect.bottom;
+  return { dx, dy };
 }
 
 function loadLayout(slot) {
@@ -98,6 +121,29 @@ export function createTouchControls(engine, container) {
   const placeAll = () => { for (const b of buttons) place(b.el, b.key); };
   const btnState = (key) => (layout.btns[key] = layout.btns[key] || { x: 0, y: 0, s: 1 });
 
+  // A layout saved on a big screen must still work on a small one: any button
+  // that landed outside the glass gets pulled back into view.
+  function clampAll() {
+    const vw = window.innerWidth, vh = window.innerHeight;
+    // vertical clamping only makes sense in fullscreen, where the viewport IS
+    // the whole world — in the page the controls may scroll, and that's fine
+    const fs = container.classList?.contains("fs-on") || container.classList?.contains("fs-fallback");
+    for (const { el, key } of buttons) {
+      const r = el.getBoundingClientRect();
+      if (!r.width) continue;
+      const { dx, dy } = shiftIntoBox(r, vw, fs ? vh : Infinity, 4);
+      if (dx || (fs && dy)) {
+        const st = btnState(key);
+        st.x += dx;
+        if (fs) st.y += dy;
+        place(el, key);
+      }
+    }
+  }
+  const onResize = () => { clampAll(); };
+  window.addEventListener("resize", onResize);
+  window.addEventListener("orientationchange", onResize);
+
   const makeBtn = (key) => {
     const b = document.createElement("button");
     b.className = "touch-btn";
@@ -124,29 +170,56 @@ export function createTouchControls(engine, container) {
     b.addEventListener("pointerleave", up);
     muzzle(b, { blockTouch: true });
 
-    // ---- edit mode: drag the button itself to MOVE it -------------------
+    // ---- edit mode: one finger MOVES the button, two fingers PINCH it ----
+    const pts = new Map();          // live pointers on this button
+    let dragBase = null, pinchBase = null;
+    const spread = () => {
+      const [p1, p2] = [...pts.values()];
+      return Math.hypot(p1.x - p2.x, p1.y - p2.y);
+    };
     b.addEventListener("pointerdown", (e) => {
       if (!editing) return;
       e.preventDefault();
       e.stopPropagation();
-      const st = btnState(key);
-      const sx = e.clientX - st.x, sy = e.clientY - st.y;
       b.setPointerCapture?.(e.pointerId);
-      const move = (ev) => {
-        st.x = ev.clientX - sx;
-        st.y = ev.clientY - sy;
-        place(b, key);
-      };
-      const up2 = () => {
-        b.removeEventListener("pointermove", move);
-        b.removeEventListener("pointerup", up2);
-        b.removeEventListener("pointercancel", up2);
-        saveLayout(slot, layout);
-      };
-      b.addEventListener("pointermove", move);
-      b.addEventListener("pointerup", up2);
-      b.addEventListener("pointercancel", up2);
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      const st = btnState(key);
+      if (pts.size === 1) {
+        dragBase = { sx: e.clientX - st.x, sy: e.clientY - st.y };
+      } else if (pts.size === 2) {
+        dragBase = null;            // second finger down = resizing, not moving
+        pinchBase = { s0: st.s || 1, d0: spread() };
+      }
     });
+    const editMove = (e) => {
+      if (!editing || !pts.has(e.pointerId)) return;
+      e.preventDefault();
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      const st = btnState(key);
+      if (pts.size >= 2 && pinchBase) {
+        st.s = pinchScale(pinchBase.s0, pinchBase.d0, spread());
+      } else if (dragBase) {
+        st.x = e.clientX - dragBase.sx;
+        st.y = e.clientY - dragBase.sy;
+      }
+      place(b, key);
+    };
+    const editEnd = (e) => {
+      if (!pts.has(e.pointerId)) return;
+      pts.delete(e.pointerId);
+      pinchBase = null;
+      if (pts.size === 1) {         // one finger stays → it takes over the drag
+        const st = btnState(key);
+        const p = [...pts.values()][0];
+        dragBase = { sx: p.x - st.x, sy: p.y - st.y };
+      } else {
+        dragBase = null;
+      }
+      if (pts.size === 0 && editing) { clampAll(); saveLayout(slot, layout); }
+    };
+    b.addEventListener("pointermove", editMove);
+    b.addEventListener("pointerup", editEnd);
+    b.addEventListener("pointercancel", editEnd);
 
     // ---- ...and its ◢ corner handle to RESIZE it -------------------------
     const rsz = document.createElement("span");
@@ -168,6 +241,7 @@ export function createTouchControls(engine, container) {
         rsz.removeEventListener("pointermove", move);
         rsz.removeEventListener("pointerup", up2);
         rsz.removeEventListener("pointercancel", up2);
+        clampAll();
         saveLayout(slot, layout);
       };
       rsz.addEventListener("pointermove", move);
@@ -244,22 +318,31 @@ export function createTouchControls(engine, container) {
 
   const tip = document.createElement("span");
   tip.className = "ctl-edit-tip";
-  tip.textContent = "drag a button to move it · drag its ◢ corner to resize";
+  tip.textContent = "drag a button to move · pinch it (or drag its ◢ corner) to resize";
   bar.appendChild(tip);
 
   function setEditing(on) {
     editing = on;
     wrap.classList.toggle("editing", on);
+    container.classList?.toggle("ctl-editing", on);
     bar.style.display = on ? "flex" : "none";
   }
   editBtn.addEventListener("click", () => setEditing(!editing));
   bar.style.display = "none";
 
   wrap.appendChild(editBtn);
-  wrap.appendChild(bar);
+  // the toolbar lives at the TOP of the stage — the bottom belongs to buttons
+  container.appendChild(bar);
   container.appendChild(wrap);
+  requestAnimationFrame?.(() => clampAll());   // a big-screen layout on a small screen
 
   return {
-    destroy() { wrap.remove(); }
+    destroy() {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
+      container.classList?.remove("ctl-editing");
+      bar.remove();
+      wrap.remove();
+    }
   };
 }

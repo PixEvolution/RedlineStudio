@@ -418,6 +418,7 @@ button, .btn, .tab, .seg-btn, a { -webkit-tap-highlight-color: transparent; }
   margin: 0;
   width: 100%;
   max-width: 640px;
+  padding-bottom: max(24px, calc(env(safe-area-inset-bottom, 0px) + 8px));
 }
 .stage.fs-on .stage-bar { position: absolute; top: 8px; right: 8px; margin: 0; z-index: 10; }
 .stage.fs-fallback {
@@ -449,6 +450,9 @@ body.fs-lock { overflow: hidden; }
   margin: 10px auto 0;
   user-select: none;
   -webkit-user-select: none;
+  /* stay ABOVE the phone's home-bar gesture zone — a drag near the very
+     bottom edge would swipe the app away instead of moving the button */
+  padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
 }
 
 .touch-dpad {
@@ -804,7 +808,7 @@ a.nav-username:hover { border-color: var(--red); color: #fff; }
 .ctl-edit-btn {
   position: absolute;
   left: 50%;
-  bottom: 2px;
+  bottom: max(6px, env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%);
   z-index: 25;
   width: 34px;
@@ -818,18 +822,23 @@ a.nav-username:hover { border-color: var(--red); color: #fff; }
 }
 .ctl-edit-btn:hover { color: var(--text); }
 .ctl-edit-bar {
+  /* the toolbar lives at the TOP of the stage — never where the buttons go */
   position: absolute;
   left: 50%;
-  bottom: 42px;
+  top: max(8px, env(safe-area-inset-top, 0px));
   transform: translateX(-50%);
-  z-index: 25;
+  z-index: 30;
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: calc(100% - 16px);
   gap: 6px;
   padding: 6px 8px;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.8);
   border: 1px solid var(--border);
   border-radius: 10px;
 }
+.stage.ctl-editing .stage-bar { visibility: hidden; }   /* no button pile-ups while editing */
 
 /* ---------- search + sort filter bar ---------- */
 .filter-bar { display: flex; gap: 10px; margin: 0 0 16px; flex-wrap: wrap; }
@@ -957,13 +966,13 @@ a.nav-username:hover { border-color: var(--red); color: #fff; }
 .touch-rsz {
   display: none;
   position: absolute;
-  right: -10px;
-  bottom: -10px;
-  width: 26px;
-  height: 26px;
+  right: -13px;
+  bottom: -13px;
+  width: 34px;               /* a real fingertip target */
+  height: 34px;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: 15px;
   color: #ff9d4a;
   background: rgba(0, 0, 0, 0.55);
   border: 1px solid #ff9d4a;
