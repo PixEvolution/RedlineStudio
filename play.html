@@ -41,6 +41,7 @@
     import { spinMachine, fundMachine, collectPool } from "./js/casino.js";
     import { createFloor, renderFloorPanel, seatTakenBy, snapFromEngine, snapToObjects, clampHogMins } from "./js/floor.js";
     import { submitScore, renderScoreboard } from "./js/scores.js";
+    import { sharpenCanvas, attachScreenSizeButton } from "./js/screen-size.js";
 
     renderNav("");
 
@@ -80,15 +81,19 @@
         canvas.width = CANVAS_W;
         canvas.height = CANVAS_H;
         canvas.className = "workspace-canvas";
+        sharpenCanvas(canvas);           // double-resolution glass — crisp at any size
         stage.appendChild(canvas);
         mount.appendChild(stage);
 
         const bar = document.createElement("div");
         bar.className = "stage-bar";
+        const szBtn = document.createElement("button");
+        szBtn.className = "btn btn-small btn-ghost";
         const fsBtn = document.createElement("button");
         fsBtn.className = "btn btn-small btn-ghost";
-        bar.appendChild(fsBtn);
+        bar.append(szBtn, fsBtn);
         stage.appendChild(bar);
+        attachScreenSizeButton(szBtn, stage);
         attachFullscreenButton(fsBtn, stage);
 
         const hint = document.createElement("p");
@@ -243,15 +248,19 @@
         canvas.width = CANVAS_W;
         canvas.height = CANVAS_H;
         canvas.className = "workspace-canvas";
+        sharpenCanvas(canvas);           // double-resolution glass — crisp at any size
         stage.appendChild(canvas);
         mount.appendChild(stage);
 
         const bar = document.createElement("div");
         bar.className = "stage-bar";
+        const szBtn = document.createElement("button");
+        szBtn.className = "btn btn-small btn-ghost";
         const fsBtn = document.createElement("button");
         fsBtn.className = "btn btn-small btn-ghost";
-        bar.appendChild(fsBtn);
+        bar.append(szBtn, fsBtn);
         stage.appendChild(bar);
+        attachScreenSizeButton(szBtn, stage);
         attachFullscreenButton(fsBtn, stage);
 
         const hint = document.createElement("p");

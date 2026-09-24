@@ -338,7 +338,7 @@ input:focus, textarea:focus { outline: 2px solid var(--red); border-color: var(-
 
 .workspace-canvas {
   width: 100%;
-  max-width: 640px;
+  max-width: var(--screen-max, 640px);   /* the 🖥 size button sets this per stage */
   display: block;
   margin: 0 auto;
   border: 2px solid #123c24;

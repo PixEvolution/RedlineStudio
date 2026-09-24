@@ -110,7 +110,7 @@
       <div>
         <div class="stage" id="stage">
           <canvas id="workspace" width="480" height="360" class="workspace-canvas"></canvas>
-          <div class="stage-bar"><button class="btn btn-small btn-ghost" id="btn-fs"></button></div>
+          <div class="stage-bar"><button class="btn btn-small btn-ghost" id="btn-size"></button><button class="btn btn-small btn-ghost" id="btn-fs"></button></div>
         </div>
         <p class="hint" id="ws-hint">Click an object to select it · drag to move · ▶ Test to play</p>
       </div>
@@ -145,6 +145,7 @@
     import { saveModel, listMyModels, instantiateModel } from "../js/models.js";
     import { createTouchControls, isTouchDevice } from "../js/touch-controls.js";
     import { attachFullscreenButton } from "../js/fullscreen.js";
+    import { sharpenCanvas, attachScreenSizeButton } from "../js/screen-size.js";
     import { setupPanel } from "../js/studio-panels.js";
     import { downloadStandalone } from "../js/export.js";
     import { attachTerminalInput } from "../js/terminal.js";
@@ -416,6 +417,8 @@
     const testBtn = $("#btn-test");
     let testControls = null, testTerminal = null, testCasino = null;
     attachFullscreenButton($("#btn-fs"), $("#stage"));
+    attachScreenSizeButton($("#btn-size"), $("#stage"));
+    sharpenCanvas($("#workspace"));   // double-resolution glass — crisp at any size
     testBtn.addEventListener("click", () => {
       if (engine) {
         engine.stop(); engine = null;

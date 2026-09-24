@@ -109,6 +109,9 @@ const GAME = ${gameJson};
 document.title = GAME.title || document.title;
 const _stage = document.getElementById("stage");
 const _canvas = document.getElementById("screen");
+// double-resolution glass: games keep drawing in 480×360, the screen holds 2×
+_canvas.width = 960; _canvas.height = 720;
+_canvas.getContext("2d").setTransform(2, 0, 0, 2, 0, 0);
 const _overlay = document.getElementById("overlay");
 // fullscreen: real fullscreen where the browser allows it, and the stage
 // fills the window either way (works from file:// and on iPhones)
