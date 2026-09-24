@@ -10,8 +10,10 @@
 //   A/D steer · W gas · S brake · Q/E shift down/up. The gearbox is REAL:
 //   below each gear's power band the engine LUGS (barely pulls at all), so
 //   you launch in 1st and work up through the box — floor it in 4th from a
-//   stop and you'll crawl. Crash = stop dead + a stalled engine for a moment.
-//   The coin buys ~60 seconds.
+//   stop and you'll crawl. The MOTOR is live through the speaker: the pitch
+//   follows the revs, so it drops on every upshift and climbs again — you
+//   can shift by ear. Crash = towed back to your last checkpoint with a
+//   stalled engine for a moment. The coin buys ~60 seconds.
 
 const T = 3600;                                    // ~60 seconds per coin
 const SPAWN = { x: 67, y: 220, a: 90 };            // left channel, heading down
@@ -41,8 +43,7 @@ const WALLS = [
   [240, 180, 240, 265],
   [320, 245, 320, 330],
   [260, 40, 260, 108],                             // the chicane (top half)
-  [330, 128, 330, 180],
-  [150, 40, 150, 100]                              // the top-left kink
+  [330, 128, 330, 180]
 ];
 
 // the gearbox: cap, pull, and the bottom of each gear's power band
@@ -166,8 +167,11 @@ function carCode() {
   push("      set speed to max(0, speed - 0.09)");
   push("    end");
   push("    set speed to speed * 0.995");
-  push("    set px to self.x");
-  push("    set py to self.y");
+  // the MOTOR: a live putt through the speaker — pitch follows the revs,
+  // so every upshift drops the note and every gear climbs it back up
+  push("    if timeleft % 4 == 0 then");
+  push("      beep 50 + (speed / maxs[gear]) * 110 for 0.05");
+  push("    end");
   push("    change self.x by cos(self.angle) * speed");
   push("    change self.y by sin(self.angle) * speed");
 
@@ -204,15 +208,13 @@ function carCode() {
   push("    if abs(self.x - 330) < 9 and self.y > 119 and self.y < 189 then");
   push("      set hit to 1");
   push("    end");
-  push("    if abs(self.x - 150) < 9 and self.y < 109 then");
-  push("      set hit to 1");
-  push("    end");
-  // crash = stop dead where you hit, engine stalled for a moment
+  // crash = towed back to your last checkpoint, engine stalled for a moment
   push("    if hit == 1 then");
   push("      explode self");
   push("      beep 90 for 0.3");
-  push("      set self.x to px");
-  push("      set self.y to py");
+  push("      set self.x to lastx");
+  push("      set self.y to lasty");
+  push("      set self.angle to lasta");
   push("      set speed to 0");
   push("      set stall to 30");
   push("    end");
@@ -222,6 +224,9 @@ function carCode() {
     push(`    if next == ${i} and dist(self, g${i}) < 20 then`);
     push("      change score by 1");
     push("      beep 523 for 0.06");
+    push(`      set lastx to g${i}.x`);
+    push(`      set lasty to g${i}.y`);
+    push("      set lasta to self.angle");
     if (i < 4) {
       push(`      set next to ${i + 1}`);
     } else {
@@ -272,6 +277,9 @@ function carCode() {
   push("    set oilcool to 0");
   push(`    set timeleft to ${T}`);
   toSpawn("    ");
+  push(`    set lastx to ${SPAWN.x}`);
+  push(`    set lasty to ${SPAWN.y}`);
+  push(`    set lasta to ${SPAWN.a}`);
   push("  end");
   push("else");
   push("  if game == 2 then");
