@@ -1,62 +1,83 @@
 // example-grantrak.js — GRAN TRAK 10 (1974), rebuilt in our studio.
 // Atari's first racing game and the first driving game with the real controls:
-// a STEERING WHEEL, a GAS pedal, a BRAKE, and a FOUR-SPEED SHIFTER. One car,
-// one track, one quarter's worth of time — pass the checkpoints in order,
-// dodge the oil slicks, and don't kiss the walls. (Famous footnote: an
-// accounting error meant Atari sold every cabinet at a loss. The game still
-// packed arcades.)
+// a STEERING WHEEL, a GAS pedal, a BRAKE, and a FOUR-SPEED SHIFTER. Like the
+// original, the track is a winding road course drawn entirely in white dots —
+// straights, esses, and a chicane — not an oval. One car, one quarter's worth
+// of time: pass the checkpoints in order, dodge the oil, don't kiss the dots.
+// (Famous footnote: an accounting error meant Atari sold every cabinet at a
+// loss. The game still packed arcades.)
 //
-//   A/D steer · W gas · S brake · Q/E shift down/up (low gears pull harder,
-//   high gears run faster) · hit the blinking gates IN ORDER · crash = back
-//   to your last gate. The coin buys ~60 seconds.
+//   A/D steer · W gas · S brake · Q/E shift down/up. The gearbox is REAL:
+//   below each gear's power band the engine LUGS (barely pulls at all), so
+//   you launch in 1st and work up through the box — floor it in 4th from a
+//   stop and you'll crawl. Crash = stop dead + a stalled engine for a moment.
+//   The coin buys ~60 seconds.
 
-const T = 3600;                                   // ~60 seconds per coin
-const SPAWN = { x: 140, y: 274, a: 0 };
-const GATES = [
-  { x: 300, y: 274 },   // 1: bottom straight
-  { x: 398, y: 180 },   // 2: right side
-  { x: 240, y: 86 },    // 3: top straight
-  { x: 82,  y: 180 }    // 4: left side
+const T = 3600;                                    // ~60 seconds per coin
+const SPAWN = { x: 67, y: 220, a: 90 };            // left channel, heading down
+
+// the racing line the attract car follows (axis-aligned waypoints, clockwise)
+const WP = [
+  [67, 297], [125, 297], [125, 212], [200, 212], [200, 297], [280, 297],
+  [280, 212], [360, 212], [413, 212], [413, 80], [300, 80], [300, 148],
+  [67, 148], [67, 220]
 ];
-const OILS = [{ x: 150, y: 86 }, { x: 398, y: 110 }, { x: 180, y: 290 }];
-// the circuit: canvas edge is the outer wall, the infield island the inner
-const OUT = { x0: 42, x1: 438, y0: 42, y1: 318 };
-const ISLE = { hx: 120, hy: 36 };                 // half-extents incl. car size
-const MAXSPD = [0, 1.4, 2.3, 3.2, 4.1];           // per gear
-const ACC = [0, 0.10, 0.075, 0.055, 0.042];       // low gears pull harder
-const WHITE = "#ffffff", DIM = "#7a8894", GREEN = "#7dff9e", AMBER = "#ff9d4a", WALLC = "#1f8f3c";
+
+// checkpoints, in racing order along the line
+const GATES = [
+  { x: 200, y: 297 },   // 1: deep in the esses
+  { x: 413, y: 140 },   // 2: the right straight
+  { x: 300, y: 115 },   // 3: threading the chicane
+  { x: 67,  y: 185 }    // 4: the left straight
+];
+const OILS = [{ x: 390, y: 212 }, { x: 160, y: 148 }, { x: 413, y: 180 }];
+
+// the track, Gran Trak style: every wall is a line of dots
+const WALLS = [
+  [24, 40, 456, 40], [24, 330, 456, 330],          // outer border
+  [24, 40, 24, 330], [456, 40, 456, 330],
+  [110, 180, 370, 180],                            // the central spine
+  [160, 245, 160, 330],                            // the esses (bottom half)
+  [240, 180, 240, 265],
+  [320, 245, 320, 330],
+  [260, 40, 260, 108],                             // the chicane (top half)
+  [330, 128, 330, 180],
+  [150, 40, 150, 100]                              // the top-left kink
+];
+
+// the gearbox: cap, pull, and the bottom of each gear's power band
+const MAXS = [0, 1.4, 2.3, 3.2, 4.1];
+const PULL = [0, 0.10, 0.075, 0.055, 0.042];
+const LUG  = [0, 0, 0.9, 1.8, 2.7];                // below this, the engine lugs
+
+const WHITE = "#ffffff", DIM = "#7a8894", GREEN = "#7dff9e", AMBER = "#ff9d4a", DOTC = "#dfe9ee";
 
 function carCode() {
   const L = [];
   const push = (s) => L.push(s);
 
-  const startRace = (pad) => {
-    push(`${pad}set game to 0`);
-    push(`${pad}set endplay to 0`);
-    push(`${pad}set score to 0`);
-    push(`${pad}set laps to 0`);
-    push(`${pad}set gear to 1`);
-    push(`${pad}set speed to 0`);
-    push(`${pad}set next to 1`);
-    push(`${pad}set stall to 0`);
-    push(`${pad}set oilcool to 0`);
-    push(`${pad}set timeleft to ${T}`);
+  const toSpawn = (pad) => {
     push(`${pad}set self.x to ${SPAWN.x}`);
     push(`${pad}set self.y to ${SPAWN.y}`);
     push(`${pad}set self.angle to ${SPAWN.a}`);
-    push(`${pad}set lastx to ${SPAWN.x}`);
-    push(`${pad}set lasty to ${SPAWN.y}`);
-    push(`${pad}set lasta to ${SPAWN.a}`);
   };
 
   push("when start");
   push("set game to 9");
-  push("set wp to 1");
   push("set gear to 1");
   push("set endplay to 0");
-  push(`set self.x to ${SPAWN.x}`);
-  push(`set self.y to ${SPAWN.y}`);
-  push("set self.angle to 0");
+  push("set wp to 1");
+  push(`set n to ${WP.length}`);
+  WP.forEach(([x, y], i) => {
+    push(`set wx[${i + 1}] to ${x}`);
+    push(`set wy[${i + 1}] to ${y}`);
+  });
+  for (let g = 1; g <= 4; g++) {
+    push(`set maxs[${g}] to ${MAXS[g]}`);
+    push(`set pull[${g}] to ${PULL[g]}`);
+    push(`set lug[${g}] to ${LUG[g]}`);
+  }
+  toSpawn("");
   push("end");
 
   push("when tick");
@@ -77,6 +98,12 @@ function carCode() {
   push('set scoretx.text to "SCORE " + score + " · LAP " + laps');
   push('set timetx.text to "TIME " + max(0, floor(timeleft / 60))');
   push('set geartx.text to "GEAR " + gear');
+  // the tach: amber = you're below the gear's power band (shift down!)
+  push("if game == 0 and gear > 1 and speed < lug[gear] then");
+  push(`  set geartx.color to "${AMBER}"`);
+  push("else");
+  push(`  set geartx.color to "${GREEN}"`);
+  push("end");
 
   // the gates: your NEXT gate blinks green; the rest sit dim
   for (let i = 1; i <= 4; i++) {
@@ -89,37 +116,28 @@ function carCode() {
     push("end");
   }
 
-  // ATTRACT: the car laps the circuit by itself — the live reel
+  // ATTRACT: the car laps the real course by itself — the live reel
   push("if game == 9 then");
-  push("  set speed to 2.4");
-  push("  if wp == 1 then");
-  push("    set self.angle to 0");
-  push("    if self.x > 395 then");
-  push("      set wp to 2");
+  push("  set tx to wx[wp]");
+  push("  set ty to wy[wp]");
+  push("  if abs(tx - self.x) > abs(ty - self.y) then");
+  push("    if tx > self.x then");
+  push("      set self.angle to 0");
+  push("    else");
+  push("      set self.angle to 180");
+  push("    end");
+  push("  else");
+  push("    if ty > self.y then");
+  push("      set self.angle to 90");
+  push("    else");
+  push("      set self.angle to -90");
   push("    end");
   push("  end");
-  push("  if wp == 2 then");
-  push("    set self.angle to -90");
-  push("    if self.y < 86 then");
-  push("      set wp to 3");
-  push("    end");
+  push("  change self.x by cos(self.angle) * 2.2");
+  push("  change self.y by sin(self.angle) * 2.2");
+  push("  if abs(tx - self.x) < 5 and abs(ty - self.y) < 5 then");
+  push("    set wp to wp % n + 1");
   push("  end");
-  push("  if wp == 3 then");
-  push("    set self.angle to 180");
-  push("    if self.x < 85 then");
-  push("      set wp to 4");
-  push("    end");
-  push("  end");
-  push("  if wp == 4 then");
-  push("    set self.angle to 90");
-  push("    if self.y > 274 then");
-  push("      set wp to 1");
-  push("      set self.x to 140");
-  push("      set self.y to 274");
-  push("    end");
-  push("  end");
-  push("  change self.x by cos(self.angle) * speed");
-  push("  change self.y by sin(self.angle) * speed");
   push("end");
 
   // THE RACE
@@ -136,18 +154,20 @@ function carCode() {
   push('    if keydown("d") then');
   push("      change self.angle by 3.4 * min(1, speed / 1.5)");
   push("    end");
-  // gas & brake, through the gearbox
+  // gas, through the gearbox: below the power band the engine LUGS
   push('    if keydown("w") then');
-  for (let g = 1; g <= 4; g++) {
-    push(`      if gear == ${g} then`);
-    push(`        set speed to min(${MAXSPD[g]}, speed + ${ACC[g]})`);
-    push("      end");
-  }
+  push("      if speed < lug[gear] then");
+  push("        change speed by 0.008");
+  push("      else");
+  push("        set speed to min(maxs[gear], speed + pull[gear])");
+  push("      end");
   push("    end");
   push('    if keydown("s") then');
   push("      set speed to max(0, speed - 0.09)");
   push("    end");
   push("    set speed to speed * 0.995");
+  push("    set px to self.x");
+  push("    set py to self.y");
   push("    change self.x by cos(self.angle) * speed");
   push("    change self.y by sin(self.angle) * speed");
 
@@ -161,15 +181,40 @@ function carCode() {
     push("    end");
   }
 
-  // the walls: outer edge + the infield island — crash = back to your last gate
-  push(`    if self.x < ${OUT.x0} or self.x > ${OUT.x1} or self.y < ${OUT.y0} or self.y > ${OUT.y1} or (abs(self.x - 240) < ${ISLE.hx} and abs(self.y - 180) < ${ISLE.hy}) then`);
+  // the dotted walls — every segment of the course, as math
+  push("    set hit to 0");
+  push("    if self.x < 33 or self.x > 447 or self.y < 49 or self.y > 321 then");
+  push("      set hit to 1");
+  push("    end");
+  push("    if abs(self.y - 180) < 9 and self.x > 101 and self.x < 379 then");
+  push("      set hit to 1");
+  push("    end");
+  push("    if abs(self.x - 160) < 9 and self.y > 236 then");
+  push("      set hit to 1");
+  push("    end");
+  push("    if abs(self.x - 240) < 9 and self.y > 171 and self.y < 274 then");
+  push("      set hit to 1");
+  push("    end");
+  push("    if abs(self.x - 320) < 9 and self.y > 236 then");
+  push("      set hit to 1");
+  push("    end");
+  push("    if abs(self.x - 260) < 9 and self.y < 117 then");
+  push("      set hit to 1");
+  push("    end");
+  push("    if abs(self.x - 330) < 9 and self.y > 119 and self.y < 189 then");
+  push("      set hit to 1");
+  push("    end");
+  push("    if abs(self.x - 150) < 9 and self.y < 109 then");
+  push("      set hit to 1");
+  push("    end");
+  // crash = stop dead where you hit, engine stalled for a moment
+  push("    if hit == 1 then");
   push("      explode self");
   push("      beep 90 for 0.3");
-  push("      set self.x to lastx");
-  push("      set self.y to lasty");
-  push("      set self.angle to lasta");
+  push("      set self.x to px");
+  push("      set self.y to py");
   push("      set speed to 0");
-  push("      set stall to 35");
+  push("      set stall to 30");
   push("    end");
 
   // the gates, in order — that's the whole race
@@ -177,9 +222,6 @@ function carCode() {
     push(`    if next == ${i} and dist(self, g${i}) < 20 then`);
     push("      change score by 1");
     push("      beep 523 for 0.06");
-    push(`      set lastx to g${i}.x`);
-    push(`      set lasty to g${i}.y`);
-    push("      set lasta to self.angle");
     if (i < 4) {
       push(`      set next to ${i + 1}`);
     } else {
@@ -197,7 +239,7 @@ function carCode() {
   push("    set game to 2");
   push("    set endplay to 1");
   push("    beep 150 for 0.5");
-  push('    set statusline.text to "SCORE " + score + " · " + laps + " LAPS — CLICK FOR ATTRACT"');
+  push('    set statusline.text to "SCORE " + score + " · " + laps + " LAPS · CLICK"');
   push("  end");
   push("end");
   push("end");
@@ -218,16 +260,24 @@ function carCode() {
 
   push("when click");
   push("if game == 9 then");
-  push("  if abs(mousex() - 240) < 60 and abs(mousey() - 240) < 16 then");
-  startRace("    ");
+  push("  if abs(mousex() - 240) < 60 and abs(mousey() - 305) < 16 then");
+  push("    set game to 0");
+  push("    set endplay to 0");
+  push("    set score to 0");
+  push("    set laps to 0");
+  push("    set gear to 1");
+  push("    set speed to 0");
+  push("    set next to 1");
+  push("    set stall to 0");
+  push("    set oilcool to 0");
+  push(`    set timeleft to ${T}`);
+  toSpawn("    ");
   push("  end");
   push("else");
   push("  if game == 2 then");
   push("    set game to 9");
   push("    set wp to 1");
-  push(`    set self.x to ${SPAWN.x}`);
-  push(`    set self.y to ${SPAWN.y}`);
-  push("    set self.angle to 0");
+  toSpawn("    ");
   push("  end");
   push("end");
   push("end");
@@ -237,14 +287,6 @@ function carCode() {
 
 export function buildGrantrakExample() {
   const objects = [];
-
-  // the infield island (visual — collision is the math above)
-  [156, 212, 268, 324].forEach((x, i) => {
-    objects.push({
-      id: "gk_i" + i, name: "isle" + i, type: "box",
-      x, y: 180, size: 56, color: WALLC, glow: 3, visible: 1, text: "", script: []
-    });
-  });
 
   // the gates
   GATES.forEach((g, i) => {
@@ -265,7 +307,7 @@ export function buildGrantrakExample() {
   // the car — brain included
   objects.push({
     id: "gk_car", name: "car", type: "tri",
-    x: SPAWN.x, y: SPAWN.y, size: 11, angle: 0, color: AMBER, glow: 12, visible: 1, text: "",
+    x: SPAWN.x, y: SPAWN.y, size: 11, angle: SPAWN.a, color: AMBER, glow: 12, visible: 1, text: "",
     script: [{ event: "code", source: carCode() }]
   });
 
@@ -283,22 +325,22 @@ export function buildGrantrakExample() {
     x: 386, y: 22, size: 12, color: GREEN, glow: 8, visible: 0, text: "GEAR 1", script: []
   });
 
-  // the marquee lives on the infield
+  // the marquee (over the top half of the course)
   objects.push({
     id: "gk_big", name: "bigtitle", type: "text",
-    x: 240, y: 172, size: 26, color: WHITE, glow: 16, visible: 1, text: "GRAN TRAK 10", script: []
+    x: 240, y: 132, size: 20, color: WHITE, glow: 16, visible: 1, text: "GRAN TRAK 10", script: []
   });
   objects.push({
     id: "gk_coin", name: "coinline", type: "text",
-    x: 240, y: 196, size: 11, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN ◎", script: []
+    x: 240, y: 156, size: 10, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN ◎", script: []
   });
   objects.push({
     id: "gk_start", name: "startbtn", type: "text",
-    x: 240, y: 240, size: 15, color: GREEN, glow: 12, visible: 1, text: "[ START ]", script: []
+    x: 240, y: 305, size: 14, color: GREEN, glow: 12, visible: 1, text: "[ START ]", script: []
   });
   objects.push({
     id: "gk_status", name: "statusline", type: "text",
-    x: 240, y: 196, size: 11, color: AMBER, glow: 10, visible: 0, text: "", script: []
+    x: 240, y: 156, size: 11, color: AMBER, glow: 10, visible: 0, text: "", script: []
   });
 
   objects.push({
@@ -307,6 +349,27 @@ export function buildGrantrakExample() {
     text: "ATARI 1974 · A/D STEER · W GAS · S BRAKE · Q/E SHIFT · GATES IN ORDER",
     script: []
   });
+
+  // the course itself: every wall drawn as a line of dots, like the original.
+  // (These sit LAST so the watch window keeps the car and HUD first.)
+  const seen = new Set();
+  let d = 0;
+  for (const [x1, y1, x2, y2] of WALLS) {
+    const len = Math.hypot(x2 - x1, y2 - y1);
+    const steps = Math.max(1, Math.round(len / 12));
+    for (let i = 0; i <= steps; i++) {
+      const x = Math.round(x1 + (x2 - x1) * i / steps);
+      const y = Math.round(y1 + (y2 - y1) * i / steps);
+      const key = x + "," + y;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      d++;
+      objects.push({
+        id: "gk_w" + d, name: "trk" + d, type: "dot",
+        x, y, size: 3, color: DOTC, glow: 2, visible: 1, text: "", script: []
+      });
+    }
+  }
 
   return { title: "Gran Trak 10 (1974)", objects };
 }
