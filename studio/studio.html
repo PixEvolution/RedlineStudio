@@ -35,6 +35,7 @@
           <option value="tank">Tank (1974)</option>
           <option value="mazewar">Maze War (1974)</option>
           <option value="mazewar2">Maze War Arena (1974, 4P online)</option>
+          <option value="spasim">Spasim (1974, 8P online 3D)</option>
           <option value="wumpus">Hunt the Wumpus (Map)</option>
           <option value="wumpus2">Hunt the Wumpus (Teletype)</option>
           <option value="slots">Redline Slots (casino)</option>
@@ -187,6 +188,7 @@
     import { buildTankExample } from "./example-tank.js";
     import { buildMazewarExample } from "./example-mazewar.js";
     import { buildMazewar2Example } from "./example-mazewar2.js";
+    import { buildSpasimExample } from "./example-spasim.js";
     import { buildWumpusExample } from "./example-wumpus.js";
     import { buildWumpus2Example } from "./example-wumpus2.js";
     import { buildSlotsExample } from "./example-slots.js";
@@ -602,6 +604,7 @@
       tank: { build: buildTankExample, screen: "live", tip: "Hit ▶ Test, pick a mode. A/D turn, W/S drive, SPACE fire — one shell in the air, walls block shots, and the mines score for the ENEMY." },
       mazewar: { build: buildMazewarExample, screen: "live", tip: "Hit ▶ Test, press START. You're IN the maze — A/D turn, W/S move, SPACE fire. Red pupil = it's aiming at you. Built entirely from the new Line object." },
       mazewar2: { build: buildMazewar2Example, screen: "live", seats: 4, tip: "The MULTIPLAYER one — publish with Players = 4 (set for you) and up to four humans hunt each other at one cabinet. Testing is solo: every eyeball is a real player." },
+      spasim: { build: buildSpasimExample, screen: "live", seats: 8, tip: "True 3D, 8 pilots online (Players = 8 set for you). A/D yaw, W/S pitch, hold E to thrust, SPACE phaser — read the projection block: it's all of 3D in 20 lines." },
       wumpus:{ build: buildWumpusExample, screen: "static", tip: "Hit ▶ Test. Walk the lit rooms and hunt by ear — smell, drafts, bats. SHOOT mode fires into a tunnel." },
       wumpus2: { build: buildWumpus2Example, screen: "static", tip: "Hit ▶ Test. The 1973 original: type M or S, then a room number. Draw your map on paper!" },
       slots: { build: buildSlotsExample, screen: "live", casino: true, tip: "Hit ▶ Test for FREE PLAY. Publish to the Casino floor and fund the pool to open for business." }
