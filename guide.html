@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RedlineStudio — Coding Guide</title>
-  <meta name="description" content="The full guide to building games on RedlineStudio: objects, events, RedScript, sound, text adventures, arcade coin slots and casino machines — blocks and code are the same language.">
+  <meta name="description" content="The full guide to building games on RedlineStudio: objects, events, RedScript, sound, text adventures, coin slots, high scores, casino machines and online multiplayer (duels to 8-seat cabinets) — blocks and code are the same language.">
   <link rel="canonical" href="https://redlinestudio.dev/guide.html">
   <meta property="og:site_name" content="RedlineStudio">
   <meta property="og:title" content="RedlineStudio Coding Guide — RedScript reference">
-  <meta property="og:description" content="The full guide to building games on RedlineStudio: objects, events, RedScript, sound, text adventures, arcade coin slots and casino machines — blocks and code are the same language.">
+  <meta property="og:description" content="The full guide to building games on RedlineStudio: objects, events, RedScript, sound, text adventures, coin slots, high scores, casino machines and online multiplayer (duels to 8-seat cabinets) — blocks and code are the same language.">
   <meta property="og:url" content="https://redlinestudio.dev/guide.html">
   <meta property="og:type" content="website">
   <link rel="stylesheet" href="css/style.css">
@@ -270,7 +270,9 @@ casino                    1 on the floor, 0 in Studio test (free play)</pre>
       <b>Line patience</b> (how long someone must wait at your machine before the line can vote to skip a player —
       1 to 120 minutes, shown on your game's page) · <b>Screen size</b> (your game's whole world: classic 480×360,
       wide, large 800×600, widescreen, or portrait for phone-first games — bigger screen = bigger maps; games
-      already published stay exactly the size they were built) · the <b>Arcade screen</b> mode (None / Static / Live).</p>
+      already published stay exactly the size they were built) · <b>Players (seats)</b> (1 is a classic cabinet;
+      2–8 makes it an online multiplayer cabinet where everyone seated shares one room — see the net contract
+      below) · the <b>Arcade screen</b> mode (None / Static / Live).</p>
       <p><b>Arcade games</b> — the platform runs the coin slot for you, and two reserved variables wire your game
       into it. <span class="code">arcade</span> is 1 when a paid play is already underway — check it in
       <span class="code">when start</span> and skip your own insert-coin screen. Set
@@ -282,8 +284,8 @@ casino                    1 on the floor, 0 in Studio test (free play)</pre>
       code) and end your plays with <span class="code">endplay</span> = 1: that's the whole contract. When a play
       ends, the platform records the player's <span class="code">score</span> on the game's page — one row per
       player, <b>personal best only</b>, best at the top. Scores are glory, not coins: they can't be spent and
-      never expire. Computer Space, Space Race, Gotcha, Gran Trak 10, Tank and Maze War all wear the pattern — load any
-      of them to see it.</p>
+      never expire. Computer Space, Space Race, Gotcha, Gran Trak 10, Tank, Maze War, Maze War Arena and Spasim
+      all wear the pattern — load any of them to see it.</p>
       <p><b>⚔ Online duels (the net contract)</b> — any game can host a second HUMAN over the platform's live
       wire. Six reserved vars carry your state out and theirs in:</p>
       <pre class="codeblock">net1 … net6    numbers you SET — sent to the opponent ~7×/second
@@ -291,7 +293,9 @@ foe1 … foe6    the opponent's net1…net6, arriving live
 netev          a counter: change it by 1 to send a pulse (a hit, a tag) —
                it arrives on their side as foeev
 duel           1 while an opponent is connected, 0 otherwise
-netslot        1 = the machine's player · 2 = the challenger (pick spawn corners with it)</pre>
+netslot        your seat: 1 = the machine's player, 2 = the challenger —
+               on a multi-seat cabinet it's your seat number, 1…8
+               (pick spawn corners with it)</pre>
       <p>A game that <b>sets net1</b> and <b>reads foe1</b> "speaks net": on a 1-seat machine its page grows a
       <b>⚔ DUEL</b> button so a second player can pay their coin and challenge. Give the game <b>2–8 seats</b>
       in the Studio instead and it becomes a true multiplayer cabinet: everyone who sits shares one room, and
@@ -311,13 +315,15 @@ hits            how many times other players have hit YOU (respawn on change)</p
       same contract as the online wire (netslot, f-lists, pcount, targeted hits), so a game that works across your
       test windows works online. Stop the test and the player windows end with it; Test again and any you left
       open reload your latest edits. Alt-Tab between windows to play each seat.</p>
-      <p>Load <b>Maze War (1974)</b> for the 2-player duel pattern, <b>Maze War Arena (1974)</b> for the full
-      4-seat, humans-only version, or <b>Spasim (1974)</b> for an 8-seat 3D dogfight (its projection block
-      is a working 3D renderer in plain RedScript) — it also shows the ROUND pattern for deathmatches: a match needs 2+
+      <p>Load <b>Maze War (1974)</b> for the 2-player duel pattern, or <b>Maze War Arena (1974)</b> for the full
+      4-seat, humans-only version — it also shows the ROUND pattern for deathmatches: a match needs 2+
       players, one life per round (no respawns to camp), last one standing wins, late joiners spectate
       until the next round deals them in, and the coin's clock only runs while a match is on — waiting
-      for players is free. All of it agreed between browsers with no referee — read its
-      round block.</p>
+      for players is free. All of it agreed between browsers with no referee — read its round block.
+      <b>Spasim (1974)</b> is the 8-seat 3D dogfight: its projection block is a working 3D renderer in plain
+      RedScript, its planets ride real orbits around a sun (four lines of trig), and its X·Y·Z position
+      instrument updates once a second — steer in polar, read your position in Cartesian, exactly like the
+      real PLATO machine.</p>
       <p><b>Models</b> — check objects → "Save checked as Model." Models keep their scripts, live in your inventory,
       insert into any game fully editable, and can be sold on the Market for free or coins. The <b>Page Studio</b>
       (from your profile: 🎨 Edit my page) is the same editor pointed at your profile page.</p>
@@ -326,13 +332,31 @@ hits            how many times other players have hit YOU (respawn on change)</p
       pinching it with two fingers (or its ◢ corner). Layouts save on their device, one per control set, and a
       layout made on a big screen pulls itself back into view on a small one — every game gets exactly the controls
       it calls for. Gamepads just work — press a button on the
-      pad once to wake it up (that press is what tells us it's a controller and not a sim wheel or pedal set).</p>
+      pad once to wake it up (that press is what tells us it's a controller and not a sim wheel or pedal set).
+      One pad drives any game; plug in TWO and they split into players — pad 1 takes the WASD side,
+      pad 2 the arrows — so any two-player example is a couch game with no setup at all.</p>
       <p><b>🖥 Screen size</b> — every machine (and the Studio) has a size button under the screen: S, M, L, or MAX
       (as wide as the page goes). Your choice is remembered on your device and applies everywhere, and the screen
       renders at double resolution so it stays crisp at any size. ⛶ next to it is still the full-monitor version.</p>
       <p><b>⬇ Download</b> — every game you make can be downloaded as a single standalone HTML file: the engine and
       your game in one file that runs offline by double-click. Upload it to itch.io as a playable browser game, or
       wrap it with Electron/Tauri to ship it as a desktop app — built on RedlineStudio, published anywhere.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Every reserved variable (the cheat sheet)</h2>
+      <p>Ordinary variables are all yours. These names are the platform's — set or read them and the machine
+      around your game responds. Everything here is explained in the sections above; this is the one-glance list:</p>
+      <pre class="codeblock">THE COIN SLOT       arcade (1 = a paid play is underway) · endplay (set 1 to end the play)
+★ HIGH SCORES       score (+ endplay) — points with a real end get a leaderboard
+🎰 THE CASINO       bet · spin · result · win · coins · pool · casino (1 on the floor)
+⚔ DUELS (2P)        net1…net6 out · foe1…foe6 in · netev out / foeev in ·
+                    duel (1 = opponent connected) · netslot (your side)
+👥 MULTI-SEAT       fon[s] · f1[s]…f6[s] · fev[s] · pcount · netslot (your seat) ·
+   (2–8 players)    set nettgt to s + change netev by 1 → their hits +1 ·
+                    hits (times YOU'VE been hit — react on change)</pre>
+      <p class="hint">Rule of one: never use these names for your own bookkeeping — pick any other name and
+      it's yours forever.</p>
     </div>
 
     <div class="panel">
