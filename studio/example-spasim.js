@@ -15,6 +15,12 @@
 //   Free-flight dogfight: get hit and you re-enter at your home point;
 //   your kills ride the HIGH SCORES table. Space wraps around (fly off one
 //   edge of the cube, arrive at the other). The coin buys ~90 seconds.
+//
+// Period details, straight from the real machine: you STEER in polar
+// (turn/pitch keys) but your POSITION reads out in Cartesian — an X · Y · Z
+// instrument that updates once a second, exactly the beat PLATO managed.
+// And the planets aren't scenery: the July '74 version made them real
+// places, so ours ORBIT the system's sun — navigate by where they'll be.
 
 const T = 5400;                                    // ~90 seconds per coin
 const VX = 240, VY = 166, K = 240;                 // screen center + focal length
@@ -27,12 +33,15 @@ const SPAWNS = [
 ];
 const spawnYaw = ([x, y]) => Math.round(Math.atan2(50 - y, 50 - x) * 180 / Math.PI);
 
-// the system's four planets — the landmarks you navigate by
+// THE SYSTEM: a sun at the center of the cube, four planets in real orbits
+// around it — different radii, speeds and heights, so the sky is never
+// the same twice and the scope reads like a live orrery, not a parade square.
+const SUN = { x: 50, y: 50, z: 50, r: 2600, c: "#ffe08a" };
 const PLANETS = [
-  { x: 25, y: 25, z: 40, r: 900, c: "#8fd0ff" },
-  { x: 75, y: 75, z: 60, r: 1300, c: "#ff9d4a" },
-  { x: 25, y: 75, z: 80, r: 700, c: "#7dff9e" },
-  { x: 75, y: 25, z: 20, r: 1100, c: "#e8b3ff" }
+  { orb: 16, z: 46, spd: 0.050, ph: 20,  r: 700,  c: "#8fd0ff" },   // quick inner rock
+  { orb: 26, z: 58, spd: 0.032, ph: 140, r: 1100, c: "#7dff9e" },   // the green one
+  { orb: 35, z: 40, spd: 0.022, ph: 250, r: 900,  c: "#e8b3ff" },   // below the ecliptic
+  { orb: 44, z: 64, spd: 0.015, ph: 330, r: 1400, c: "#ff9d4a" }    // slow outer giant
 ];
 
 const SHIPCOLS = ["#ff9d4a", "#7dff9e", "#8fd0ff", "#e8b3ff", "#ffe08a", "#ff8f8c", "#9effe8"];
@@ -78,6 +87,7 @@ function brainCode() {
   push("set endplay to 0");
   push("set score to 0");
   push("set lasthits to 0");
+  push("set clk to 0");
   SPAWNS.forEach(([x, y, z], i) => {
     push(`set sxs[${i + 1}] to ${x}`);
     push(`set sys[${i + 1}] to ${y}`);
@@ -93,6 +103,13 @@ function brainCode() {
   push("end");
 
   push("when tick");
+  push("set clk to clk + 1");
+  // THE ORRERY: each planet rides its own circle around the sun — the
+  // whole system is four lines of trig, and the scope becomes a live map
+  PLANETS.forEach((p, i) => {
+    push(`set p${i + 1}x to ${SUN.x} + ${p.orb} * cos(clk * ${p.spd} + ${p.ph})`);
+    push(`set p${i + 1}y to ${SUN.y} + ${p.orb} * sin(clk * ${p.spd} + ${p.ph})`);
+  });
   push("set bigtitle.visible to (game == 9)");
   push("set coinline.visible to (game == 9)");
   push("set subline.visible to (game == 9)");
@@ -100,6 +117,7 @@ function brainCode() {
   push("set scoretx.visible to (game != 9)");
   push("set timetx.visible to (game != 9)");
   push("set hdgtx.visible to (game != 9)");
+  push("set postx.visible to (game != 9)");
   push("set statusline.visible to (game == 2)");
   push("set ch1.visible to (game == 0)");
   push("set ch2.visible to (game == 0)");
@@ -181,9 +199,19 @@ function brainCode() {
   }
 
   // ---- PROJECT THE SYSTEM ----
-  // the planets
+  // the sun
+  project(SUN.x, SUN.y, SUN.z, "  ");
+  push(`  if fwd > 2 and abs(sxp - ${VX}) < 300 and abs(syp - ${VY}) < 220 then`);
+  push("    set sol.visible to 1");
+  push("    set sol.x to sxp");
+  push("    set sol.y to syp");
+  push(`    set sol.size to min(70, ${SUN.r} / max(4, fwd) / 10)`);
+  push("  else");
+  push("    set sol.visible to 0");
+  push("  end");
+  // the planets, wherever their orbits have carried them
   PLANETS.forEach((p, i) => {
-    project(p.x, p.y, p.z, "  ");
+    project(`p${i + 1}x`, `p${i + 1}y`, p.z, "  ");
     push(`  if fwd > 2 and abs(sxp - ${VX}) < 300 and abs(syp - ${VY}) < 220 then`);
     push(`    set pl${i + 1}.visible to 1`);
     push(`    set pl${i + 1}.x to sxp`);
@@ -220,16 +248,30 @@ function brainCode() {
     push(`    set rd${oi}.visible to 0`);
     push("  end");
   }
-  // radar shows the planets too (fixed world spots relative to me)
+  // radar shows the system too — the sun and the planets mid-orbit
+  push(`  set dx to ${SUN.x} - px`);
+  push(`  set dy to ${SUN.y} - py`);
+  wrapDelta("dx", "  ");
+  wrapDelta("dy", "  ");
+  push(`  set rsol.x to ${RX} + max(-${RR - 4}, min(${RR - 4}, dx * 0.65))`);
+  push(`  set rsol.y to ${RY} + max(-${RR - 4}, min(${RR - 4}, dy * 0.65))`);
   PLANETS.forEach((p, i) => {
-    push(`  set dx to ${p.x} - px`);
-    push(`  set dy to ${p.y} - py`);
+    push(`  set dx to p${i + 1}x - px`);
+    push(`  set dy to p${i + 1}y - py`);
     wrapDelta("dx", "  ");
     wrapDelta("dy", "  ");
     push(`  set rp${i + 1}.x to ${RX} + max(-${RR - 4}, min(${RR - 4}, dx * 0.65))`);
     push(`  set rp${i + 1}.y to ${RY} + max(-${RR - 4}, min(${RR - 4}, dy * 0.65))`);
   });
-  push(`  set rme.angle to yaw - 90`);
+  // the scope is a top-down world map (x right, y down — same as the sky),
+  // so my marker's nose points exactly along my yaw: it flies nose-first
+  push("  set rme.angle to yaw");
+
+  // the Cartesian instrument: steer in polar, READ your position in X·Y·Z —
+  // refreshed once a second, the same beat the PLATO network managed in 1974
+  push("  if clk % 60 == 0 then");
+  push('    set postx.text to "POS X " + floor(px) + " · Y " + floor(py) + " · Z " + floor(pz)');
+  push("  end");
 
   // the net contract: where I am, which way I face, how I'm scoring
   push("  set net1 to px");
@@ -305,7 +347,11 @@ function brainCode() {
 export function buildSpasimExample() {
   const objects = [];
 
-  // the four planets of this system
+  // the sun, then the four planets that orbit it (drawn over the sun)
+  objects.push({
+    id: "sp_sol", name: "sol", type: "ring",
+    x: VX, y: VY, size: 30, color: SUN.c, glow: 16, visible: 0, text: "", script: []
+  });
   PLANETS.forEach((p, i) => {
     objects.push({
       id: "sp_p" + (i + 1), name: "pl" + (i + 1), type: "ring",
@@ -336,6 +382,10 @@ export function buildSpasimExample() {
     id: "sp_rr", name: "rring", type: "ring",
     x: RX, y: RY, size: RR, color: "#2e5c3a", glow: 3, visible: 1, text: "", script: []
   });
+  objects.push({
+    id: "sp_rsol", name: "rsol", type: "dot",
+    x: RX, y: RY, size: 3, color: SUN.c, glow: 6, visible: 1, text: "", script: []
+  });
   PLANETS.forEach((p, i) => {
     objects.push({
       id: "sp_rp" + (i + 1), name: "rp" + (i + 1), type: "ring",
@@ -350,7 +400,7 @@ export function buildSpasimExample() {
   }
   objects.push({
     id: "sp_rme", name: "rme", type: "tri",
-    x: RX, y: RY, size: 6, angle: -45, color: WHITE, glow: 8, visible: 1, text: "",
+    x: RX, y: RY, size: 6, angle: 45, color: WHITE, glow: 8, visible: 1, text: "",
     script: [{ event: "code", source: brainCode() }]
   });
 
@@ -366,6 +416,11 @@ export function buildSpasimExample() {
   objects.push({
     id: "sp_hd", name: "hdgtx", type: "text",
     x: 386, y: 22, size: 12, color: AMBER, glow: 8, visible: 0, text: "HDG 45 · PIT 0", script: []
+  });
+  // the Cartesian position instrument — polar in, X·Y·Z out, 1Hz, pure 1974
+  objects.push({
+    id: "sp_pos", name: "postx", type: "text",
+    x: 88, y: 306, size: 10, color: AMBER, glow: 6, visible: 0, text: "POS X — · Y — · Z —", script: []
   });
 
   // the marquee
