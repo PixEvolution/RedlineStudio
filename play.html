@@ -436,11 +436,16 @@
         window.addEventListener("pagehide", () => floorCtl.leaveBeacon());
       }
 
-      // HIGH SCORES: any game with points and a real end gets the table
-      if (game.engine === "v1" && !game.casino
-          && new Engine(null, game.data?.objects || []).usesScoreboard()) {
-        scoreCtl = renderScoreboard(document.getElementById("game-scores"), id, currentUser());
-      }
+      // HIGH SCORES: any game with points and a real end gets the table.
+      // (Defensive: never let the leaderboard probe take down the machine —
+      // e.g. a stale cached engine.js without usesScoreboard yet.)
+      try {
+        const probe = new Engine(null, game.data?.objects || []);
+        if (game.engine === "v1" && !game.casino
+            && typeof probe.usesScoreboard === "function" && probe.usesScoreboard()) {
+          scoreCtl = renderScoreboard(document.getElementById("game-scores"), id, currentUser());
+        }
+      } catch (err) { console.warn("scoreboard probe:", err); }
 
       const render = game.casino ? renderers.casino : (renderers[game.engine] || renderers.v0);
       render(game, frame);
