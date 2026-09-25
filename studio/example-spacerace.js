@@ -50,18 +50,20 @@ function rocketCode(isRight) {
     push("      end");
     push("    end");
     push("  else");
-    push(`    if keydown("ArrowUp") then`);
+    push(`    if keydown("ArrowUp") or sticky(2) < -0.35 then`);
     push(`      change self.y by -${UP}`);
     push("    end");
-    push(`    if keydown("ArrowDown") then`);
+    push(`    if keydown("ArrowDown") or sticky(2) > 0.35 then`);
     push(`      change self.y by ${DOWN}`);
     push("    end");
     push("  end");
   } else {
-    push(`  if keydown("w") then`);
+    // keys and JOYSTICK 1 side by side — the real 1973 cabinet was a
+    // joystick per player: push up to climb, pull back to duck
+    push(`  if keydown("w") or sticky(1) < -0.35 then`);
     push(`    change self.y by -${UP}`);
     push("  end");
-    push(`  if keydown("s") then`);
+    push(`  if keydown("s") or sticky(1) > 0.35 then`);
     push(`    change self.y by ${DOWN}`);
     push("  end");
   }

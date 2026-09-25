@@ -167,18 +167,12 @@ function brainCode() {
   push("    set pit to sin(time() * 20) * 8");
   push("    set spd to 0.22");
   push("  else");
-  push('    if keydown("a") then');
-  push("      change yaw by -2.2");
-  push("    end");
-  push('    if keydown("d") then');
-  push("      change yaw by 2.2");
-  push("    end");
-  push('    if keydown("w") then');
-  push("      set pit to min(80, pit + 1.8)");
-  push("    end");
-  push('    if keydown("s") then');
-  push("      set pit to max(-80, pit - 1.8)");
-  push("    end");
+  // the flight stick: keys and JOYSTICK 1 side by side — stick right yaws
+  // right, push UP to pitch up (analog, so gentle inputs fly gentle arcs)
+  push('    set yax to max(-1, min(1, keydown("d") - keydown("a") + stickx(1)))');
+  push("    change yaw by yax * 2.2");
+  push('    set pax to max(-1, min(1, keydown("w") - keydown("s") - sticky(1)))');
+  push("    set pit to max(-80, min(80, pit + pax * 1.8))");
   push('    if keydown("e") then');
   push("      set spd to min(0.5, spd + 0.01)");
   push("    else");

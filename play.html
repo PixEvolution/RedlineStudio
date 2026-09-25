@@ -208,7 +208,7 @@
             }
           };
           loop = attachCasinoLoop(engine, wallet, { real: true });
-          if (isTouchDevice()) controls = createTouchControls(engine, stage);
+          controls = createTouchControls(engine, stage);   // buttons on touch, sticks everywhere
           term = attachTerminalInput(engine, stage);
           engine.start();
           if (floorCtl) floorCtl.startBeating(() => engine ? snapFromEngine(engine) : null);
@@ -421,7 +421,7 @@
           engine = new Engine(canvas, game.data?.objects || [], { w: W, h: H });
           engine.vars.arcade = 1;   // the coin door is handled out here
           if (engine.errors.length) console.warn("Script issues:", engine.errors);
-          if (isTouchDevice()) controls = createTouchControls(engine, stage);
+          controls = createTouchControls(engine, stage);   // buttons on touch, sticks everywhere
           term = attachTerminalInput(engine, stage);   // text adventures get their keyboard
           engine.start();
           if (floorCtl) floorCtl.startBeating(() => engine ? snapFromEngine(engine) : null);
@@ -479,7 +479,7 @@
             duelCtl = ctl;
             isDuelist = true;
             if (engine.errors.length) console.warn("Script issues:", engine.errors);
-            if (isTouchDevice()) controls = createTouchControls(engine, stage);
+            controls = createTouchControls(engine, stage);   // buttons on touch, sticks everywhere
             term = attachTerminalInput(engine, stage);
             engine.start();
             if (me !== game.owner) countPlay(game.id);

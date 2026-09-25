@@ -184,18 +184,16 @@ function brainCode() {
   push("  set ai1 to (game == 9)");
   push("  set ai2 to (game == 9 or mode == 1)");
 
-  // YOUR treads (the drone drives tank1 on the attract reel)
+  // YOUR treads (the drone drives tank1 on the attract reel).
+  // Keys and JOYSTICK 1 side by side — the real 1974 cabinet was all sticks:
+  // stick left/right turns (analog: half-push = gentle turn), up/down drives.
   push("  if game == 0 and stun1 == 0 then");
-  push('    if keydown("a") then');
-  push(`      change tank1.angle by -${TURN}`);
-  push("    end");
-  push('    if keydown("d") then');
-  push(`      change tank1.angle by ${TURN}`);
-  push("    end");
-  push('    if keydown("w") then');
+  push('    set trn1 to max(-1, min(1, keydown("d") - keydown("a") + stickx(1)))');
+  push(`    change tank1.angle by trn1 * ${TURN}`);
+  push('    if keydown("w") or sticky(1) < -0.35 then');
   push("      set go1 to 1");
   push("    end");
-  push('    if keydown("s") then');
+  push('    if keydown("s") or sticky(1) > 0.35 then');
   push(`      set go1 to -${REV}`);
   push("    end");
   push("  end");
@@ -211,18 +209,14 @@ function brainCode() {
   push("    end");
   push("  end");
 
-  // THEIR treads: the drone, or player 2 on the arrows
+  // THEIR treads: the drone, or player 2 on the arrows / JOYSTICK 2
   push("  if game == 0 and mode == 2 and stun2 == 0 then");
-  push('    if keydown("ArrowLeft") then');
-  push(`      change tank2.angle by -${TURN}`);
-  push("    end");
-  push('    if keydown("ArrowRight") then');
-  push(`      change tank2.angle by ${TURN}`);
-  push("    end");
-  push('    if keydown("ArrowUp") then');
+  push('    set trn2 to max(-1, min(1, keydown("ArrowRight") - keydown("ArrowLeft") + stickx(2)))');
+  push(`    change tank2.angle by trn2 * ${TURN}`);
+  push('    if keydown("ArrowUp") or sticky(2) < -0.35 then');
   push("      set go2 to 1");
   push("    end");
-  push('    if keydown("ArrowDown") then');
+  push('    if keydown("ArrowDown") or sticky(2) > 0.35 then');
   push(`      set go2 to -${REV}`);
   push("    end");
   push("  end");

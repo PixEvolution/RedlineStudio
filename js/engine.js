@@ -129,6 +129,12 @@ export class Engine {
     this.keys = {};
     this.gpKeys = {};   // keys held via gamepads (merged with the keyboard)
     this._pads = {};    // per-gamepad activation state (see pollGamepads)
+    // JOYSTICKS: stickx(n)/sticky(n) read -1..1. Two sources feed each stick —
+    // the on-screen stick (finger or mouse) and a gamepad's analog stick —
+    // and while a screen stick is held it owns its number.
+    this.sticksTouch = {};   // n -> {x, y}, set by the on-screen sticks
+    this.sticksPad = {};     // n -> {x, y}, set by pollGamepads
+    this._usedSticksCache = null;
     this.beeps = [];    // sounds played this session (tests read this)
     this.termLines = []; // the teletype: print writes here, drawFrame shows it
     this.lastAnswer = ""; // the last thing the player typed (answer() reads it)
@@ -287,18 +293,30 @@ export class Engine {
       arrows: { up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight",
                 a: " ", b: "Enter", x: "ArrowDown", y: "ArrowUp" }
     };
+    // a game that reads sticks gets the pads' axes as ANALOG sticks; games
+    // that don't keep the classic axis→keys mapping. Buttons map either way.
+    const analog = this.usedSticks().length > 0;
+    const trustedAxis = (pad, st, i) => {
+      const v = Number(pad.axes?.[i]) || 0;
+      if (Math.abs(v) < 0.3) st.centered[i] = true;   // proven it can rest
+      return st.centered[i] ? v : 0;                  // pegged-from-birth axes stay dead
+    };
+    const dead = (v) => (Math.abs(v) < 0.12 ? 0 : v); // analog deadzone
+    const padSticks = {};
+    active.forEach(({ pad, st }, k) => {
+      // pad 1 → sticks 1 (left) + 2 (right) · pad 2 → sticks 3 + 4 · …
+      padSticks[k * 2 + 1] = { x: dead(trustedAxis(pad, st, 0)), y: dead(trustedAxis(pad, st, 1)) };
+      padSticks[k * 2 + 2] = { x: dead(trustedAxis(pad, st, 2)), y: dead(trustedAxis(pad, st, 3)) };
+    });
+    this.sticksPad = padSticks;
+
     const apply = ({ pad, st }, c) => {
-      const axis = (i) => {
-        const v = Number(pad.axes?.[i]) || 0;
-        if (Math.abs(v) < 0.3) st.centered[i] = true;   // proven it can rest
-        return st.centered[i] ? v : 0;
-      };
-      const ax = axis(0), ay = axis(1);
+      const ax = trustedAxis(pad, st, 0), ay = trustedAxis(pad, st, 1);
       const btn = (i) => !!pad.buttons?.[i]?.pressed;
-      if (ay < -0.4 || btn(12)) next[c.up] = true;
-      if (ay > 0.4 || btn(13)) next[c.down] = true;
-      if (ax < -0.4 || btn(14)) next[c.left] = true;
-      if (ax > 0.4 || btn(15)) next[c.right] = true;
+      if ((!analog && ay < -0.4) || btn(12)) next[c.up] = true;
+      if ((!analog && ay > 0.4) || btn(13)) next[c.down] = true;
+      if ((!analog && ax < -0.4) || btn(14)) next[c.left] = true;
+      if ((!analog && ax > 0.4) || btn(15)) next[c.right] = true;
       if (btn(0)) next[c.a] = true;
       if (btn(1)) next[c.b] = true;
       if (btn(2)) next[c.x] = true;
@@ -308,6 +326,48 @@ export class Engine {
     else if (active.length >= 2) { apply(active[0], CLUSTERS.wasd); apply(active[1], CLUSTERS.arrows); }
     for (const k in next) if (!this.gpKeys[k]) this.fireKey(k);   // rising edge -> "when key"
     this.gpKeys = next;
+  }
+
+  // ---- joysticks -----------------------------------------------------------
+  // stickx(n)/sticky(n): -1..1 on each axis, screen convention (push up = -1,
+  // push right = +1). The on-screen stick wins while it's held; otherwise the
+  // matching gamepad analog stick drives it (stick 1 = pad 1 left, stick 2 =
+  // pad 1 right, stick 3 = pad 2 left, stick 4 = pad 2 right).
+  stickVal(n) {
+    n = Math.round(Number(n)) || 1;
+    return this.sticksTouch[n] || this.sticksPad[n] || { x: 0, y: 0 };
+  }
+  setStick(n, x, y) {   // the on-screen sticks call these
+    n = Math.round(Number(n)) || 1;
+    const cl = (v) => Math.max(-1, Math.min(1, Number(v) || 0));
+    this.sticksTouch[n] = { x: cl(x), y: cl(y) };
+  }
+  clearStick(n) {
+    delete this.sticksTouch[Math.round(Number(n)) || 1];
+  }
+  // Every stick number this game's scripts read — stickx(1), sticky(2), …
+  // The on-screen controls are generated from this, exactly like usedKeys().
+  usedSticks() {
+    if (this._usedSticksCache) return this._usedSticksCache;
+    const sticks = new Set();
+    const walkExpr = (x) => {
+      if (!x || typeof x !== "object") return;
+      if (x.e === "call" && (x.fn === "stickx" || x.fn === "sticky") && x.args?.[0]?.e === "num") {
+        const n = Math.round(Number(x.args[0].v));
+        if (n >= 1 && n <= 8) sticks.add(n);
+      }
+      for (const f of ["a", "b", "i"]) walkExpr(x[f]);
+      (x.args || []).forEach(walkExpr);
+    };
+    const walkStmts = (list) => (list || []).forEach(s => {
+      for (const f of ["value", "by", "cond", "times", "seconds"]) walkExpr(s[f]);
+      walkStmts(s.then); walkStmts(s.else); walkStmts(s.body);
+    });
+    for (const c of this.compiled) {
+      for (const ev of c.events) walkStmts(ev.body);
+    }
+    this._usedSticksCache = [...sticks].sort((a, b) => a - b);
+    return this._usedSticksCache;
   }
 
   keyMatches(want, got) {
@@ -601,6 +661,8 @@ export class Engine {
               (k === " " && (m["Space"] || m["space"]));
             return (held(this.keys) || held(this.gpKeys)) ? 1 : 0;
           }
+          case "stickx": return this.stickVal(args[0]).x;
+          case "sticky": return this.stickVal(args[0]).y;
           case "abs": return Math.abs(Number(args[0]));
           case "min": return Math.min(...args.map(Number));
           case "max": return Math.max(...args.map(Number));

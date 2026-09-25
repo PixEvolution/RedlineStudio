@@ -87,6 +87,9 @@ rand(10, 90)          random number in a range
 dist(self, target1)   distance between two objects (center to center)
 touching(self, wall1) 1 while two objects overlap — knows each shape's size
 keydown("w")          1 while that key/button is held
+stickx(1) sticky(1)   joystick 1's position, -1..1 per axis (up = -1, right = +1)
+                      — the on-screen stick, the mouse, or a gamepad's analog
+                      stick, all reading back through the same number
 mousex()  mousey()    where the pointer is
 abs(x)  min(a,b)  max(a,b)  floor(x)  round(x)
 sin(deg)  cos(deg)    trig in degrees — angles into motion
@@ -335,6 +338,18 @@ hits            how many times other players have hit YOU (respawn on change)</p
       pad once to wake it up (that press is what tells us it's a controller and not a sim wheel or pedal set).
       One pad drives any game; plug in TWO and they split into players — pad 1 takes the WASD side,
       pad 2 the arrows — so any two-player example is a couch game with no setup at all.</p>
+      <p><b>🕹 Joysticks</b> — read <span class="code">stickx(1)</span> / <span class="code">sticky(1)</span>
+      anywhere in a script and joystick 1 exists: the platform generates an <b>on-screen stick</b> for it on
+      EVERY device — a thumb flies it on phones, and on a desktop the <b>mouse</b> drags it — movable,
+      resizable (pinch or ◢) and saved exactly like the buttons. A <b>gamepad's analog sticks</b> drive the
+      same numbers (pad 1's left stick is 1, its right stick is 2; a second pad brings 3 and 4), with a
+      deadzone so resting sticks read a clean 0 — and while an on-screen stick is held, it owns its number.
+      Add as many as the game calls for (up to 8). Values are analog: a half push reads 0.5, so
+      <span class="code">change self.x by stickx(1) * 3</span> creeps or sprints by how far it's pushed.
+      The house style is keys AND stick side by side, so every hand is welcome:
+      <span class="code">set trn to max(-1, min(1, keydown("d") - keydown("a") + stickx(1)))</span>.
+      Tank, Gotcha, Space Race, Spacewar! and Spasim all wear that pattern — the machines that really were
+      joystick cabinets in the 70s. Load any of them and read the two-line idiom.</p>
       <p><b>🖥 Screen size</b> — every machine (and the Studio) has a size button under the screen: S, M, L, or MAX
       (as wide as the page goes). Your choice is remembered on your device and applies everywhere, and the screen
       renders at double resolution so it stays crisp at any size. ⛶ next to it is still the full-monitor version.</p>
@@ -354,7 +369,9 @@ hits            how many times other players have hit YOU (respawn on change)</p
                     duel (1 = opponent connected) · netslot (your side)
 👥 MULTI-SEAT       fon[s] · f1[s]…f6[s] · fev[s] · pcount · netslot (your seat) ·
    (2–8 players)    set nettgt to s + change netev by 1 → their hits +1 ·
-                    hits (times YOU'VE been hit — react on change)</pre>
+                    hits (times YOU'VE been hit — react on change)
+🕹 JOYSTICKS        stickx(n) · sticky(n) — functions, not vars: reading one
+                    is what summons joystick n onto the screen</pre>
       <p class="hint">Rule of one: never use these names for your own bookkeeping — pick any other name and
       it's yours forever.</p>
     </div>

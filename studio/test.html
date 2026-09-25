@@ -83,7 +83,7 @@
       sharpenCanvas(canvas, 2, engine.w, engine.h);
       engine.start();
       wire = attachLocalParty(engine, "rl_wire:" + testId, slot, seats, "P" + slot);
-      if (isTouchDevice()) controls = createTouchControls(engine, stage);
+      controls = createTouchControls(engine, stage);   // buttons on touch, sticks everywhere
       term = attachTerminalInput(engine, stage);
     }
 

@@ -1,6 +1,10 @@
-// touch-controls.js — on-screen buttons for phones/tablets.
+// touch-controls.js — on-screen buttons AND joysticks.
 // The buttons are GENERATED from whatever keys the game's scripts actually use
-// (engine.usedKeys()), so every game automatically gets the right controls.
+// (engine.usedKeys()), and on-screen joysticks from whatever sticks they read
+// (engine.usedSticks() — stickx(n)/sticky(n)), so every game automatically
+// gets the right controls. Buttons are for touch screens; STICKS render on
+// every device — on a desktop the mouse flies them — and a gamepad's analog
+// sticks drive the same numbers, so one script serves thumb, mouse and pad.
 //
 // Players can make them their own: the ✥ button opens edit mode, where EVERY
 // INDIVIDUAL BUTTON can be dragged anywhere, PINCHED bigger or smaller with
@@ -57,6 +61,16 @@ export function pinchScale(s0, d0, d1) {
   return clampBtnScale((Number(s0) || 1) * (Math.max(1, Number(d1) || 1) / Math.max(1, Number(d0) || 1)));
 }
 
+// A joystick's reading: finger offset from the base's center, clamped to the
+// unit circle. Screen convention — up is -1, right is +1. Pure, testable.
+export function stickVector(dx, dy, r) {
+  r = Math.max(1, Number(r) || 1);
+  let x = (Number(dx) || 0) / r, y = (Number(dy) || 0) / r;
+  const m = Math.hypot(x, y);
+  if (m > 1) { x /= m; y /= m; }
+  return { x: Math.round(x * 100) / 100, y: Math.round(y * 100) / 100 };
+}
+
 // A layout saved on one screen, opened on a smaller one: how far a button's
 // rect must shift to come back into the visible box. Pure, so it's testable.
 export function shiftIntoBox(rect, boxW, boxH, pad = 2) {
@@ -94,22 +108,27 @@ function muzzle(el, { blockTouch = false } = {}) {
 }
 
 // Creates the controls inside `container`. Returns { destroy }.
+// Safe to call on ANY device: phones get buttons + sticks, desktops get
+// on-screen sticks only (their keyboard beats buttons, but a mouse flies a
+// stick as well as a thumb does). Nothing to show = it renders nothing.
 export function createTouchControls(engine, container) {
   const keys = engine.usedKeys();
+  const sticks = (typeof engine.usedSticks === "function") ? engine.usedSticks() : [];
+  const touch = isTouchDevice();
 
   // the game canvas is a game surface — no long-press menu, no text callout
   const canvas = container.querySelector?.("canvas");
   if (canvas) muzzle(canvas, { blockTouch: true });
   muzzle(container);   // context menu / selection off everywhere in the stage
 
-  if (keys.length === 0) {
-    // Click-only game — no buttons needed, the canvas itself is the controller.
+  if ((touch ? keys.length + sticks.length : sticks.length) === 0) {
+    // nothing to draw — the canvas/keyboard is the whole controller here
     return { destroy() {} };
   }
 
   const wrap = document.createElement("div");
   wrap.className = "touch-controls";
-  const slot = layoutSlot(keys);
+  const slot = layoutSlot([...keys, ...sticks.map(n => "stick" + n)]);
   let layout = loadLayout(slot);
   let editing = false;
 
@@ -170,18 +189,25 @@ export function createTouchControls(engine, container) {
     b.addEventListener("pointerleave", up);
     muzzle(b, { blockTouch: true });
 
-    // ---- edit mode: one finger MOVES the button, two fingers PINCH it ----
-    const pts = new Map();          // live pointers on this button
+    wireEditing(b, key);
+    buttons.push({ el: b, key });
+    return b;
+  };
+
+  // ---- edit mode, shared by buttons AND sticks: one finger MOVES the
+  // control, two fingers PINCH it, and the ◢ corner handle also resizes ----
+  function wireEditing(el, key) {
+    const pts = new Map();          // live pointers on this control
     let dragBase = null, pinchBase = null;
     const spread = () => {
       const [p1, p2] = [...pts.values()];
       return Math.hypot(p1.x - p2.x, p1.y - p2.y);
     };
-    b.addEventListener("pointerdown", (e) => {
+    el.addEventListener("pointerdown", (e) => {
       if (!editing) return;
       e.preventDefault();
       e.stopPropagation();
-      b.setPointerCapture?.(e.pointerId);
+      el.setPointerCapture?.(e.pointerId);
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
       const st = btnState(key);
       if (pts.size === 1) {
@@ -202,7 +228,7 @@ export function createTouchControls(engine, container) {
         st.x = e.clientX - dragBase.sx;
         st.y = e.clientY - dragBase.sy;
       }
-      place(b, key);
+      place(el, key);
     };
     const editEnd = (e) => {
       if (!pts.has(e.pointerId)) return;
@@ -217,11 +243,10 @@ export function createTouchControls(engine, container) {
       }
       if (pts.size === 0 && editing) { clampAll(); saveLayout(slot, layout); }
     };
-    b.addEventListener("pointermove", editMove);
-    b.addEventListener("pointerup", editEnd);
-    b.addEventListener("pointercancel", editEnd);
+    el.addEventListener("pointermove", editMove);
+    el.addEventListener("pointerup", editEnd);
+    el.addEventListener("pointercancel", editEnd);
 
-    // ---- ...and its ◢ corner handle to RESIZE it -------------------------
     const rsz = document.createElement("span");
     rsz.className = "touch-rsz";
     rsz.textContent = "◢";
@@ -235,7 +260,7 @@ export function createTouchControls(engine, container) {
       const move = (ev) => {
         const d = (ev.clientX - ox) + (ev.clientY - oy);   // drag out = bigger
         st.s = clampBtnScale(s0 * (1 + d / 120));
-        place(b, key);
+        place(el, key);
       };
       const up2 = () => {
         rsz.removeEventListener("pointermove", move);
@@ -248,21 +273,80 @@ export function createTouchControls(engine, container) {
       rsz.addEventListener("pointerup", up2);
       rsz.addEventListener("pointercancel", up2);
     });
-    b.appendChild(rsz);
+    el.appendChild(rsz);
+  }
 
-    buttons.push({ el: b, key });
-    return b;
+  // ---- the on-screen JOYSTICK: a base ring and a knob that follows your
+  // finger — or your mouse — and reads back through stickx(n)/sticky(n) ----
+  const makeStick = (n) => {
+    const base = document.createElement("div");
+    base.className = "touch-stick";
+    base.setAttribute("aria-label", "joystick " + n);
+    const knob = document.createElement("div");
+    knob.className = "touch-knob";
+    const tag = document.createElement("span");
+    tag.className = "touch-stick-num";
+    tag.textContent = n;
+    base.append(knob, tag);
+    muzzle(base, { blockTouch: true });
+
+    let driving = null;   // the one pointer flying this stick
+    const fly = (e) => {
+      const r = base.getBoundingClientRect();
+      const v = stickVector(
+        e.clientX - (r.left + r.width / 2),
+        e.clientY - (r.top + r.height / 2),
+        r.width / 2
+      );
+      engine.setStick(n, v.x, v.y);
+      knob.style.transform =
+        `translate(calc(-50% + ${(v.x * r.width * 0.3).toFixed(1)}px), calc(-50% + ${(v.y * r.height * 0.3).toFixed(1)}px))`;
+      base.classList.add("held");
+    };
+    const land = () => {
+      driving = null;
+      engine.clearStick(n);
+      knob.style.transform = "translate(-50%, -50%)";
+      base.classList.remove("held");
+    };
+    base.addEventListener("pointerdown", (e) => {
+      if (editing || driving !== null) return;
+      e.preventDefault();
+      driving = e.pointerId;
+      base.setPointerCapture?.(e.pointerId);
+      fly(e);
+    });
+    base.addEventListener("pointermove", (e) => {
+      if (editing || e.pointerId !== driving) return;
+      e.preventDefault();
+      fly(e);
+    });
+    const up = (e) => { if (e.pointerId === driving) land(); };
+    base.addEventListener("pointerup", up);
+    base.addEventListener("pointercancel", up);
+
+    wireEditing(base, "stick" + n);
+    buttons.push({ el: base, key: "stick" + n });
+    return base;
   };
 
-  // Arrow keys form a D-pad on the left; everything else is an action button
-  // on the right. Those are just the DEFAULT spots — every button then wears
-  // its own saved offset and size.
-  const usedArrows = ARROWS.filter(a => keys.includes(a));
-  const others = keys.filter(k => !ARROWS.includes(k));
+  // Layout: odd sticks + the D-pad on the left, action buttons + even sticks
+  // on the right. Those are just the DEFAULT spots — every control then wears
+  // its own saved offset and size. Key BUTTONS only appear on touch devices
+  // (a desktop has the real keys); STICKS appear everywhere they're read.
+  const leftBox = document.createElement("div");
+  leftBox.className = "touch-side touch-cluster";
+  const rightBox = document.createElement("div");
+  rightBox.className = "touch-side touch-cluster";
+
+  for (const n of sticks) (n % 2 ? leftBox : rightBox).appendChild(makeStick(n));
+
+  const usedArrows = touch ? ARROWS.filter(a => keys.includes(a)) : [];
+  const others = touch ? keys.filter(k => !ARROWS.includes(k)) : [];
 
   if (usedArrows.length > 0) {
     const pad = document.createElement("div");
-    pad.className = "touch-dpad touch-cluster";
+    pad.className = "touch-dpad";
     const slotBtn = (area, key) => {
       if (!keys.includes(key)) { const sp = document.createElement("span"); sp.style.gridArea = area; pad.appendChild(sp); return; }
       const b = makeBtn(key);
@@ -273,15 +357,18 @@ export function createTouchControls(engine, container) {
     slotBtn("left", "ArrowLeft");
     slotBtn("down", "ArrowDown");
     slotBtn("right", "ArrowRight");
-    wrap.appendChild(pad);
+    leftBox.appendChild(pad);
   }
 
   if (others.length > 0) {
     const actions = document.createElement("div");
-    actions.className = "touch-actions touch-cluster";
+    actions.className = "touch-actions";
     for (const k of others) actions.appendChild(makeBtn(k));
-    wrap.appendChild(actions);
+    rightBox.insertBefore(actions, rightBox.firstChild);
   }
+
+  if (leftBox.children.length) wrap.appendChild(leftBox);
+  if (rightBox.children.length) wrap.appendChild(rightBox);
 
   placeAll();
 
@@ -340,6 +427,7 @@ export function createTouchControls(engine, container) {
     destroy() {
       window.removeEventListener("resize", onResize);
       window.removeEventListener("orientationchange", onResize);
+      for (const n of sticks) { try { engine.clearStick(n); } catch {} }
       container.classList?.remove("ctl-editing");
       bar.remove();
       wrap.remove();

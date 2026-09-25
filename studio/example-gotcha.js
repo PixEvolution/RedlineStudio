@@ -60,18 +60,12 @@ function chaserCode() {
   push("if game == 0 then");
   push("  set oldx to self.x");
   push("  set oldy to self.y");
-  push(`  if keydown("w") then`);
-  push(`    change self.y by -${CH_SPD}`);
-  push("  end");
-  push(`  if keydown("s") then`);
-  push(`    change self.y by ${CH_SPD}`);
-  push("  end");
-  push(`  if keydown("a") then`);
-  push(`    change self.x by -${CH_SPD}`);
-  push("  end");
-  push(`  if keydown("d") then`);
-  push(`    change self.x by ${CH_SPD}`);
-  push("  end");
+  // keys and JOYSTICK 1 side by side — the real 1973 Gotcha was a joystick
+  // game (the stick is analog: a half-push creeps, full tilt sprints)
+  push(`  set cax to max(-1, min(1, keydown("d") - keydown("a") + stickx(1)))`);
+  push(`  set cay to max(-1, min(1, keydown("s") - keydown("w") + sticky(1)))`);
+  push(`  change self.x by cax * ${CH_SPD}`);
+  push(`  change self.y by cay * ${CH_SPD}`);
   moveTail(push);
   // THE CATCH — the whole point of the machine
   push("  if dist(self, runner) < 15 then");
@@ -117,18 +111,11 @@ function runnerCode() {
   push("      set self.y to self.y + max(-1.2, min(1.2, 190 - self.y))");
   push("    end");
   push("  else");
-  push(`    if keydown("ArrowUp") then`);
-  push(`      change self.y by -${RN_SPD}`);
-  push("    end");
-  push(`    if keydown("ArrowDown") then`);
-  push(`      change self.y by ${RN_SPD}`);
-  push("    end");
-  push(`    if keydown("ArrowLeft") then`);
-  push(`      change self.x by -${RN_SPD}`);
-  push("    end");
-  push(`    if keydown("ArrowRight") then`);
-  push(`      change self.x by ${RN_SPD}`);
-  push("    end");
+  // the runner's arrows / JOYSTICK 2
+  push(`    set rax to max(-1, min(1, keydown("ArrowRight") - keydown("ArrowLeft") + stickx(2)))`);
+  push(`    set ray to max(-1, min(1, keydown("ArrowDown") - keydown("ArrowUp") + sticky(2)))`);
+  push(`    change self.x by rax * ${RN_SPD}`);
+  push(`    change self.y by ray * ${RN_SPD}`);
   push("  end");
   moveTail(push);
   push("end");

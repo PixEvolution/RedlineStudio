@@ -56,15 +56,12 @@ function shipCode(p) {
 
   push(`set ${p.fireFlag} to 0`);
   push(`if game == 0 and ${p.aliveVar} == 1 then`);
-  // rotation
-  push(`  if keydown("${p.left}") then`);
-  push(`    set self.angle to self.angle - ${ROT}`);
-  push("  end");
-  push(`  if keydown("${p.right}") then`);
-  push(`    set self.angle to self.angle + ${ROT}`);
-  push("  end");
+  // rotation: keys and JOYSTICK ${p.stick} side by side (stick is analog —
+  // a half-push turns half as fast); push UP on the stick to thrust
+  push(`  set self.trn to max(-1, min(1, keydown("${p.right}") - keydown("${p.left}") + stickx(${p.stick})))`);
+  push(`  set self.angle to self.angle + self.trn * ${ROT}`);
   // thrust along the heading (+ exhaust flame)
-  push(`  if keydown("${p.thrust}") then`);
+  push(`  if keydown("${p.thrust}") or sticky(${p.stick}) < -0.35 then`);
   push(`    set self.velx to min(${VMAX}, max(-${VMAX}, self.velx + cos(self.angle) * ${THRUST}))`);
   push(`    set self.vely to min(${VMAX}, max(-${VMAX}, self.vely + sin(self.angle) * ${THRUST}))`);
   push(`    set ${p.flame}.visible to 1`);
@@ -286,7 +283,7 @@ export function buildSpacewarExample() {
     x: NEEDLE_SPAWN.x, y: NEEDLE_SPAWN.y, size: 15, angle: NEEDLE_SPAWN.a,
     color: "#7dff9e", glow: 12, visible: 1, text: "",
     script: [{ event: "code", source: shipCode({
-      spawn: NEEDLE_SPAWN, left: "a", right: "d", thrust: "w", fire: "s", hyper: "q",
+      spawn: NEEDLE_SPAWN, left: "a", right: "d", thrust: "w", fire: "s", hyper: "q", stick: 1,
       fireFlag: "fire1", takenFlag: "taken1", aliveVar: "nalive",
       killSelf: "kill1", flame: "nflame"
     }) }]
@@ -297,7 +294,7 @@ export function buildSpacewarExample() {
     color: "#ff9d4a", glow: 12, visible: 1, text: "",
     script: [{ event: "code", source: shipCode({
       spawn: WEDGE_SPAWN, left: "ArrowLeft", right: "ArrowRight", thrust: "ArrowUp",
-      fire: "ArrowDown", hyper: "Enter",
+      fire: "ArrowDown", hyper: "Enter", stick: 2,
       fireFlag: "fire2", takenFlag: "taken2", aliveVar: "walive",
       killSelf: "kill2", flame: "wflame"
     }) }]

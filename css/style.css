@@ -797,14 +797,56 @@ a.nav-username:hover { border-color: var(--red); color: #fff; }
 
 /* ---------- movable / resizable touch controls ---------- */
 .touch-cluster { position: relative; z-index: 20; transform-origin: bottom center; touch-action: none; }
+.touch-side { display: flex; align-items: flex-end; gap: 14px; }
+.touch-dpad, .touch-actions { touch-action: none; }
 .touch-controls { position: relative; }
-.touch-controls.editing .touch-cluster {
-  outline: 2px dashed #39ff5e;
-  outline-offset: 6px;
-  border-radius: 10px;
-  cursor: grab;
-}
 .touch-controls.editing .touch-btn { opacity: 0.6; }
+
+/* the on-screen joystick: a base ring, a knob that follows the finger/mouse */
+.touch-stick {
+  position: relative;
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  border: 2px solid #1f8f3c;
+  background: rgba(57, 255, 94, 0.05);
+  touch-action: none;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.touch-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid #39ff5e;
+  background: rgba(57, 255, 94, 0.18);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.touch-stick.held .touch-knob {
+  background: rgba(57, 255, 94, 0.4);
+  box-shadow: 0 0 14px rgba(57, 255, 94, 0.5);
+}
+.touch-stick-num {
+  position: absolute;
+  left: 50%;
+  bottom: -4px;
+  transform: translateX(-50%);
+  color: #3f7a52;
+  font-family: "Courier New", monospace;
+  font-size: 11px;
+  font-weight: 800;
+  pointer-events: none;
+}
+.touch-controls.editing .touch-stick {
+  outline: 1px dashed #ff9d4a;
+  outline-offset: 2px;
+  opacity: 0.7;
+}
+.stage.fs-on .touch-stick { width: 96px; height: 96px; }
 .ctl-edit-btn {
   position: absolute;
   left: 50%;

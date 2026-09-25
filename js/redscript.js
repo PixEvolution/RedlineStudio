@@ -69,7 +69,8 @@ const OBJECT_ARG_FNS = new Set(["dist", "touching", "explode"]);
 const KNOWN_FNS = new Set([
   "rand", "dist", "touching", "keydown", "abs", "min", "max", "floor", "round",
   "mousex", "mousey", "time", "xor", "sin", "cos",
-  "answer", "upper", "len"
+  "answer", "upper", "len",
+  "stickx", "sticky"   // joysticks: stickx(1)/sticky(1) read -1..1
 ]);
 
 class ExprParser {

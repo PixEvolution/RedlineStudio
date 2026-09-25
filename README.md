@@ -20,8 +20,8 @@ A game platform by Redline Digital — players make accounts, build games in the
 | `js/cards.js` | Game cards with live/static arcade screens + like counts |
 | `js/social.js` | Likes/dislikes + comments (games, players, models) |
 | `js/forum.js` | Forums: threads and replies |
-| `js/touch-controls.js` | On-screen buttons for phones — each one movable/resizable, layouts saved per control set |
-| (engine) | Gamepad support: 1 controller drives any game, 2 controllers = P1/P2 |
+| `js/touch-controls.js` | On-screen buttons (phones) + on-screen joysticks (every device, mouse-flyable) — each control movable/resizable, layouts saved per control set |
+| (engine) | Gamepad support: 1 controller drives any game, 2 controllers = P1/P2, analog sticks drive stickx(n)/sticky(n) |
 | `js/fullscreen.js` | Optional fullscreen for testing and playing |
 | `js/screen-size.js` | 🖥 screen size button (S/M/L/MAX, remembered) + double-res crisp canvas |
 | `js/studio-panels.js` | Studio panels: collapsible headers + floatable windows (desktop) |
@@ -67,7 +67,7 @@ Blocks and text are the **same language** (RedScript):
 - A 📜 Code block holds full RedScript and compiles into the same structure
 - One interpreter (`engine.js`) runs everything
 
-Events: `when start`, `when tick`, `when click`, `when answer`, `when key "..."` (tick is a fixed 60Hz on every screen) · Actions: `set`, `change`, `if/else`, `repeat`, `say`, `explode`, `beep freq for secs`, `print`, `clear` · Math: `+ - * / %`, `xor(a,b)`, `sin(deg)` `cos(deg)`, comparisons, `and or not`, unary minus, `touching(a,b)`, `answer()` `upper()` `len()` · Lists: `board[i]` read/write anywhere · Objects: dot, ring, box, line (vector segment along its angle), text, tri (ship) with angle/rotation and x/y/size/color/glow/visible/text.
+Events: `when start`, `when tick`, `when click`, `when answer`, `when key "..."` (tick is a fixed 60Hz on every screen) · Actions: `set`, `change`, `if/else`, `repeat`, `say`, `explode`, `beep freq for secs`, `print`, `clear` · Math: `+ - * / %`, `xor(a,b)`, `sin(deg)` `cos(deg)`, comparisons, `and or not`, unary minus, `touching(a,b)`, `stickx(n)`/`sticky(n)` joysticks, `answer()` `upper()` `len()` · Lists: `board[i]` read/write anywhere · Objects: dot, ring, box, line (vector segment along its angle), text, tri (ship) with angle/rotation and x/y/size/color/glow/visible/text.
 
 ## Models & Market (v1)
 

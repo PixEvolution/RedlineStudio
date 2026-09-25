@@ -551,7 +551,7 @@
       if (engine.usesCasino()) testCasino = attachCasinoLoop(engine, localWallet(100, 1000));
       engine.start();
       startLocalWire(engine);   // multiplayer games test with REAL extra players
-      if (isTouchDevice()) testControls = createTouchControls(engine, $("#stage"));
+      testControls = createTouchControls(engine, $("#stage"));   // buttons on touch, sticks everywhere
       testTerminal = attachTerminalInput(engine, $("#stage"));
       testBtn.textContent = "■ Stop";
       $("#ws-hint").textContent = engine.usesCasino()
@@ -654,17 +654,17 @@
       tennis: { build: buildTennisExample, screen: "static", tip: "Hit ▶ Test. Grab a friend — W/S+D vs ↑/↓+←. First to 5!" },
       mouse: { build: buildMouseExample, screen: "static", tip: "Hit ▶ Test. Draw walls, drop the cheese, press RUN — then run it AGAIN." },
       txo: { build: buildTxoExample, screen: "static", tip: "Hit ▶ Test. Pick the opponent program and run the experiment." },
-      spacewar: { build: buildSpacewarExample, screen: "static", tip: "Hit ▶ Test. Two players — mind the star, and save hyperspace for emergencies." },
+      spacewar: { build: buildSpacewarExample, screen: "static", tip: "Hit ▶ Test. Two players, keys OR the two on-screen joysticks — mind the star, and save hyperspace for emergencies." },
       galaxy: { build: buildGalaxyExample, screen: "live", tip: "Hit ▶ Test, click to drop a coin. Publish it with a ◎ price + Live screen for the full 1971." },
       odyssey: { build: buildOdysseyExample, screen: "static", tip: "Hit ▶ Test. Two players — and hold your keys AFTER hitting to curve the ball (english)!" },
       pong: { build: buildPongExample, screen: "live", tip: "Hit ▶ Test, click a mode. Edges of your paddle = sharp angles. Avoid missing ball for high score." },
-      spacerace: { build: buildSpaceraceExample, screen: "live", tip: "Hit ▶ Test, click a mode. Race to the top — the coin buys TIME, and the center bar is it draining." },
-      gotcha: { build: buildGotchaExample, screen: "live", tip: "Hit ▶ Test, click a mode. Square hunts ring through a maze that never stops moving — the first maze game." },
+      spacerace: { build: buildSpaceraceExample, screen: "live", tip: "Hit ▶ Test, click a mode. Race to the top by key or joystick (one stick per rocket, like 1973) — the coin buys TIME, and the center bar is it draining." },
+      gotcha: { build: buildGotchaExample, screen: "live", tip: "Hit ▶ Test, click a mode. Square hunts ring through a maze that never stops moving — a joystick game in 1973, so grab the on-screen stick (or WASD)." },
       grantrak: { build: buildGrantrakExample, screen: "live", tip: "Hit ▶ Test, press START. A/D steer, W gas, S brake, Q/E shift — launch in 1st and work up through the box; the high gears just lug from a stop." },
-      tank: { build: buildTankExample, screen: "live", tip: "Hit ▶ Test, pick a mode. A/D turn, W/S drive, SPACE fire — one shell in the air, walls block shots, and the mines score for the ENEMY." },
+      tank: { build: buildTankExample, screen: "live", tip: "Hit ▶ Test, pick a mode. A/D turn, W/S drive — or the joystick, like the real all-stick cabinet — SPACE fire. One shell in the air, and the mines score for the ENEMY." },
       mazewar: { build: buildMazewarExample, screen: "live", tip: "Hit ▶ Test, press START. You're IN the maze — A/D turn, W/S move, SPACE fire. Red pupil = it's aiming at you. Built entirely from the new Line object." },
       mazewar2: { build: buildMazewar2Example, screen: "live", seats: 4, tip: "The MULTIPLAYER one — hit ▶ Test, then ➕ Player to open real second/third/fourth players in their own windows. Publish with Players = 4 (set for you) for the online cabinet." },
-      spasim: { build: buildSpasimExample, screen: "live", seats: 8, tip: "True 3D, 8 pilots online (Players = 8 set for you) — ▶ Test then ➕ Player to dogfight yourself. A/D yaw, W/S pitch, hold E to thrust, SPACE phaser — the projection block is all of 3D in 20 lines." },
+      spasim: { build: buildSpasimExample, screen: "live", seats: 8, tip: "True 3D, 8 pilots online (Players = 8 set for you) — ▶ Test then ➕ Player to dogfight yourself. Fly on keys or the flight stick (A/D yaw, W/S pitch, hold E to thrust, SPACE phaser) — the projection block is all of 3D in 20 lines." },
       wumpus:{ build: buildWumpusExample, screen: "static", tip: "Hit ▶ Test. Walk the lit rooms and hunt by ear — smell, drafts, bats. SHOOT mode fires into a tunnel." },
       wumpus2: { build: buildWumpus2Example, screen: "static", tip: "Hit ▶ Test. The 1973 original: type M or S, then a room number. Draw your map on paper!" },
       slots: { build: buildSlotsExample, screen: "live", casino: true, tip: "Hit ▶ Test for FREE PLAY. Publish to the Casino floor and fund the pool to open for business." }

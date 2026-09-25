@@ -66,8 +66,26 @@ export async function buildStandaloneHtml({ title, objects, w, h }, { rootPath =
   .touch-controls { position: relative; display: flex; align-items: flex-end; justify-content: space-between;
                     gap: 16px; margin-top: 10px; }
   .touch-cluster { position: relative; z-index: 20; transform-origin: bottom center; touch-action: none; }
-  .touch-controls.editing .touch-cluster { outline: 2px dashed #39ff5e; outline-offset: 6px; border-radius: 10px; }
+  .touch-side { display: flex; align-items: flex-end; gap: 14px; }
   .touch-controls.editing .touch-btn { opacity: .6; }
+  .touch-stick { position: relative; width: 104px; height: 104px; border-radius: 50%;
+                 border: 2px solid #1f8f3c; background: rgba(57,255,94,.05); touch-action: none;
+                 cursor: pointer; flex: 0 0 auto; }
+  .touch-knob { position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; border-radius: 50%;
+                border: 2px solid #39ff5e; background: rgba(57,255,94,.18);
+                transform: translate(-50%,-50%); pointer-events: none; }
+  .touch-stick.held .touch-knob { background: rgba(57,255,94,.4); box-shadow: 0 0 14px rgba(57,255,94,.5); }
+  .touch-stick-num { position: absolute; left: 50%; bottom: -4px; transform: translateX(-50%);
+                     color: #3f7a52; font-size: 11px; font-weight: 800; pointer-events: none; }
+  .touch-controls.editing .touch-stick { outline: 1px dashed #ff9d4a; outline-offset: 2px; opacity: .7; }
+  .touch-btn { position: relative; }
+  .touch-rsz { display: none; position: absolute; right: -13px; bottom: -13px; width: 34px; height: 34px;
+               align-items: center; justify-content: center; font-size: 15px; color: #ff9d4a;
+               background: rgba(0,0,0,.55); border: 1px solid #ff9d4a; border-radius: 50%;
+               touch-action: none; z-index: 5; }
+  .touch-controls.editing .touch-rsz { display: flex; }
+  .touch-controls.editing .touch-btn { outline: 1px dashed #ff9d4a; outline-offset: 2px; }
+  .ctl-edit-tip { color: #7a8894; font-size: 11px; align-self: center; }
   .touch-dpad { display: grid; grid-template-areas: ". up ." "left down right"; gap: 6px; }
   .touch-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
   .touch-btn { min-width: 58px; min-height: 58px; padding: 8px 14px; border-radius: 14px; border: 2px solid #1f8f3c;
@@ -141,7 +159,7 @@ document.getElementById("startbtn").addEventListener("click", () => {
   const engine = new Engine(_canvas, GAME.objects || [], { w: _W, h: _H });
   if (engine.usesCasino()) attachCasinoLoop(engine, localWallet(100, 1000));  // offline = free play
   engine.start();
-  if (isTouchDevice()) createTouchControls(engine, _stage);
+  createTouchControls(engine, _stage);   // buttons on touch, sticks everywhere
   attachTerminalInput(engine, _stage);
 });
 </script>
