@@ -267,5 +267,10 @@ export function buildGotchaExample() {
     script: []
   });
 
+  // name the on-screen joysticks — the harness reads stickNtag objects
+  // so every stick says WHOSE it is (hidden: they're labels, not scenery)
+  objects.push({ id: "gc_st1", name: "stick1tag", type: "text", x: 0, y: 0, size: 10, color: "#3f7a52", glow: 0, visible: 0, text: "HUNTER", script: [] });
+  objects.push({ id: "gc_st2", name: "stick2tag", type: "text", x: 0, y: 0, size: 10, color: "#3f7a52", glow: 0, visible: 0, text: "RUNNER", script: [] });
+
   return { title: "Gotcha (1973)", objects };
 }

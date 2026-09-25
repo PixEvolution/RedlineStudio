@@ -446,5 +446,9 @@ export function buildSpasimExample() {
     script: []
   });
 
+  // name the on-screen joysticks — the harness reads stickNtag objects
+  // so every stick says WHOSE it is (hidden: they're labels, not scenery)
+  objects.push({ id: "sp_st1", name: "stick1tag", type: "text", x: 0, y: 0, size: 10, color: "#3f7a52", glow: 0, visible: 0, text: "FLY", script: [] });
+
   return { title: "Spasim (1974)", objects };
 }

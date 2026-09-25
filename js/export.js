@@ -75,8 +75,9 @@ export async function buildStandaloneHtml({ title, objects, w, h }, { rootPath =
                 border: 2px solid #39ff5e; background: rgba(57,255,94,.18);
                 transform: translate(-50%,-50%); pointer-events: none; }
   .touch-stick.held .touch-knob { background: rgba(57,255,94,.4); box-shadow: 0 0 14px rgba(57,255,94,.5); }
-  .touch-stick-num { position: absolute; left: 50%; bottom: -4px; transform: translateX(-50%);
-                     color: #3f7a52; font-size: 11px; font-weight: 800; pointer-events: none; }
+  .touch-stick-num { position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%);
+                     color: #57b06f; font-size: 10px; font-weight: 800; white-space: nowrap;
+                     background: rgba(3,17,10,.8); padding: 0 5px; border-radius: 6px; pointer-events: none; }
   .touch-controls.editing .touch-stick { outline: 1px dashed #ff9d4a; outline-offset: 2px; opacity: .7; }
   .touch-btn { position: relative; }
   .touch-rsz { display: none; position: absolute; right: -13px; bottom: -13px; width: 34px; height: 34px;

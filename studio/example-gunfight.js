@@ -382,5 +382,12 @@ export function buildGunfightExample() {
     script: []
   });
 
+  // name the on-screen joysticks — the harness reads stickNtag objects
+  // so every stick says WHOSE it is (hidden: they're labels, not scenery)
+  objects.push({ id: "gf_st1", name: "stick1tag", type: "text", x: 0, y: 0, size: 10, color: "#3f7a52", glow: 0, visible: 0, text: "P1 WALK", script: [] });
+  objects.push({ id: "gf_st2", name: "stick2tag", type: "text", x: 0, y: 0, size: 10, color: "#3f7a52", glow: 0, visible: 0, text: "P1 AIM ↕", script: [] });
+  objects.push({ id: "gf_st3", name: "stick3tag", type: "text", x: 0, y: 0, size: 10, color: "#3f7a52", glow: 0, visible: 0, text: "P2 WALK", script: [] });
+  objects.push({ id: "gf_st4", name: "stick4tag", type: "text", x: 0, y: 0, size: 10, color: "#3f7a52", glow: 0, visible: 0, text: "P2 AIM ↕", script: [] });
+
   return { title: "Gun Fight (1975)", w: W, h: H, objects };
 }

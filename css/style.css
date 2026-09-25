@@ -890,12 +890,17 @@ a.nav-username:hover { border-color: var(--red); color: #fff; }
 .touch-stick-num {
   position: absolute;
   left: 50%;
-  bottom: -4px;
+  bottom: -6px;
   transform: translateX(-50%);
-  color: #3f7a52;
+  color: #57b06f;
   font-family: "Courier New", monospace;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  background: rgba(3, 17, 10, 0.8);
+  padding: 0 5px;
+  border-radius: 6px;
   pointer-events: none;
 }
 .touch-controls.editing .touch-stick {

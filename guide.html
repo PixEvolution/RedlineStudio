@@ -273,6 +273,11 @@ end</pre>
       <span class="code">change self.x by stickx(1) * 3</span> creeps or sprints by how far it's pushed.
       The house style is keys AND stick side by side, so every hand is welcome:
       <span class="code">set trn to max(-1, min(1, keydown("d") - keydown("a") + stickx(1)))</span>.
+      <b>Name your sticks</b> so nobody guesses: add a hidden Text object called
+      <span class="code">stick1tag</span>, <span class="code">stick2tag</span>, … and its text becomes the
+      label under that on-screen stick — "P1", "AIM ↕", "WEDGE". That matters because stick numbers are
+      the GAME's to assign: in Tank, stick 2 is <i>player 2's</i> whole tank (so against the drone it sits
+      idle), while in Gun Fight stick 2 is <i>player 1's aim</i>. A label ends the mystery.
       Tank, Gotcha, Space Race, Spacewar! and Spasim all wear that pattern — the machines that really were
       joystick cabinets in the 70s — and <b>Gun Fight (1975)</b> is the full DUAL-stick cabinet: one stick
       walks each cowboy, a second tilts his gun, four sticks on one machine. Load any of them and read

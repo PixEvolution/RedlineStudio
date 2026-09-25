@@ -277,7 +277,10 @@ export function createTouchControls(engine, container) {
   }
 
   // ---- the on-screen JOYSTICK: a base ring and a knob that follows your
-  // finger — or your mouse — and reads back through stickx(n)/sticky(n) ----
+  // finger — or your mouse — and reads back through stickx(n)/sticky(n).
+  // A game can NAME its sticks: a (hidden) text object called stick1tag,
+  // stick2tag, … labels that stick — "P1", "AIM ↕", "WEDGE" — so nobody has
+  // to guess which stick is whose. No tag object = the plain number.
   const makeStick = (n) => {
     const base = document.createElement("div");
     base.className = "touch-stick";
@@ -286,7 +289,8 @@ export function createTouchControls(engine, container) {
     knob.className = "touch-knob";
     const tag = document.createElement("span");
     tag.className = "touch-stick-num";
-    tag.textContent = n;
+    const named = engine.byName && engine.byName["stick" + n + "tag"];
+    tag.textContent = (named && String(named.text || "").trim()) || String(n);
     base.append(knob, tag);
     muzzle(base, { blockTouch: true });
 
