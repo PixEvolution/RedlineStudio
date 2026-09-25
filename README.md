@@ -29,6 +29,8 @@ A game platform by Redline Digital — players make accounts, build games in the
 | `js/screen-size.js` | 🖥 screen size button (S/M/L/MAX, remembered) + double-res crisp canvas |
 | `js/studio-panels.js` | Studio panels: collapsible headers + floatable windows (desktop) |
 | `js/filterbar.js` | Search + sort bar for the Games, Market and Players lists |
+| `js/gamefile.js` | The sealed .rlgame file: pack/verify/sanitize — imports are scene data, never code |
+| `js/export-studio.js` | 📦 Offline Studio: bundles the whole editor into one offline HTML file |
 | `js/export.js` | ⬇ Download: bundles a game into one standalone offline HTML file |
 | `js/terminal.js` | The teletype input row for text-adventure games |
 | `js/casino-odds.js` | THE HOUSE RULES — fixed public odds (92% RTP) + the casino loop |
@@ -58,7 +60,7 @@ A game platform by Redline Digital — players make accounts, build games in the
 | `about.html` | About the platform |
 | `studio/studio.html` | The Studio (game mode + `?mode=page` Page Studio for profiles) |
 | `studio/test.html` | An extra test PLAYER window — ➕ Player opens these to test multiplayer like Roblox Studio |
-|  `studio/example-*.js` | Reference examples: CRT Amusement Device (1947), Bertie the Brain (1950), NIMROD (1951), Draughts (1951), OXO (1952), Tennis for Two (1958), Mouse in the Maze (1959), Tic-Tac-Toe on TX-0 (1959), Spacewar! (1962), Computer Space (1971), Odyssey Table Tennis (1972), Pong (1972), Space Race (1973), Gotcha (1973), Hunt the Wumpus (Map + Teletype, 1973), Gran Trak 10 (1974), Tank (1974), Maze War (1974), Maze War Arena (1974, 4P online), Spasim (1974, 8P online 3D), Western Gun (1975), Gun Fight (1975), Redline Slots |
+|  `studio/example-*.js` | Reference examples: CRT Amusement Device (1947), Bertie the Brain (1950), NIMROD (1951), Draughts (1951), OXO (1952), Tennis for Two (1958), Mouse in the Maze (1959), Tic-Tac-Toe on TX-0 (1959), Spacewar! (1962), Computer Space (1971), Odyssey Table Tennis (1972), Pong (1972), Space Race (1973), Gotcha (1973), Hunt the Wumpus (Map + Teletype, 1973), Gran Trak 10 (1974), Tank (1974), Maze War (1974), Maze War Arena (1974, 4P online), Spasim (1974, 8P online 3D), Western Gun (1975), Gun Fight (1975), Shark Jaws (1975), Redline Slots |
 
 **Rules of the road:** one file, one job. New features get new files. Every game is saved with a `version` and `engine` field so old games keep working as the Studio evolves — each engine version keeps its renderer forever.
 

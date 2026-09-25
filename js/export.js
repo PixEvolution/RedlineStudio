@@ -4,9 +4,11 @@
 // game, or wrap it with Electron/Tauri to ship a desktop build.
 // Built on RedlineStudio, published anywhere.
 
+import { packGame, embedInHtml } from "./gamefile.js";
+
 // Our modules only import each other, so bundling = strip the module plumbing
 // and concatenate in dependency order inside one <script>.
-function stripModules(source) {
+export function stripModules(source) {
   return source
     .split("\n")
     .filter(line => !/^\s*import\s/.test(line) && !/^\}\s*from\s+"/.test(line))
@@ -120,6 +122,7 @@ export async function buildStandaloneHtml({ title, objects, w, h }, { rootPath =
   <div class="overlay" id="overlay"><button class="coin-btn" id="startbtn">▶ PLAY</button></div>
 </div>
 <p class="credit">Made with <a href="https://redlinestudio.dev" target="_blank" rel="noopener">RedlineStudio</a></p>
+${embedInHtml(packGame({ title, w, h, objects }))}
 <script>
 ${sources.join("\n\n")}
 

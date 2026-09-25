@@ -38,6 +38,7 @@
           <option value="spasim">Spasim (1974, 8P online 3D)</option>
           <option value="westerngun">Western Gun (1975)</option>
           <option value="gunfight">Gun Fight (1975)</option>
+          <option value="sharkjaws">Shark Jaws (1975)</option>
           <option value="wumpus">Hunt the Wumpus (Map)</option>
           <option value="wumpus2">Hunt the Wumpus (Teletype)</option>
           <option value="slots">Redline Slots (casino)</option>
@@ -46,7 +47,10 @@
         <button class="btn btn-ghost" id="btn-redo" title="Redo (Ctrl+Y)">↷</button>
         <button class="btn btn-ghost" id="btn-tour" title="A guided walk through every panel — made for first-time game makers">🎓</button>
         <button class="btn btn-ghost" id="btn-new">New</button>
+        <button class="btn btn-ghost" id="btn-import" title="Import a .rlgame file (or a downloaded game HTML) — the import verifies the file's seal">⬆ Import</button>
         <button class="btn btn-ghost" id="btn-download" title="Download this game as a standalone HTML file — runs offline, uploads to itch.io">⬇ Download</button>
+        <button class="btn btn-ghost" id="btn-offstudio" title="Download the whole STUDIO as one offline file — build anywhere, save .rlgame files, import them here to publish">📦 Offline Studio</button>
+        <input type="file" id="import-file" accept=".rlgame,.json,.html" style="display:none">
         <button class="btn btn-ghost" id="btn-player" style="display:none"
           title="Opens another window that's a REAL player on the local wire — its own seat, its own keyboard. Test multiplayer without publishing.">➕ Player</button>
         <button class="btn" id="btn-test">▶ Test</button>
@@ -181,6 +185,8 @@
     import { sharpenCanvas, attachScreenSizeButton } from "../js/screen-size.js";
     import { setupPanel } from "../js/studio-panels.js";
     import { downloadStandalone } from "../js/export.js";
+    import { downloadOfflineStudio } from "../js/export-studio.js";
+    import { unpackGame, extractFromHtml } from "../js/gamefile.js";
     import { attachTerminalInput } from "../js/terminal.js";
     import { attachCasinoLoop, localWallet } from "../js/casino-odds.js";
     import { attachLocalParty } from "../js/localwire.js";
@@ -208,6 +214,7 @@
     import { buildSpasimExample } from "./example-spasim.js";
     import { buildGunfightExample } from "./example-gunfight.js";
     import { buildWesterngunExample } from "./example-westerngun.js";
+    import { buildSharkjawsExample } from "./example-sharkjaws.js";
     import { buildWumpusExample } from "./example-wumpus.js";
     import { buildWumpus2Example } from "./example-wumpus2.js";
     import { buildSlotsExample } from "./example-slots.js";
@@ -833,6 +840,54 @@
       btn.disabled = false;
     });
 
+    // ⬆ Import: an offline-Studio .rlgame, or any downloaded game HTML.
+    // The seal is verified and the game is rebuilt from the engine's own
+    // schema — nothing but scene data can come through the door.
+    $("#btn-import").addEventListener("click", () => {
+      if (engine) { toast("Stop the test first.", true); return; }
+      $("#import-file").click();
+    });
+    $("#import-file").addEventListener("change", () => {
+      const f = $("#import-file").files[0];
+      $("#import-file").value = "";
+      if (!f) return;
+      const rd = new FileReader();
+      rd.onload = () => {
+        try {
+          let text = String(rd.result);
+          if (/^\s*</.test(text)) {
+            const inner = extractFromHtml(text);
+            if (!inner) throw new Error("That HTML file doesn't carry a RedlineStudio game inside.");
+            text = inner;
+          }
+          const g = unpackGame(text);
+          if (scene.objects.length > 0 && !confirm(`Replace the current workspace with "${g.title}"?`)) return;
+          scenes.game = { objects: g.objects };
+          if (g.w && g.h) { scenes.game.w = g.w; scenes.game.h = g.h; }
+          scenes.screen = { objects: g.screen ? g.screen.objects : [] };
+          if (!pageMode && g.screen) $("#g-screenmode").value = g.screen.mode;
+          editingId = null;
+          titleInput.value = g.title;
+          setTarget("game");
+          select(scene.objects[0]?.id || null);
+          commit();
+          toast(`✔ Seal verified — "${g.title}" is intact and pure RedlineStudio. 💾 Save publishes it.`);
+        } catch (err) { toast(err.message, true); }
+      };
+      rd.readAsText(f);
+    });
+
+    // 📦 the offline Studio: the whole editor in one file
+    $("#btn-offstudio").addEventListener("click", async () => {
+      const btn = $("#btn-offstudio");
+      btn.disabled = true;
+      try {
+        await downloadOfflineStudio("../");
+        toast("Offline Studio downloaded — one file, runs from a double-click with no internet. Save .rlgame files there and ⬆ Import them here to publish.");
+      } catch (err) { toast(err.message, true); }
+      btn.disabled = false;
+    });
+
     $("#btn-new").addEventListener("click", () => {
       if (!confirm(pageMode ? "Clear your page and start empty? (Nothing changes until you Save.)"
                             : "Start a new empty game? (↶ undo can bring the current one back.)")) return;
@@ -875,6 +930,7 @@
       spasim: { build: buildSpasimExample, screen: "live", seats: 8, tip: "True 3D, 8 pilots online (Players = 8 set for you) — ▶ Test then ➕ Player to dogfight yourself. Fly on keys or the flight stick (A/D yaw, W/S pitch, hold E to thrust, SPACE phaser) — the projection block is all of 3D in 20 lines." },
       westerngun: { build: buildWesterngunExample, screen: "live", tip: "Taito's ORIGINAL, before Midway rebuilt it on a CPU. Roam ANYWHERE, shoot the way you face — and mind the rocks: ricochets will drop the man who fired. Cacti shoot apart, so cover is a budget." },
       gunfight: { build: buildGunfightExample, screen: "live", tip: "Hit ▶ Test, pick a mode. TWO sticks per player like the real cabinet — left walks, right tilts the gun — or WASD+Q/E+SPACE. Six shots, then the long reload. First microprocessor game, on a big 800×600 world." },
+      sharkjaws: { build: buildSharkjawsExample, screen: "live", tip: "Hit ▶ Test, press DIVE. WASD or the stick — grab fish, and remember the shark is FASTER than you, so turn hard and never swim straight. Sold by 'Horror Games', a company that absolutely existed." },
       wumpus:{ build: buildWumpusExample, screen: "static", tip: "Hit ▶ Test. Walk the lit rooms and hunt by ear — smell, drafts, bats. SHOOT mode fires into a tunnel." },
       wumpus2: { build: buildWumpus2Example, screen: "static", tip: "Hit ▶ Test. The 1973 original: type M or S, then a room number. Draw your map on paper!" },
       slots: { build: buildSlotsExample, screen: "live", casino: true, tip: "Hit ▶ Test for FREE PLAY. Publish to the Casino floor and fund the pool to open for business." }
