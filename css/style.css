@@ -795,6 +795,49 @@ a.nav-username:hover { border-color: var(--red); color: #fff; }
   .panel-head .drag { display: none; }
 }
 
+/* ---------- guide difficulty badges ---------- */
+.lvl {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  padding: 2px 9px;
+  border-radius: 9px;
+  vertical-align: middle;
+  margin-left: 10px;
+  border: 1px solid;
+}
+.lvl.l1 { color: #7dff9e; border-color: #1f8f3c; background: rgba(57, 255, 94, 0.07); }
+.lvl.l2 { color: #ffcf7d; border-color: #8a6a1f; background: rgba(255, 207, 125, 0.07); }
+.lvl.l3 { color: #ff8f8c; border-color: #8a2f2d; background: rgba(255, 143, 140, 0.07); }
+
+/* ---------- the 🎓 studio tutorial ---------- */
+.tour-hole {
+  position: fixed;
+  z-index: 400;
+  border: 2px solid #39ff5e;
+  border-radius: 10px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.72), 0 0 18px rgba(57, 255, 94, 0.6);
+  pointer-events: none;
+  transition: left 0.25s, top 0.25s, width 0.25s, height 0.25s;
+}
+.tour-bubble {
+  position: fixed;
+  z-index: 401;
+  width: 320px;
+  max-width: calc(100vw - 16px);
+  background: #0d1512;
+  border: 1px solid #1f8f3c;
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+}
+.tour-bubble h3 { margin: 0 0 6px; color: #8dffa9; font-size: 15px; }
+.tour-bubble p { margin: 0 0 12px; color: var(--text); font-size: 13px; line-height: 1.5; }
+.tour-row { display: flex; gap: 6px; align-items: center; }
+.tour-count { color: var(--text-dim); font-size: 11px; margin-right: auto; }
+.script-head-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.script-head-row h3 { margin: 0; }
+
 /* ---------- movable / resizable touch controls ---------- */
 .touch-cluster { position: relative; z-index: 20; transform-origin: bottom center; touch-action: none; }
 .touch-side { display: flex; align-items: flex-end; gap: 14px; }

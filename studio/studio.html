@@ -40,6 +40,7 @@
           <option value="wumpus2">Hunt the Wumpus (Teletype)</option>
           <option value="slots">Redline Slots (casino)</option>
         </select>
+        <button class="btn btn-ghost" id="btn-tour" title="A guided walk through every panel — made for first-time game makers">🎓</button>
         <button class="btn btn-ghost" id="btn-new">New</button>
         <button class="btn btn-ghost" id="btn-download" title="Download this game as a standalone HTML file — runs offline, uploads to itch.io">⬇ Download</button>
         <button class="btn btn-ghost" id="btn-player" style="display:none"
@@ -134,7 +135,7 @@
           <canvas id="workspace" width="480" height="360" class="workspace-canvas"></canvas>
           <div class="stage-bar"><button class="btn btn-small btn-ghost" id="btn-size"></button><button class="btn btn-small btn-ghost" id="btn-fs"></button></div>
         </div>
-        <p class="hint" id="ws-hint">Click an object to select it · drag to move · ▶ Test to play</p>
+        <p class="hint" id="ws-hint">Click an object to select it · drag to move · ▶ Test to play · new here? hit 🎓</p>
       </div>
 
       <!-- PROPERTIES -->
@@ -146,8 +147,14 @@
 
     <!-- SCRIPT EDITOR -->
     <div class="panel" id="script-panel" style="margin-top:16px">
-      <h3 id="script-title">Script</h3>
-      <p class="hint">Blocks build the script — a <b>📜 Code</b> block is the same language as text.
+      <div class="script-head-row">
+        <h3 id="script-title">Script</h3>
+        <select id="sel-behavior" class="blk-add" style="margin:0"
+          title="Ready-made game logic — inserts ordinary blocks you can open and edit">
+          <option value="">✨ Add behavior…</option>
+        </select>
+      </div>
+      <p class="hint">No code needed: pick a <b>✨ behavior</b> above, or build with blocks — a <b>📜 Code</b> block is the same language as text.
         Expressions work in every field: <code>self.x + 2</code>, <code>rand(10,90)</code>, <code>dist(self, target1) &lt; 20</code>, <code>keydown("ArrowUp")</code>, <code>xor(a, b)</code> — and lists: <code>board[i]</code></p>
       <div id="script-editor" class="hint">Select an object to edit its script.</div>
     </div>
@@ -173,6 +180,8 @@
     import { attachTerminalInput } from "../js/terminal.js";
     import { attachCasinoLoop, localWallet } from "../js/casino-odds.js";
     import { attachLocalParty } from "../js/localwire.js";
+    import { BEHAVIORS, getBehavior, applyBehavior } from "../js/behaviors.js";
+    import { startTour } from "../js/tour.js";
     import { buildCrtExample } from "./example-crt.js";
     import { buildBertieExample } from "./example-bertie.js";
     import { buildNimrodExample } from "./example-nimrod.js";
@@ -269,7 +278,7 @@
       $("#seg-screen").classList.toggle("active", t === "screen");
       $("#ws-hint").textContent = t === "screen"
         ? "Editing the ARCADE SCREEN — what players see on the card, before playing."
-        : "Click an object to select it · drag to move · ▶ Test to play";
+        : "Click an object to select it · drag to move · ▶ Test to play · new here? hit 🎓";
       applyDims();
       select(null);
       renderExplorer(); redraw();
@@ -333,6 +342,22 @@
         const type = document.createElement("span");
         type.textContent = o.type;
         type.className = "hint";
+        const dup = document.createElement("button");
+        dup.className = "blk-mini";
+        dup.textContent = "⧉";
+        dup.title = "Duplicate — a full copy, scripts and all";
+        dup.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const copy = JSON.parse(JSON.stringify(o));
+          copy.id = "o" + Date.now().toString(36) + Math.floor(Math.random() * 1e6);
+          copy.name = uniqueName(copy.name.replace(/\d+$/, "") || copy.type);
+          copy.x = Math.min((Number(copy.x) || 0) + 24, gameDims().w - 10);
+          copy.y = Math.min((Number(copy.y) || 0) + 18, gameDims().h - 10);
+          scene.objects.push(copy);
+          select(copy.id);
+          renderExplorer(); redraw();
+          toast(`Duplicated as "${copy.name}".`);
+        });
         const del = document.createElement("button");
         del.className = "blk-mini blk-del";
         del.textContent = "✕";
@@ -343,8 +368,8 @@
           if (selectedId === o.id) select(null);
           renderExplorer(); redraw();
         });
-        row.append(cb, name, type, del);
-        row.addEventListener("click", (e) => { if (e.target !== cb && e.target !== del) select(o.id); });
+        row.append(cb, name, type, dup, del);
+        row.addEventListener("click", (e) => { if (e.target !== cb && e.target !== del && e.target !== dup) select(o.id); });
         list.appendChild(row);
       }
     }
@@ -539,7 +564,7 @@
         if (testTerminal) { testTerminal.destroy(); testTerminal = null; }
         if (testCasino) { testCasino.destroy(); testCasino = null; }
         testBtn.textContent = "▶ Test";
-        $("#ws-hint").textContent = "Click an object to select it · drag to move · ▶ Test to play";
+        $("#ws-hint").textContent = "Click an object to select it · drag to move · ▶ Test to play · new here? hit 🎓";
         redraw();
         return;
       }
@@ -698,6 +723,46 @@
       select(scene.objects[0].id);
       toast(`${ex.title} loaded — ${EXAMPLES[pick].tip}`);
     });
+
+    // ------------------------------------------------------------ behaviors + tutorial
+    // ✨ Behaviors: one click drops WORKING blocks into the selected object —
+    // game logic with no code, and every insert is an editable lesson.
+    const behSel = $("#sel-behavior");
+    for (const b of BEHAVIORS) {
+      const opt = document.createElement("option");
+      opt.value = b.id;
+      opt.textContent = b.name;
+      behSel.appendChild(opt);
+    }
+    behSel.addEventListener("change", () => {
+      const id = behSel.value;
+      behSel.value = "";
+      if (!id) return;
+      if (engine) { toast("Stop the test first.", true); return; }
+      const o = selObj();
+      if (!o) { toast("Select an object first — behaviors attach to the selected object.", true); return; }
+      const b = getBehavior(id);
+      let target;
+      if (b.needsTarget) {
+        const others = scene.objects.filter(x => x.id !== o.id).map(x => x.name);
+        target = prompt(`Which object should "${o.name}" aim at?`, others[0] || "target1");
+        if (target == null) return;
+        target = target.trim() || others[0] || "target1";
+      }
+      applyBehavior(o, id, target);
+      renderScriptEditor();
+      toast(`${b.name} added to "${o.name}" — ${b.blurb}`);
+    });
+
+    // 🎓 the tutorial: a guided walk for people who've never made a game
+    $("#btn-tour").addEventListener("click", () => startTour());
+    if (!pageMode) {
+      try {
+        if (!localStorage.getItem("rl_tour_done")) {
+          setTimeout(() => toast("First time in the Studio? The 🎓 button up top walks you through everything."), 800);
+        }
+      } catch {}
+    }
 
     // ------------------------------------------------------------ models
     $("#btn-save-model").addEventListener("click", async () => {

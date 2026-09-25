@@ -18,10 +18,31 @@
 <body>
   <main class="page guide">
     <h1 class="page-title">Coding Guide</h1>
-    <p class="page-sub">Everything the Studio can do — blocks, RedScript, objects, and how real games are built.</p>
+    <p class="page-sub">Starts at absolute zero and ends at online 3D — the badges (EASY → MEDIUM → ADVANCED) mark the climb. Read until you have enough, build something, come back for more.</p>
 
     <div class="panel">
-      <h2>The big idea</h2>
+      <h2>🌱 Start here — your first game in five minutes <span class="lvl l1">EASY</span></h2>
+      <p>Never made a game? Never written code? Perfect — you won't need either. A game here is just
+      <b>things on a screen</b> plus <b>rules for how they act</b>, and the Studio hands you both.
+      (In the Studio, the <b>🎓 button</b> gives you a guided walk through every panel — take it first
+      if you like.) Then:</p>
+      <pre class="codeblock">1  In the Studio, click  + Dot  — that's your player.
+2  With the dot selected, open  ✨ Add behavior…  and pick  🕹 Move.
+3  Hit  ▶ Test.  WASD — or the on-screen joystick — moves it. You made that.
+4  Click  + Ring  — the treasure. With the RING selected:
+   ✨ → ⭐ Score on touch → type your dot's name (dot1).
+5  Ring still selected:  ✨ → ⏱ Coin timer.  ▶ Test again:
+   chase the treasure, score points, beat the clock — a real arcade game.
+6  Type a title up top and hit  💾 Save.  It's live on the Games page,
+   playable by anyone on earth — and it earned a ★ high-score table.</pre>
+      <p>That's a published game with zero code. Behaviors insert ordinary <b>blocks</b> — open them in the
+      Script panel, read them, change a 3 to a 6 and Test again. Everything past this point in the guide is
+      just more of the same idea, one step deeper at a time. Stop whenever you have enough — the
+      difficulty badges on each section tell you when the water gets deep.</p>
+    </div>
+
+    <div class="panel">
+      <h2>The big idea <span class="lvl l1">EASY</span></h2>
       <p>A game is a set of <b>objects</b> (dots, rings, boxes, lines, text, ships). Each object can carry a <b>script</b>:
       a list of <b>events</b> ("when the game starts", "every frame", "when clicked", "when a key is pressed") filled with
       <b>actions</b>. You build scripts with blocks — and a <b>📜 Code block</b> is the exact same language typed as text,
@@ -35,7 +56,7 @@
     </div>
 
     <div class="panel">
-      <h2>Objects &amp; properties</h2>
+      <h2>Objects &amp; properties <span class="lvl l1">EASY</span></h2>
       <p>Add objects from the Explorer: <b>Dot</b>, <b>Ring</b>, <b>Box</b>, <b>Line</b> (a vector segment: starts at
       x/y and runs along its angle for <span class="code">size</span> length — Maze War's whole first-person view is
       lines), <b>Text</b>, <b>Ship</b> (a triangle that points along its angle — boxes rotate with angle too).
@@ -55,7 +76,7 @@ text        what a Text object says</pre>
     </div>
 
     <div class="panel">
-      <h2>Events</h2>
+      <h2>Events <span class="lvl l1">EASY</span></h2>
       <pre class="codeblock">when start          runs once, when the game begins
 when tick           runs exactly 60 times a second on EVERY screen — physics lives here
 when click          runs on every tap/click; read mousex() and mousey()
@@ -65,7 +86,7 @@ when answer         runs when the player types into the terminal and hits
     </div>
 
     <div class="panel">
-      <h2>Actions</h2>
+      <h2>Actions <span class="lvl l1">EASY</span></h2>
       <pre class="codeblock">set self.x to 240            set a property, variable, or list slot
 change self.y by -2          add to it
 if score > 5 then … else … end
@@ -79,7 +100,28 @@ clear                        wipe the teletype</pre>
     </div>
 
     <div class="panel">
-      <h2>Expressions — the same everywhere</h2>
+      <h2>✨ Behaviors — game logic without code <span class="lvl l1">EASY</span></h2>
+      <p>Select an object, open <b>✨ Add behavior…</b> in the Script panel, pick one — done. Each behavior
+      drops ready-made, working blocks into that object's script:</p>
+      <pre class="codeblock">🕹 Move — keys + joystick     WASD or joystick 1 slides it around
+🚀 Fly like a ship            turn + thrust + drift, like Spacewar!
+🏀 Bounce around the screen   drifts and bounces off the edges forever
+🎯 Chase an object            hunts whatever object you name
+🖱 Follow the mouse           glides after the pointer (or a touch)
+⭐ Score on touch             touch it → +1 score, beep, jump somewhere new
+🔘 Clickable button           click/tap ON it → +1 score
+🌀 Wrap around the edges      off one side, in the other
+🌪 Spin forever               rotates — ships, boxes and lines love it
+⏱ Coin timer                 60 seconds, then the play truly ENDS</pre>
+      <p>Three things make behaviors more than shortcuts: they <b>stack</b> (a dot with 🕹 Move + 🌀 Wrap +
+      ⭐ Score is already a game), they're <b>ordinary blocks</b> once inserted — open the script, read them,
+      tune every number — and they follow the platform's contracts, so 🕹 Move gives your game touch buttons
+      AND an on-screen joystick automatically, and ⏱ Coin timer alone earns a ★ high-score table. Attach,
+      Test, read what appeared: that's the gentlest way to learn scripting ever devised.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Expressions — the same everywhere <span class="lvl l2">MEDIUM</span></h2>
       <p>Every value field in every block accepts a full expression:</p>
       <pre class="codeblock">Math        + - * / %   (% is remainder) · unary minus works: -vy
 Compare     &lt; &gt; &lt;= &gt;= == !=      combine with: and, or, not
@@ -101,7 +143,7 @@ len(x)                length of a string</pre>
     </div>
 
     <div class="panel">
-      <h2>Variables &amp; lists</h2>
+      <h2>Variables &amp; lists <span class="lvl l2">MEDIUM</span></h2>
       <pre class="codeblock">set score to 0            variables are shared by every object
 change score by 1
 set board[i] to 5         lists: any expression as the index
@@ -112,7 +154,7 @@ set board[r * 8 + c] to 1</pre>
     </div>
 
     <div class="panel">
-      <h2>Recipes</h2>
+      <h2>Recipes <span class="lvl l2">MEDIUM</span></h2>
       <p><b>Move with keys</b> (put on the player object):</p>
       <pre class="codeblock">when tick
 if keydown("ArrowRight") then
@@ -166,7 +208,7 @@ end</pre>
     </div>
 
     <div class="panel">
-      <h2>Text adventures</h2>
+      <h2>Text adventures <span class="lvl l2">MEDIUM</span></h2>
       <p>Any game that uses <span class="code">print</span> gets a <b>teletype</b>: lines appear on the screen,
       and a text input shows up under it. When the player types and hits Enter, every
       <span class="code">when answer</span> event runs — read the text with <span class="code">answer()</span>.
@@ -181,7 +223,60 @@ end</pre>
     </div>
 
     <div class="panel">
-      <h2>Coins</h2>
+      <h2>The Studio itself <span class="lvl l2">MEDIUM</span></h2>
+      <p><b>Explorer</b> — add and pick objects; checkboxes select several, and the <b>search box</b> filters by
+      name or type when a game gets big · <b>Workspace</b> — drag things into place, <b>▶ Test</b> plays your game
+      right there (casino machines test in FREE PLAY: pretend coins, the real odds) · <b>Properties</b> — tune the
+      selected object · <b>Script</b> — the block editor for whatever's selected.</p>
+      <p><b>The panels are yours to arrange:</b> click any panel's header to collapse it, and on desktop drag the
+      <b>⠿</b> handle to pop it out into a floating window you can park anywhere (⟲ docks it back) — float
+      Properties next to the Script editor and thank yourself later.</p>
+      <p><b>📺 Screen</b> — a second scene that plays on your game's card in the Games list (the arcade "attract
+      screen"). Loading any historic example fills the Screen automatically — the Atari coin-ops come with live
+      attract reels; steal their setup.</p>
+      <p><b>The settings row</b>, left to right: the <b>description</b> shown on your card ·
+      <b>Publish to</b> (the Games page, or the Casino floor — machines need the casino loop to go public) ·
+      <b>Visibility</b> (Public, or Unlisted to keep working on it in private — flip it later) ·
+      <b>Price per play</b> (◎, paid straight to you; hidden for casino machines, where the bet is the price) ·
+      <b>Line patience</b> (how long someone must wait at your machine before the line can vote to skip a player —
+      1 to 120 minutes, shown on your game's page) · <b>Screen size</b> (your game's whole world: classic 480×360,
+      wide, large 800×600, widescreen, or portrait for phone-first games — bigger screen = bigger maps; games
+      already published stay exactly the size they were built) · <b>Players (seats)</b> (1 is a classic cabinet;
+      2–8 makes it an online multiplayer cabinet where everyone seated shares one room — see the net contract
+      below) · the <b>Arcade screen</b> mode (None / Static / Live).</p>
+      <p><b>Models</b> — check objects → "Save checked as Model." Models keep their scripts, live in your inventory,
+      insert into any game fully editable, and can be sold on the Market for free or coins. The <b>Page Studio</b>
+      (from your profile: 🎨 Edit my page) is the same editor pointed at your profile page.</p>
+      <p>Controls come free: keyboards work everywhere, phones get on-screen buttons generated from whatever keys your
+      scripts use — and the ✥ button opens edit mode, where players drag EACH button anywhere and resize it by
+      pinching it with two fingers (or its ◢ corner). Layouts save on their device, one per control set, and a
+      layout made on a big screen pulls itself back into view on a small one — every game gets exactly the controls
+      it calls for. Gamepads just work — press a button on the
+      pad once to wake it up (that press is what tells us it's a controller and not a sim wheel or pedal set).
+      One pad drives any game; plug in TWO and they split into players — pad 1 takes the WASD side,
+      pad 2 the arrows — so any two-player example is a couch game with no setup at all.</p>
+      <p><b>🕹 Joysticks</b> — read <span class="code">stickx(1)</span> / <span class="code">sticky(1)</span>
+      anywhere in a script and joystick 1 exists: the platform generates an <b>on-screen stick</b> for it on
+      EVERY device — a thumb flies it on phones, and on a desktop the <b>mouse</b> drags it — movable,
+      resizable (pinch or ◢) and saved exactly like the buttons. A <b>gamepad's analog sticks</b> drive the
+      same numbers (pad 1's left stick is 1, its right stick is 2; a second pad brings 3 and 4), with a
+      deadzone so resting sticks read a clean 0 — and while an on-screen stick is held, it owns its number.
+      Add as many as the game calls for (up to 8). Values are analog: a half push reads 0.5, so
+      <span class="code">change self.x by stickx(1) * 3</span> creeps or sprints by how far it's pushed.
+      The house style is keys AND stick side by side, so every hand is welcome:
+      <span class="code">set trn to max(-1, min(1, keydown("d") - keydown("a") + stickx(1)))</span>.
+      Tank, Gotcha, Space Race, Spacewar! and Spasim all wear that pattern — the machines that really were
+      joystick cabinets in the 70s. Load any of them and read the two-line idiom.</p>
+      <p><b>🖥 Screen size</b> — every machine (and the Studio) has a size button under the screen: S, M, L, or MAX
+      (as wide as the page goes). Your choice is remembered on your device and applies everywhere, and the screen
+      renders at double resolution so it stays crisp at any size. ⛶ next to it is still the full-monitor version.</p>
+      <p><b>⬇ Download</b> — every game you make can be downloaded as a single standalone HTML file: the engine and
+      your game in one file that runs offline by double-click. Upload it to itch.io as a playable browser game, or
+      wrap it with Electron/Tauri to ship it as a desktop app — built on RedlineStudio, published anywhere.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Coins <span class="lvl l2">MEDIUM</span></h2>
       <p>◎ Coins are the platform's play money — they can't be bought and can't be cashed out, and the database
       itself guarantees no one can create them from nothing. How they move:</p>
       <pre class="codeblock">EARN   100 when you sign up
@@ -195,7 +290,7 @@ SPEND  playing coin games · buying Models · betting at the casino ·
     </div>
 
     <div class="panel">
-      <h2>The arcade floor</h2>
+      <h2>The arcade floor <span class="lvl l2">MEDIUM</span></h2>
       <p>Machines are physical, and every game declares how many <b>seats</b> it has (1–8, set in the Studio).
       A one-seat game is the classic cabinet; a multi-seat game is a little server in arcade clothes — walk up
       and take any empty seat, like Roblox with a coin slot. The line only forms once <b>every</b> seat is full,
@@ -220,7 +315,7 @@ SPEND  playing coin games · buying Models · betting at the casino ·
     </div>
 
     <div class="panel">
-      <h2>Casino machines</h2>
+      <h2>Casino machines <span class="lvl l3">ADVANCED</span></h2>
       <p>The Casino floor runs on one rule: <b>machines do the show, the platform does the math.</b>
       The odds are locked in the engine — no owner can make a machine pay better or worse. They're public:</p>
       <pre class="codeblock">multiplier   chance     ·  RETURN TO PLAYER: 92%
@@ -255,27 +350,10 @@ casino                    1 on the floor, 0 in Studio test (free play)</pre>
     </div>
 
     <div class="panel">
-      <h2>The Studio itself</h2>
-      <p><b>Explorer</b> — add and pick objects; checkboxes select several, and the <b>search box</b> filters by
-      name or type when a game gets big · <b>Workspace</b> — drag things into place, <b>▶ Test</b> plays your game
-      right there (casino machines test in FREE PLAY: pretend coins, the real odds) · <b>Properties</b> — tune the
-      selected object · <b>Script</b> — the block editor for whatever's selected.</p>
-      <p><b>The panels are yours to arrange:</b> click any panel's header to collapse it, and on desktop drag the
-      <b>⠿</b> handle to pop it out into a floating window you can park anywhere (⟲ docks it back) — float
-      Properties next to the Script editor and thank yourself later.</p>
-      <p><b>📺 Screen</b> — a second scene that plays on your game's card in the Games list (the arcade "attract
-      screen"). Loading any historic example fills the Screen automatically — the Atari coin-ops come with live
-      attract reels; steal their setup.</p>
-      <p><b>The settings row</b>, left to right: the <b>description</b> shown on your card ·
-      <b>Publish to</b> (the Games page, or the Casino floor — machines need the casino loop to go public) ·
-      <b>Visibility</b> (Public, or Unlisted to keep working on it in private — flip it later) ·
-      <b>Price per play</b> (◎, paid straight to you; hidden for casino machines, where the bet is the price) ·
-      <b>Line patience</b> (how long someone must wait at your machine before the line can vote to skip a player —
-      1 to 120 minutes, shown on your game's page) · <b>Screen size</b> (your game's whole world: classic 480×360,
-      wide, large 800×600, widescreen, or portrait for phone-first games — bigger screen = bigger maps; games
-      already published stay exactly the size they were built) · <b>Players (seats)</b> (1 is a classic cabinet;
-      2–8 makes it an online multiplayer cabinet where everyone seated shares one room — see the net contract
-      below) · the <b>Arcade screen</b> mode (None / Static / Live).</p>
+      <h2>Arcade cabinets &amp; going online <span class="lvl l3">ADVANCED</span></h2>
+      <p>This is the deep end — the reserved-variable contracts that wire a game into the platform's
+      coin slot, leaderboards and live wire. Everything here is still just <b>set</b> and <b>if</b> on
+      special variable names, so it reads exactly like the scripts you already know.</p>
       <p><b>Arcade games</b> — the platform runs the coin slot for you, and two reserved variables wire your game
       into it. <span class="code">arcade</span> is 1 when a paid play is already underway — check it in
       <span class="code">when start</span> and skip your own insert-coin screen. Set
@@ -327,39 +405,10 @@ hits            how many times other players have hit YOU (respawn on change)</p
       RedScript, its planets ride real orbits around a sun (four lines of trig), and its X·Y·Z position
       instrument updates once a second — steer in polar, read your position in Cartesian, exactly like the
       real PLATO machine.</p>
-      <p><b>Models</b> — check objects → "Save checked as Model." Models keep their scripts, live in your inventory,
-      insert into any game fully editable, and can be sold on the Market for free or coins. The <b>Page Studio</b>
-      (from your profile: 🎨 Edit my page) is the same editor pointed at your profile page.</p>
-      <p>Controls come free: keyboards work everywhere, phones get on-screen buttons generated from whatever keys your
-      scripts use — and the ✥ button opens edit mode, where players drag EACH button anywhere and resize it by
-      pinching it with two fingers (or its ◢ corner). Layouts save on their device, one per control set, and a
-      layout made on a big screen pulls itself back into view on a small one — every game gets exactly the controls
-      it calls for. Gamepads just work — press a button on the
-      pad once to wake it up (that press is what tells us it's a controller and not a sim wheel or pedal set).
-      One pad drives any game; plug in TWO and they split into players — pad 1 takes the WASD side,
-      pad 2 the arrows — so any two-player example is a couch game with no setup at all.</p>
-      <p><b>🕹 Joysticks</b> — read <span class="code">stickx(1)</span> / <span class="code">sticky(1)</span>
-      anywhere in a script and joystick 1 exists: the platform generates an <b>on-screen stick</b> for it on
-      EVERY device — a thumb flies it on phones, and on a desktop the <b>mouse</b> drags it — movable,
-      resizable (pinch or ◢) and saved exactly like the buttons. A <b>gamepad's analog sticks</b> drive the
-      same numbers (pad 1's left stick is 1, its right stick is 2; a second pad brings 3 and 4), with a
-      deadzone so resting sticks read a clean 0 — and while an on-screen stick is held, it owns its number.
-      Add as many as the game calls for (up to 8). Values are analog: a half push reads 0.5, so
-      <span class="code">change self.x by stickx(1) * 3</span> creeps or sprints by how far it's pushed.
-      The house style is keys AND stick side by side, so every hand is welcome:
-      <span class="code">set trn to max(-1, min(1, keydown("d") - keydown("a") + stickx(1)))</span>.
-      Tank, Gotcha, Space Race, Spacewar! and Spasim all wear that pattern — the machines that really were
-      joystick cabinets in the 70s. Load any of them and read the two-line idiom.</p>
-      <p><b>🖥 Screen size</b> — every machine (and the Studio) has a size button under the screen: S, M, L, or MAX
-      (as wide as the page goes). Your choice is remembered on your device and applies everywhere, and the screen
-      renders at double resolution so it stays crisp at any size. ⛶ next to it is still the full-monitor version.</p>
-      <p><b>⬇ Download</b> — every game you make can be downloaded as a single standalone HTML file: the engine and
-      your game in one file that runs offline by double-click. Upload it to itch.io as a playable browser game, or
-      wrap it with Electron/Tauri to ship it as a desktop app — built on RedlineStudio, published anywhere.</p>
     </div>
 
     <div class="panel">
-      <h2>Every reserved variable (the cheat sheet)</h2>
+      <h2>Every reserved variable (the cheat sheet) <span class="lvl l3">ADVANCED</span></h2>
       <p>Ordinary variables are all yours. These names are the platform's — set or read them and the machine
       around your game responds. Everything here is explained in the sections above; this is the one-glance list:</p>
       <pre class="codeblock">THE COIN SLOT       arcade (1 = a paid play is underway) · endplay (set 1 to end the play)
