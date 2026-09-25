@@ -20,6 +20,7 @@ A game platform by Redline Digital — players make accounts, build games in the
 | `js/cards.js` | Game cards with live/static arcade screens + like counts |
 | `js/social.js` | Likes/dislikes + comments (games, players, models) |
 | `js/forum.js` | Forums: threads and replies |
+| `js/studio-tools.js` | Studio comforts as pure logic: undo/redo history + grid snapping |
 | `js/behaviors.js` | ✨ Behaviors: one-click game logic (no code) — inserts ordinary, editable blocks |
 | `js/tour.js` | 🎓 Studio tutorial: a guided walk through every panel for first-time makers |
 | `js/touch-controls.js` | On-screen buttons (phones) + on-screen joysticks (every device, mouse-flyable) — each control movable/resizable, layouts saved per control set |

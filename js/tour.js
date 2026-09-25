@@ -60,6 +60,11 @@ export const TOUR_STEPS = [
     text: "⬇ Download bundles your game into ONE file that runs offline anywhere — even on itch.io. Games you publish here also earn ★ high-score tables and coins automatically."
   },
   {
+    sel: "#btn-undo",
+    title: "Impossible to break",
+    text: "↶ ↷ undo and redo every change (Ctrl+Z / Ctrl+Y). Arrow keys nudge the selected object, Delete removes it, Ctrl+D duplicates, Ctrl+C/V copies — and the Studio autosaves a draft as you work, so a closed tab loses nothing. Experiment fearlessly."
+  },
+  {
     sel: null,
     title: "That's the whole Studio",
     text: "Now make something: add a Dot, give it 🕹 Move, hit ▶ Test. When you want more, the Coding Guide starts from absolute zero and goes all the way to online 3D — it's in the top menu. Replay this tour any time with 🎓."

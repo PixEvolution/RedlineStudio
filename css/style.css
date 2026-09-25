@@ -838,6 +838,20 @@ a.nav-username:hover { border-color: var(--red); color: #fff; }
 .script-head-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
 .script-head-row h3 { margin: 0; }
 
+/* studio quality of life: layer buttons, color swatch, disabled undo/redo */
+.layer-row { display: flex; gap: 4px; flex-wrap: wrap; }
+.layer-row .btn { padding: 4px 10px; }
+.prop-color {
+  width: 42px;
+  height: 36px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #0d1512;
+  cursor: pointer;
+}
+#btn-undo:disabled, #btn-redo:disabled { opacity: 0.35; cursor: default; }
+
 /* ---------- movable / resizable touch controls ---------- */
 .touch-cluster { position: relative; z-index: 20; transform-origin: bottom center; touch-action: none; }
 .touch-side { display: flex; align-items: flex-end; gap: 14px; }

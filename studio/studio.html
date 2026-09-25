@@ -40,6 +40,8 @@
           <option value="wumpus2">Hunt the Wumpus (Teletype)</option>
           <option value="slots">Redline Slots (casino)</option>
         </select>
+        <button class="btn btn-ghost" id="btn-undo" title="Undo (Ctrl+Z)">↶</button>
+        <button class="btn btn-ghost" id="btn-redo" title="Redo (Ctrl+Y)">↷</button>
         <button class="btn btn-ghost" id="btn-tour" title="A guided walk through every panel — made for first-time game makers">🎓</button>
         <button class="btn btn-ghost" id="btn-new">New</button>
         <button class="btn btn-ghost" id="btn-download" title="Download this game as a standalone HTML file — runs offline, uploads to itch.io">⬇ Download</button>
@@ -133,7 +135,7 @@
       <div>
         <div class="stage" id="stage">
           <canvas id="workspace" width="480" height="360" class="workspace-canvas"></canvas>
-          <div class="stage-bar"><button class="btn btn-small btn-ghost" id="btn-size"></button><button class="btn btn-small btn-ghost" id="btn-fs"></button></div>
+          <div class="stage-bar"><button class="btn btn-small btn-ghost" id="btn-snap" title="Snap dragged objects to a grid"></button><button class="btn btn-small btn-ghost" id="btn-size"></button><button class="btn btn-small btn-ghost" id="btn-fs"></button></div>
         </div>
         <p class="hint" id="ws-hint">Click an object to select it · drag to move · ▶ Test to play · new here? hit 🎓</p>
       </div>
@@ -182,6 +184,7 @@
     import { attachLocalParty } from "../js/localwire.js";
     import { BEHAVIORS, getBehavior, applyBehavior } from "../js/behaviors.js";
     import { startTour } from "../js/tour.js";
+    import { createHistory, snapCoord, GRID } from "../js/studio-tools.js";
     import { buildCrtExample } from "./example-crt.js";
     import { buildBertieExample } from "./example-bertie.js";
     import { buildNimrodExample } from "./example-nimrod.js";
@@ -267,8 +270,141 @@
     }
     const titleInput = $("#g-title");
 
+    // ------------------------------------------------ undo / redo + autosave
+    // Snapshot history (Ctrl+Z / Ctrl+Y) + a draft that survives a closed tab:
+    // every change autosaves to this browser, and the Studio recovers it.
+    const hist = createHistory(60);
+    const DRAFT_KEY = "rl_draft_v1";
+    const snapState = () => JSON.stringify({ scenes, editTarget, selectedId });
+    const settingsGet = () => pageMode ? null : {
+      desc: $("#g-desc").value, type: $("#g-type").value, pub: $("#g-public").value,
+      price: $("#g-price").value, hog: $("#g-hogmins").value, seats: $("#g-seats").value,
+      smode: $("#g-screenmode").value
+    };
+    const settingsSet = (t) => {
+      if (!t || pageMode) return;
+      $("#g-desc").value = t.desc ?? "";
+      $("#g-type").value = t.type || "game";
+      $("#g-public").value = t.pub || "public";
+      $("#g-price").value = t.price ?? "0";
+      $("#g-hogmins").value = t.hog ?? "15";
+      $("#g-seats").value = t.seats ?? "1";
+      $("#g-screenmode").value = t.smode || "none";
+      syncTypeUi();
+    };
+    let draftTimer = null;
+    const saveDraft = () => {
+      if (pageMode) return;
+      clearTimeout(draftTimer);
+      draftTimer = setTimeout(() => {
+        try {
+          localStorage.setItem(DRAFT_KEY, JSON.stringify({
+            scenes, editingId, title: titleInput.value, settings: settingsGet(), at: Date.now()
+          }));
+        } catch {}
+      }, 600);
+    };
+    const syncUndoUi = () => {
+      $("#btn-undo").disabled = !hist.canUndo();
+      $("#btn-redo").disabled = !hist.canRedo();
+    };
+    let commitTimer = null;
+    const commit = () => { hist.commit(snapState()); saveDraft(); syncUndoUi(); };
+    const commitSoon = () => { clearTimeout(commitTimer); commitTimer = setTimeout(commit, 500); };
+    const resetHistory = () => { hist.seed(snapState()); saveDraft(); syncUndoUi(); };
+    const applySnap = (snap) => {
+      const st = JSON.parse(snap);
+      scenes = st.scenes;
+      editTarget = st.editTarget;
+      scene = scenes[editTarget];
+      selectedId = scene.objects.some(o => o.id === st.selectedId) ? st.selectedId : null;
+      $("#seg-game").classList.toggle("active", editTarget === "game");
+      $("#seg-screen").classList.toggle("active", editTarget === "screen");
+      applyDims();
+      renderExplorer(); renderProps(); renderScriptEditor(); redraw();
+      saveDraft(); syncUndoUi();
+    };
+    const undo = () => {
+      if (engine) { toast("Stop the test first.", true); return; }
+      clearTimeout(commitTimer);
+      const s = hist.undo(snapState());
+      if (!s) { toast("Nothing to undo."); return; }
+      applySnap(s);
+    };
+    const redo = () => {
+      if (engine) { toast("Stop the test first.", true); return; }
+      const s = hist.redo(snapState());
+      if (!s) { toast("Nothing to redo."); return; }
+      applySnap(s);
+    };
+    $("#btn-undo").addEventListener("click", undo);
+    $("#btn-redo").addEventListener("click", redo);
+
     // ------------------------------------------------------------ helpers
     const selObj = () => scene.objects.find(o => o.id === selectedId) || null;
+
+    let clip = null;   // the copy/paste clipboard (Ctrl+C / Ctrl+V)
+    function addCopy(src, label) {
+      const copy = JSON.parse(JSON.stringify(src));
+      copy.id = "o" + Date.now().toString(36) + Math.floor(Math.random() * 1e6);
+      copy.name = uniqueName(copy.name.replace(/\d+$/, "") || copy.type);
+      copy.x = Math.min((Number(copy.x) || 0) + 24, gameDims().w - 10);
+      copy.y = Math.min((Number(copy.y) || 0) + 18, gameDims().h - 10);
+      scene.objects.push(copy);
+      select(copy.id);
+      renderExplorer(); redraw(); commit();
+      toast(`${label} "${copy.name}".`);
+    }
+    function deleteObj(o) {
+      scene.objects = scene.objects.filter(x => x.id !== o.id);
+      checkedIds.delete(o.id);
+      if (selectedId === o.id) select(null);
+      renderExplorer(); redraw(); commit();
+    }
+
+    // modern-editor keyboard: undo/redo, duplicate, copy/paste, delete, nudge
+    window.addEventListener("keydown", (e) => {
+      if (engine) return;   // while testing, the keyboard belongs to the game
+      const tag = e.target && e.target.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      const mod = e.ctrlKey || e.metaKey;
+      const k = e.key.toLowerCase();
+      if (mod && k === "z" && !e.shiftKey) { e.preventDefault(); undo(); return; }
+      if (mod && (k === "y" || (k === "z" && e.shiftKey))) { e.preventDefault(); redo(); return; }
+      const o = selObj();
+      if (mod && k === "d") { if (o) { e.preventDefault(); addCopy(o, "Duplicated as"); } return; }
+      if (mod && k === "c") { if (o) { clip = JSON.parse(JSON.stringify(o)); toast(`Copied "${o.name}".`); } return; }
+      if (mod && k === "v") { if (clip) { e.preventDefault(); addCopy(clip, "Pasted as"); } return; }
+      if ((e.key === "Delete" || e.key === "Backspace") && o) { e.preventDefault(); deleteObj(o); return; }
+      if (o && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+        e.preventDefault();
+        const step = e.shiftKey ? 10 : 1;   // Shift = big nudge
+        if (e.key === "ArrowLeft") o.x -= step;
+        if (e.key === "ArrowRight") o.x += step;
+        if (e.key === "ArrowUp") o.y -= step;
+        if (e.key === "ArrowDown") o.y += step;
+        renderProps(); redraw(); commitSoon();
+      }
+    });
+
+    // ⌗ snap-to-grid: dragged objects land on a tidy grid (remembered)
+    let snapOn = false;
+    try { snapOn = localStorage.getItem("rl_snap") === "1"; } catch {}
+    const snapBtn = $("#btn-snap");
+    const syncSnapBtn = () => { snapBtn.textContent = snapOn ? "⌗ snap on" : "⌗ snap off"; };
+    snapBtn.addEventListener("click", () => {
+      snapOn = !snapOn;
+      try { localStorage.setItem("rl_snap", snapOn ? "1" : "0"); } catch {}
+      syncSnapBtn(); redraw();
+      toast(snapOn ? `Snap on — drags land on the ${GRID}px grid.` : "Snap off — free placement.");
+    });
+    syncSnapBtn();
+    // the title and settings ride along in the autosaved draft too
+    titleInput.addEventListener("input", saveDraft);
+    if (!pageMode) {
+      $("#game-settings").addEventListener("input", saveDraft);
+      $("#game-settings").addEventListener("change", saveDraft);
+    }
 
     function setTarget(t) {
       if (engine) { toast("Stop the test first.", true); return; }
@@ -296,6 +432,17 @@
     function redraw() {
       if (engine) return; // engine owns the canvas while testing
       drawFrame(canvas.getContext("2d"), scene.objects, { selectedIds: selectedId ? [selectedId] : [], ...gameDims() });
+      if (snapOn) {
+        // the snap grid: faint dots at every landing spot
+        const ctx = canvas.getContext("2d");
+        const { w, h } = gameDims();
+        ctx.save();
+        ctx.fillStyle = "rgba(57, 255, 94, 0.18)";
+        for (let gx = GRID; gx < w; gx += GRID) {
+          for (let gy = GRID; gy < h; gy += GRID) ctx.fillRect(gx - 0.5, gy - 0.5, 1.5, 1.5);
+        }
+        ctx.restore();
+      }
       if (scene.objects.length === 0) {
         // a blank screen shouldn't be a mystery
         const ctx = canvas.getContext("2d");
@@ -348,25 +495,14 @@
         dup.title = "Duplicate — a full copy, scripts and all";
         dup.addEventListener("click", (e) => {
           e.stopPropagation();
-          const copy = JSON.parse(JSON.stringify(o));
-          copy.id = "o" + Date.now().toString(36) + Math.floor(Math.random() * 1e6);
-          copy.name = uniqueName(copy.name.replace(/\d+$/, "") || copy.type);
-          copy.x = Math.min((Number(copy.x) || 0) + 24, gameDims().w - 10);
-          copy.y = Math.min((Number(copy.y) || 0) + 18, gameDims().h - 10);
-          scene.objects.push(copy);
-          select(copy.id);
-          renderExplorer(); redraw();
-          toast(`Duplicated as "${copy.name}".`);
+          addCopy(o, "Duplicated as");
         });
         const del = document.createElement("button");
         del.className = "blk-mini blk-del";
         del.textContent = "✕";
         del.addEventListener("click", (e) => {
           e.stopPropagation();
-          scene.objects = scene.objects.filter(x => x.id !== o.id);
-          checkedIds.delete(o.id);
-          if (selectedId === o.id) select(null);
-          renderExplorer(); redraw();
+          deleteObj(o);
         });
         row.append(cb, name, type, dup, del);
         row.addEventListener("click", (e) => { if (e.target !== cb && e.target !== del && e.target !== dup) select(o.id); });
@@ -381,7 +517,7 @@
         const o = makeObject(type, uniqueName(type), d.w / 2, d.h / 2);
         scene.objects.push(o);
         select(o.id);
-        renderExplorer(); redraw();
+        renderExplorer(); redraw(); commit();
       });
     });
 
@@ -408,13 +544,13 @@
       const num = (prop, step = 1) => {
         const i = document.createElement("input");
         i.type = "number"; i.step = step; i.value = o[prop];
-        i.addEventListener("input", () => { o[prop] = Number(i.value) || 0; redraw(); });
+        i.addEventListener("input", () => { o[prop] = Number(i.value) || 0; redraw(); commitSoon(); });
         return i;
       };
       const txt = (prop) => {
         const i = document.createElement("input");
         i.type = "text"; i.value = o[prop] ?? ""; i.spellcheck = false;
-        i.addEventListener("input", () => { o[prop] = i.value; renderExplorer(); renderScriptEditor(); redraw(); });
+        i.addEventListener("input", () => { o[prop] = i.value; renderExplorer(); renderScriptEditor(); redraw(); commitSoon(); });
         return i;
       };
 
@@ -423,16 +559,57 @@
       field("Y", num("y"));
       field("Size", num("size"));
       field("Angle", num("angle"));
-      field("Color", txt("color"));
+
+      // color: type anything, or pick from a real color swatch
+      const colorRow = document.createElement("div");
+      colorRow.style.display = "flex"; colorRow.style.gap = "6px";
+      const colorText = txt("color");
+      colorText.style.flex = "1";
+      const picker = document.createElement("input");
+      picker.type = "color";
+      picker.className = "prop-color";
+      picker.value = /^#[0-9a-fA-F]{6}$/.test(String(o.color)) ? o.color : "#39ff5e";
+      picker.addEventListener("input", () => {
+        o.color = picker.value;
+        colorText.value = picker.value;
+        redraw(); commitSoon();
+      });
+      colorText.addEventListener("input", () => {
+        if (/^#[0-9a-fA-F]{6}$/.test(colorText.value)) picker.value = colorText.value;
+      });
+      colorRow.append(colorText, picker);
+      field("Color", colorRow);
+
       field("Glow", num("glow"));
       const vis = document.createElement("input");
       vis.type = "checkbox"; vis.checked = Number(o.visible) !== 0;
-      vis.addEventListener("change", () => { o.visible = vis.checked ? 1 : 0; redraw(); });
+      vis.addEventListener("change", () => { o.visible = vis.checked ? 1 : 0; redraw(); commit(); });
       const visLabel = document.createElement("label");
       visLabel.style.display = "flex"; visLabel.style.alignItems = "center"; visLabel.style.gap = "8px";
       visLabel.append(vis, document.createTextNode("Visible"));
       body.appendChild(visLabel);
       if (o.type === "text") field("Text", txt("text"));
+
+      // layers: objects draw in Explorer order — bottom of the list is on TOP
+      const layerLabel = document.createElement("label");
+      layerLabel.textContent = "Layer & position";
+      const layerRow = document.createElement("div");
+      layerRow.className = "layer-row";
+      const move = (label, title, fn) => {
+        const b = document.createElement("button");
+        b.className = "btn btn-small btn-ghost";
+        b.textContent = label;
+        b.title = title;
+        b.addEventListener("click", () => { fn(); renderExplorer(); renderProps(); redraw(); commit(); });
+        layerRow.appendChild(b);
+      };
+      const idx = () => scene.objects.indexOf(o);
+      move("⤒", "Bring to front (drawn over everything)", () => { scene.objects.splice(idx(), 1); scene.objects.push(o); });
+      move("↑", "Up one layer", () => { const i = idx(); if (i < scene.objects.length - 1) { scene.objects.splice(i, 1); scene.objects.splice(i + 1, 0, o); } });
+      move("↓", "Down one layer", () => { const i = idx(); if (i > 0) { scene.objects.splice(i, 1); scene.objects.splice(i - 1, 0, o); } });
+      move("⤓", "Send to back (drawn under everything)", () => { scene.objects.splice(idx(), 1); scene.objects.unshift(o); });
+      move("⌖", "Center on the screen", () => { const d = gameDims(); o.x = Math.round(d.w / 2); o.y = Math.round(d.h / 2); });
+      body.append(layerLabel, layerRow);
     }
 
     // ------------------------------------------------------------ script editor
@@ -450,7 +627,7 @@
       mount.className = "";
       mount.innerHTML = "";
       o.script = o.script || [];
-      blockEditor = createBlockEditor(mount, o.script, { onChange: () => {} });
+      blockEditor = createBlockEditor(mount, o.script, { onChange: () => commitSoon() });
     }
 
     // ------------------------------------------------------------ canvas interaction
@@ -482,12 +659,12 @@
     window.addEventListener("pointermove", (e) => {
       if (!dragging || engine) return;
       const p = canvasPos(e);
-      dragging.obj.x = Math.round(p.x + dragging.dx);
-      dragging.obj.y = Math.round(p.y + dragging.dy);
+      dragging.obj.x = snapCoord(p.x + dragging.dx, snapOn);
+      dragging.obj.y = snapCoord(p.y + dragging.dy, snapOn);
       renderProps(); redraw();
     });
-    window.addEventListener("pointerup", () => dragging = null);
-    window.addEventListener("pointercancel", () => dragging = null);
+    window.addEventListener("pointerup", () => { if (dragging) { dragging = null; commit(); } });
+    window.addEventListener("pointercancel", () => { if (dragging) { dragging = null; commit(); } });
 
     // ------------------------------------------------------------ test mode
     const testBtn = $("#btn-test");
@@ -554,6 +731,7 @@
       if (w === CANVAS_W && h === CANVAS_H) { delete scenes.game.w; delete scenes.game.h; }
       else { scenes.game.w = w; scenes.game.h = h; }
       applyDims();
+      commit();
       toast(`Screen is now ${w}×${h} — the whole world, Test to feel it.`);
     });
     testBtn.addEventListener("click", () => {
@@ -653,7 +831,7 @@
 
     $("#btn-new").addEventListener("click", () => {
       if (!confirm(pageMode ? "Clear your page and start empty? (Nothing changes until you Save.)"
-                            : "Start a new empty game? Unpublished changes are lost.")) return;
+                            : "Start a new empty game? (↶ undo can bring the current one back.)")) return;
       scenes = { game: { objects: [] }, screen: { objects: [] } };
       editingId = null;
       titleInput.value = "";
@@ -668,6 +846,7 @@
         syncTypeUi();
       }
       setTarget("game");
+      commit();   // "New" is just another change — Ctrl+Z brings it all back
     });
 
     const EXAMPLES = {
@@ -721,6 +900,7 @@
         $("#g-screenmode").value = smode;
       }
       select(scene.objects[0].id);
+      commit();
       toast(`${ex.title} loaded — ${EXAMPLES[pick].tip}`);
     });
 
@@ -751,6 +931,7 @@
       }
       applyBehavior(o, id, target);
       renderScriptEditor();
+      commit();
       toast(`${b.name} added to "${o.name}" — ${b.blurb}`);
     });
 
@@ -814,6 +995,7 @@
             const added = instantiateModel(m, scene);
             renderExplorer(); redraw();
             if (added[0]) select(added[0].id);
+            commit();
             toast(`Inserted "${m.name}".`);
           });
           row.append(name, count, ins);
@@ -873,6 +1055,7 @@
             syncTypeUi();
             setTarget("game");
             select(scene.objects[0]?.id || null);
+            resetHistory();   // a fresh project = a fresh undo line
             window.scrollTo({ top: 0, behavior: "smooth" });
             toast(`Editing "${g.title}" — 💾 Save stores your changes.`);
           });
@@ -933,6 +1116,24 @@
         }
       } catch {}
     }
+    // ♻ recover unsaved work: the Studio autosaves a draft to this browser on
+    // every change, so a closed tab or a crash costs nothing
+    if (!pageMode) {
+      try {
+        const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
+        if (d && d.scenes && (d.scenes.game?.objects?.length || d.scenes.screen?.objects?.length || d.title)) {
+          scenes = { game: d.scenes.game || { objects: [] }, screen: d.scenes.screen || { objects: [] } };
+          scene = scenes[editTarget];
+          editingId = d.editingId || null;
+          titleInput.value = d.title || "";
+          settingsSet(d.settings);
+          applyDims();
+          selectedId = scene.objects[0]?.id || null;
+          toast("♻ Recovered your unsaved work — New starts fresh.");
+        }
+      } catch {}
+    }
+    resetHistory();
     renderExplorer();
     renderProps();
     renderScriptEditor();
