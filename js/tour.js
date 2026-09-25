@@ -45,6 +45,11 @@ export const TOUR_STEPS = [
     text: "The Studio ships with the entire prehistory of video games, 1947–1974, rebuilt from these same blocks. Load Pong, click its objects, read its scripts — every trick in every machine is yours to take."
   },
   {
+    sel: "#btn-toblocks",
+    title: "One language, two views",
+    text: "Blocks and code are the SAME language, and these buttons prove it: 🧱 To blocks unfolds any script's code into real blocks, 📜 To code prints blocks as text. Load an example, select its brain object, hit 🧱 — and read a real 1970s machine as blocks you can drag."
+  },
+  {
     sel: "#game-settings",
     title: "Game settings",
     text: "Your game's card description, its price per play (coins go to YOU), its screen size, how many players share the machine (2–8 = online multiplayer), and its arcade screen."

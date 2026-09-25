@@ -8,7 +8,7 @@
 import { stripModules } from "./export.js";
 
 const STUDIO_BUNDLE = [
-  "js/redscript.js", "js/engine.js", "js/blocks.js", "js/behaviors.js",
+  "js/redscript.js", "js/engine.js", "js/convert.js", "js/blocks.js", "js/behaviors.js",
   "js/studio-tools.js", "js/gamefile.js", "js/touch-controls.js",
   "js/terminal.js", "js/casino-odds.js"
 ];
@@ -136,7 +136,7 @@ export async function buildOfflineStudioHtml({ rootPath = "", fetchText } = {}) 
 <div class="panel" id="blocks">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
     <h3 id="scripttitle">Script</h3>
-    <select id="behsel"><option value="">✨ Add behavior…</option></select>
+    <span><button class="mini" id="toblocks" title="Unfold code into real blocks">🧱 blocks</button> <button class="mini" id="tocode" title="Print blocks as RedScript">📜 code</button> <select id="behsel"><option value="">✨ Add behavior…</option></select></span>
   </div>
   <div id="scripted" class="hint">Select an object to edit its script.</div>
 </div>
@@ -355,6 +355,19 @@ ${sources.join("\n\n")}
   BEHAVIORS.forEach(function (b) {
     var opt = document.createElement("option"); opt.value = b.id; opt.textContent = b.name; behsel.appendChild(opt);
   });
+  function flip(convert) {
+    if (engine) return;
+    var o = selObj();
+    if (!o) { alert("Select an object first."); return; }
+    var conv;
+    try { conv = convert(o.script || []); } catch (err) { alert("Couldn't convert: " + err.message); return; }
+    if (JSON.stringify(conv) === JSON.stringify(o.script || [])) return;
+    if (!compiledEqual(o.script || [], conv)) { alert("Conversion refused — the two views wouldn't compile to the same program."); return; }
+    o.script = conv; renderScript(); commit();
+  }
+  $("#toblocks").addEventListener("click", function () { flip(scriptToBlocks); });
+  $("#tocode").addEventListener("click", function () { flip(scriptToCode); });
+
   behsel.addEventListener("change", function () {
     var id = behsel.value; behsel.value = "";
     if (!id || engine) return;

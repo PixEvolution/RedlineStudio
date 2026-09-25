@@ -157,10 +157,16 @@
     <div class="panel" id="script-panel" style="margin-top:16px">
       <div class="script-head-row">
         <h3 id="script-title">Script</h3>
-        <select id="sel-behavior" class="blk-add" style="margin:0"
-          title="Ready-made game logic — inserts ordinary blocks you can open and edit">
-          <option value="">✨ Add behavior…</option>
-        </select>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center">
+          <button class="btn btn-small btn-ghost" id="btn-toblocks"
+            title="Unfold every 📜 Code section into real blocks — the best way to READ an example">🧱 To blocks</button>
+          <button class="btn btn-small btn-ghost" id="btn-tocode"
+            title="Print this object's whole script as RedScript text — same program, other view">📜 To code</button>
+          <select id="sel-behavior" class="blk-add" style="margin:0"
+            title="Ready-made game logic — inserts ordinary blocks you can open and edit">
+            <option value="">✨ Add behavior…</option>
+          </select>
+        </div>
       </div>
       <p class="hint">No code needed: pick a <b>✨ behavior</b> above, or build with blocks — a <b>📜 Code</b> block is the same language as text.
         Expressions work in every field: <code>self.x + 2</code>, <code>rand(10,90)</code>, <code>dist(self, target1) &lt; 20</code>, <code>keydown("ArrowUp")</code>, <code>xor(a, b)</code> — and lists: <code>board[i]</code></p>
@@ -187,6 +193,7 @@
     import { downloadStandalone } from "../js/export.js";
     import { downloadOfflineStudio } from "../js/export-studio.js";
     import { unpackGame, extractFromHtml } from "../js/gamefile.js";
+    import { scriptToBlocks, scriptToCode, compiledEqual } from "../js/convert.js";
     import { attachTerminalInput } from "../js/terminal.js";
     import { attachCasinoLoop, localWallet } from "../js/casino-odds.js";
     import { attachLocalParty } from "../js/localwire.js";
@@ -1001,6 +1008,33 @@
       commit();
       toast(`${b.name} added to "${o.name}" — ${b.blurb}`);
     });
+
+    // 🧱⇄📜 the two-way door: same script, blocks view or RedScript view.
+    // Accepted only when both views compile to the IDENTICAL program.
+    const flipScript = (label, convert) => {
+      if (engine) { toast("Stop the test first.", true); return; }
+      const o = selObj();
+      if (!o) { toast("Select an object first.", true); return; }
+      let converted;
+      try { converted = convert(o.script || []); }
+      catch (err) { toast("Couldn't convert: " + err.message, true); return; }
+      if (JSON.stringify(converted) === JSON.stringify(o.script || [])) {
+        toast(`"${o.name}" is already in that view.`);
+        return;
+      }
+      if (!compiledEqual(o.script || [], converted)) {
+        toast("Conversion refused — the two views wouldn't compile to the same program (fix script errors first, or a tricky expression is confusing the line grammar).", true);
+        return;
+      }
+      o.script = converted;
+      renderScriptEditor();
+      commit();
+      toast(`${label} — same program, other view. ↶ undo flips it back.`);
+    };
+    $("#btn-toblocks").addEventListener("click", () =>
+      flipScript("🧱 Unfolded into blocks", scriptToBlocks));
+    $("#btn-tocode").addEventListener("click", () =>
+      flipScript("📜 Printed as RedScript", scriptToCode));
 
     // 🎓 the tutorial: a guided walk for people who've never made a game
     $("#btn-tour").addEventListener("click", () => startTour());

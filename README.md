@@ -29,6 +29,7 @@ A game platform by Redline Digital — players make accounts, build games in the
 | `js/screen-size.js` | 🖥 screen size button (S/M/L/MAX, remembered) + double-res crisp canvas |
 | `js/studio-panels.js` | Studio panels: collapsible headers + floatable windows (desktop) |
 | `js/filterbar.js` | Search + sort bar for the Games, Market and Players lists |
+| `js/convert.js` | 🧱⇄📜 blocks ↔ RedScript conversion — accepted only when both views compile identically |
 | `js/gamefile.js` | The sealed .rlgame file: pack/verify/sanitize — imports are scene data, never code |
 | `js/export-studio.js` | 📦 Offline Studio: bundles the whole editor into one offline HTML file |
 | `js/export.js` | ⬇ Download: bundles a game into one standalone offline HTML file |
