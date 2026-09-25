@@ -30,6 +30,7 @@ import {
   updateProfile,
   updatePassword,
   updateEmail,
+  verifyBeforeUpdateEmail,
   sendEmailVerification,
   sendPasswordResetEmail,
   EmailAuthProvider,
@@ -204,20 +205,39 @@ export async function changePassword(currentPassword, newPassword) {
 }
 
 // Link a real email: it becomes the account's login email (username + password
-// keeps working until the link, then login is EMAIL + password), it receives
-// the verification mail, and it enables password recovery.
+// keeps working until the link lands, then login is EMAIL + password), and it
+// enables password recovery.
+//
+// Firebase has two moods about this, depending on a console setting:
+//   · classic: updateEmail() attaches it at once, then we mail a verification
+//   · protected (the default on new projects): updateEmail() is refused, and
+//     the email attaches only AFTER its owner clicks a link we mail them —
+//     linked and verified in one click.
+// We try classic and fall back to protected, so it works either way.
+// Returns "linked" (attached now, verify mail sent) or "pending" (the mail
+// does the attaching — nothing changes until it's clicked).
 export async function linkEmail(currentPassword, email) {
   email = String(email || "").trim();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("That doesn't look like an email address.");
   const u = await reauth(currentPassword);
   try {
     await updateEmail(u, email);
+    try { await sendEmailVerification(u); } catch {}
+    return "linked";
   } catch (err) {
     if (err && err.code === "auth/email-already-in-use") throw new Error("That email is already on another account.");
-    if (err && err.code === "auth/operation-not-allowed") throw new Error("Firebase wants the email verified first — check the console setting, or try again.");
+    if (err && err.code === "auth/operation-not-allowed") {
+      // the protected flow: the mail's link performs the linking
+      try {
+        await verifyBeforeUpdateEmail(u, email);
+        return "pending";
+      } catch (err2) {
+        if (err2 && err2.code === "auth/email-already-in-use") throw new Error("That email is already on another account.");
+        throw new Error(friendlyError(err2));
+      }
+    }
     throw new Error(friendlyError(err));
   }
-  try { await sendEmailVerification(u); } catch {}
 }
 
 export async function resendVerification() {

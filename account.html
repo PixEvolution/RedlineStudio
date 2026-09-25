@@ -174,16 +174,33 @@
         $("#email-verify").style.display = "none";
       }
     };
-    renderEmail(await emailStatus());
+    // sync the public hasEmail flag with the truth whenever we see it
+    const syncEmailFlag = async (st) => {
+      if (st.linked && !udata.hasEmail) {
+        try { await updateDoc(uref, { hasEmail: true }); udata.hasEmail = true; } catch {}
+      }
+    };
+    {
+      const st = await emailStatus();
+      await syncEmailFlag(st);   // e.g. returning after clicking the link-mail
+      renderEmail(st);
+    }
     $("#btn-email").addEventListener("click", async () => {
       const btn = $("#btn-email");
       btn.disabled = true;
       try {
-        await linkEmail($("#li-pass").value, $("#li-email").value);
-        await updateDoc(uref, { hasEmail: true });
-        udata.hasEmail = true;
-        renderEmail(await emailStatus());
-        toast("Verification mail sent — from now on, log in with this EMAIL + your password.");
+        const how = await linkEmail($("#li-pass").value, $("#li-email").value);
+        const st = await emailStatus();
+        await syncEmailFlag(st);
+        renderEmail(st);
+        if (how === "pending") {
+          $("#email-now").innerHTML = `<b style="color:#ff9d4a">Check your inbox</b> — clicking the link in the
+            mail links AND verifies the email in one go. It may log you out; log back in with the
+            <b>EMAIL</b> + your password, then come back here.`;
+          toast("Mail sent — the link in it does the linking. Check spam too.");
+        } else {
+          toast("Email linked, verification mail sent — from now on, log in with this EMAIL + your password.");
+        }
       } catch (err) { toast(err.message, true); }
       btn.disabled = false;
     });
@@ -193,8 +210,9 @@
     });
     $("#btn-refresh").addEventListener("click", async () => {
       const st = await emailStatus();
+      await syncEmailFlag(st);
       renderEmail(st);
-      toast(st.verified ? "✔ Verified — the 18+ gate opens for you now." : "Not verified yet — click the link in the mail first.");
+      toast(st.verified ? "✔ Verified — the 18+ gate opens for you now." : "Not verified yet — click the link in the mail first (check spam).");
     });
 
     // ---- password ----
