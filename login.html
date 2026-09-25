@@ -12,6 +12,7 @@
   <meta property="og:url" content="https://redlinestudio.dev/login.html">
   <meta property="og:type" content="website">
   <link rel="stylesheet" href="css/style.css">
+  <script>(window.adsbygoogle = window.adsbygoogle || []).requestNonPersonalizedAds = 1;</script>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2208639648972390"
      crossorigin="anonymous"></script>
 </head>
@@ -33,15 +34,24 @@
         <input type="password" id="password" maxlength="10" autocomplete="off">
         <p class="hint">1–10 characters. Any character allowed. Caps matter.</p>
 
+        <!-- creating an account = agreeing to the Terms: a box you must tick -->
+        <label id="agree-row" style="display:none; font-weight:normal; margin-top:10px; cursor:pointer">
+          <input type="checkbox" id="agree" style="width:auto; margin-right:6px; vertical-align:middle">
+          I agree to the <a href="terms.html" target="_blank" style="color:#ff8f8c">Terms of Service</a> and
+          have read the <a href="privacy.html" target="_blank" style="color:#ff8f8c">Privacy Policy</a>.
+          <span class="hint" style="display:block; margin-top:4px">Under 18? Get a parent or guardian's okay first.
+          Don't use your real name as your username.</span>
+        </label>
+
         <br>
         <button class="btn" id="submit" type="submit" style="width:100%">Log in</button>
       </form>
       <p class="hint" style="margin-top:12px; text-align:center">
         <a href="#" id="forgot" style="color:#ff8f8c">Forgot password?</a> — works once an email is linked in ⚙ Account.
       </p>
-      <p class="hint" style="text-align:center">By creating an account you agree to the
-        <a href="terms.html" style="color:#ff8f8c">Terms of Service</a> and
-        <a href="privacy.html" style="color:#ff8f8c">Privacy Policy</a>.</p>
+      <p class="hint" style="text-align:center">
+        <a href="terms.html" style="color:#ff8f8c">Terms of Service</a> ·
+        <a href="privacy.html" style="color:#ff8f8c">Privacy Policy</a></p>
     </div>
   </main>
 
@@ -62,6 +72,7 @@
       tabLogin.classList.toggle("active", m === "login");
       tabCreate.classList.toggle("active", m === "create");
       submit.textContent = m === "login" ? "Log in" : "Create account";
+      $("#agree-row").style.display = m === "create" ? "block" : "none";
     }
     $("#forgot").addEventListener("click", async (e) => {
       e.preventDefault();
@@ -79,6 +90,10 @@
       e.preventDefault();
       const username = $("#username").value;
       const password = $("#password").value;
+      if (mode === "create" && !$("#agree").checked) {
+        toast("Tick the box to agree to the Terms of Service first.", true);
+        return;
+      }
       submit.disabled = true;
       try {
         if (mode === "create") {
