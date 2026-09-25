@@ -39,9 +39,9 @@
       <h2>Email &amp; recovery</h2>
       <p id="email-now" class="hint">Loading…</p>
       <div id="email-link" style="display:none">
-        <p>Linking an email is optional (13+ only) and does three things: it becomes your <b>login</b>
-        (email + password instead of username + password), it makes <b>password recovery</b> possible,
-        and once <b>verified</b> it unlocks the adult side of the site (Casino, 18+ games).</p>
+        <p>Linking an email is optional (13+ only) and does three things: it becomes a <b>second way to
+        log in</b> (your username keeps working too), it makes <b>password recovery</b> possible, and once
+        <b>verified</b> it unlocks the adult side of the site (Casino, 18+ games).</p>
         <label for="li-email">Email</label>
         <input type="email" id="li-email" style="max-width:320px" autocomplete="email">
         <label for="li-pass">Current password</label>
@@ -195,11 +195,11 @@
         renderEmail(st);
         if (how === "pending") {
           $("#email-now").innerHTML = `<b style="color:#ff9d4a">Check your inbox</b> — clicking the link in the
-            mail links AND verifies the email in one go. It may log you out; log back in with the
-            <b>EMAIL</b> + your password, then come back here.`;
+            mail links AND verifies the email in one go. It may log you out — log back in with your
+            <b>username or the email</b> + your password, then come back here.`;
           toast("Mail sent — the link in it does the linking. Check spam too.");
         } else {
-          toast("Email linked, verification mail sent — from now on, log in with this EMAIL + your password.");
+          toast("Email linked, verification mail sent — log in with your username or this email, same password.");
         }
       } catch (err) { toast(err.message, true); }
       btn.disabled = false;

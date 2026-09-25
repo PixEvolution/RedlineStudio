@@ -4,21 +4,18 @@
 //   Username: 1-10 characters, ANY character allowed, caps matter, must be unique (exact match).
 //   Password: 1-10 characters, ANY character allowed, caps matter.
 //
-// What changed (v2): logins now go through Firebase Authentication, so the database
-// can tell who is really logged in. Editing localStorage or using the browser console
-// no longer lets someone act as another player. Players see no difference.
+// Logins go through Firebase Authentication. Each username becomes a hidden
+// login ID (<hash>@users.redlinestudio.dev); passwords are sent with a fixed
+// prefix so 1-character passwords pass Firebase's 6-character minimum, and
+// are stored only by Firebase Auth, never in our database.
 //
-// Behind the scenes (players never see or type any of this):
-//   - Each username becomes a hidden login ID: <hash of the exact username>@users.redlinestudio.dev
-//     (a hash keeps ANY character and exact caps working).
-//   - The password is sent to Firebase with a fixed prefix, so 1-character passwords still
-//     pass Firebase's 6-character minimum.
-//   - Passwords are stored only by Firebase Authentication, never in our database.
+// EMAIL-LINKED ACCOUNTS (⚙ Account): the linked email becomes the Firebase
+// login email. Username login still works on any device that has seen the
+// email once (link time, or one email login) — the pairing is remembered in
+// THAT BROWSER ONLY. The public database never stores anyone's address, and
+// nothing derived from a password is ever written anywhere.
 //
-// Old v1 accounts upgrade themselves the first time they log in with their old password.
-//
-// Same exports as v1 (createAccount, login, currentUser, logout, requireLogin,
-// userDocId, validateName), plus `auth` and `authReady`.
+// Old v1 accounts upgrade themselves on their first login.
 
 import { app, db } from "./firebase.js";
 import {
@@ -46,6 +43,22 @@ export const auth = getAuth(app);
 const SESSION_KEY = "rl_session_v1";          // display cache only — NOT what grants access
 const EMAIL_DOMAIN = "users.redlinestudio.dev";
 const PASS_PREFIX = "redline::";
+
+// THIS DEVICE remembers which username goes with which linked email, so
+// username login keeps working here after an email is linked. It never
+// leaves the browser.
+const EMAIL_MAP_KEY = "rl_login_emails_v1";
+function rememberLoginEmail(username, email) {
+  try {
+    const map = JSON.parse(localStorage.getItem(EMAIL_MAP_KEY) || "{}");
+    map[username] = email;
+    localStorage.setItem(EMAIL_MAP_KEY, JSON.stringify(map));
+  } catch {}
+}
+function recallLoginEmail(username) {
+  try { return JSON.parse(localStorage.getItem(EMAIL_MAP_KEY) || "{}")[username] || null; }
+  catch { return null; }
+}
 
 // ---------- validation ----------
 
@@ -143,26 +156,31 @@ export async function createAccount(username, password) {
   return username;
 }
 
+// Signs in with an EMAIL. Passwords set on the SITE carry the hidden prefix;
+// passwords set on Firebase's reset page are raw — so both are tried.
+async function emailSignIn(email, password) {
+  let cred;
+  try {
+    cred = await signInWithEmailAndPassword(auth, email, firebasePassword(password));
+  } catch (err) {
+    const code = err && err.code;
+    if (code !== "auth/invalid-credential" && code !== "auth/wrong-password") throw new Error(friendlyError(err));
+    try {
+      cred = await signInWithEmailAndPassword(auth, email, password);
+    } catch (err2) { throw new Error(friendlyError(err2)); }
+  }
+  const name = cred.user.displayName || email;
+  setSession(name);
+  rememberLoginEmail(name, email);   // username login works on this device now
+  return name;
+}
+
 export async function login(username, password) {
   if (!username || !password) throw new Error("Enter your username and password.");
 
-  // an email in the username box = email login (accounts with a linked email).
-  // Passwords set on the SITE carry a hidden prefix; passwords set on
-  // Firebase's reset page are raw — so we try both spellings.
+  // an email in the username box = email login (accounts with a linked email)
   if (username.includes("@")) {
-    let cred;
-    try {
-      cred = await signInWithEmailAndPassword(auth, username.trim(), firebasePassword(password));
-    } catch (err) {
-      const code = err && err.code;
-      if (code !== "auth/invalid-credential" && code !== "auth/wrong-password") throw new Error(friendlyError(err));
-      try {
-        cred = await signInWithEmailAndPassword(auth, username.trim(), password);
-      } catch (err2) { throw new Error(friendlyError(err2)); }
-    }
-    const name = cred.user.displayName || username;
-    setSession(name);
-    return name;
+    return emailSignIn(username.trim(), password);
   }
 
   const loginId = await loginIdFor(username);
@@ -181,27 +199,48 @@ export async function login(username, password) {
       setSession(username);
       return username;
     }
-    // an account with a LINKED EMAIL logs in with the email, not the username
+    // an email-linked account: this device may remember which email is theirs,
+    // so the USERNAME keeps working here like nothing changed
+    const remembered = recallLoginEmail(username);
+    if (remembered) {
+      try { return await emailSignIn(remembered, password); } catch {}
+    }
     try {
       const snap = await getDoc(doc(db, "users", userDocId(username)));
       if (snap.exists() && snap.data().hasEmail) {
-        throw new Error("This account has a linked email — type your EMAIL in the username box to log in.");
+        throw new Error("This account has a linked email — log in with the EMAIL once on this device, and your username works here again after that.");
       }
     } catch (e2) { if (String(e2.message).includes("linked email")) throw e2; }
     throw new Error(friendlyError(err));
   }
 }
 
+// Old accounts have passHash and no uid. If the old password matches, create the
+// Firebase login for them, link it, and remove the old hash. Keeps coins and games.
+async function upgradeLegacyAccount(username, password, loginId) {
+  const ref = doc(db, "users", userDocId(username));
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return false;
+  const data = snap.data();
+  if (data.uid || !data.passHash) return false;
+  if (data.passHash !== await legacyHash(password)) return false;
+
+  const cred = await createUserWithEmailAndPassword(auth, loginId, firebasePassword(password));
+  await updateProfile(cred.user, { displayName: username });
+  await updateDoc(ref, { uid: cred.user.uid, version: 2, passHash: deleteField() });
+  return true;
+}
+
 // ---------- account settings (account.html) ----------
 
 // Sensitive changes re-prove the password first, whatever the auth email is.
+// (Dual attempt: site-prefixed, then raw — see emailSignIn.)
 async function reauth(currentPassword) {
   const u = auth.currentUser;
   if (!u) throw new Error("You're not logged in.");
   try {
     await reauthenticateWithCredential(u, EmailAuthProvider.credential(u.email, firebasePassword(currentPassword)));
   } catch (err) {
-    // a password set on Firebase's reset page has no prefix — try it raw
     try {
       await reauthenticateWithCredential(u, EmailAuthProvider.credential(u.email, currentPassword));
     } catch (err2) {
@@ -218,9 +257,8 @@ export async function changePassword(currentPassword, newPassword) {
   await updatePassword(u, firebasePassword(newPassword));
 }
 
-// Link a real email: it becomes the account's login email (username + password
-// keeps working until the link lands, then login is EMAIL + password), and it
-// enables password recovery.
+// Link a real email: it becomes the account's Firebase login email, it makes
+// password recovery possible, and (verified) it opens the 18+ gate.
 //
 // Firebase has two moods about this, depending on a console setting:
 //   · classic: updateEmail() attaches it at once, then we mail a verification
@@ -237,6 +275,7 @@ export async function linkEmail(currentPassword, email) {
   try {
     await updateEmail(u, email);
     try { await sendEmailVerification(u); } catch {}
+    if (u.displayName) rememberLoginEmail(u.displayName, email);
     return "linked";
   } catch (err) {
     if (err && err.code === "auth/email-already-in-use") throw new Error("That email is already on another account.");
@@ -244,6 +283,7 @@ export async function linkEmail(currentPassword, email) {
       // the protected flow: the mail's link performs the linking
       try {
         await verifyBeforeUpdateEmail(u, email);
+        if (u.displayName) rememberLoginEmail(u.displayName, email);
         return "pending";
       } catch (err2) {
         if (err2 && err2.code === "auth/email-already-in-use") throw new Error("That email is already on another account.");
@@ -266,6 +306,7 @@ export async function emailStatus() {
   if (!u) return { linked: false, email: "", verified: false };
   try { await u.reload(); } catch {}
   const real = u.email && !u.email.endsWith("@" + EMAIL_DOMAIN);
+  if (real && u.displayName) rememberLoginEmail(u.displayName, u.email);
   return { linked: !!real, email: real ? u.email : "", verified: !!(real && u.emailVerified) };
 }
 
@@ -287,22 +328,6 @@ export async function deleteLogin(currentPassword) {
   const u = await reauth(currentPassword);
   await deleteUser(u);
   clearSession();
-}
-
-// Old accounts have passHash and no uid. If the old password matches, create the
-// Firebase login for them, link it, and remove the old hash. Keeps coins and games.
-async function upgradeLegacyAccount(username, password, loginId) {
-  const ref = doc(db, "users", userDocId(username));
-  const snap = await getDoc(ref);
-  if (!snap.exists()) return false;
-  const data = snap.data();
-  if (data.uid || !data.passHash) return false;
-  if (data.passHash !== await legacyHash(password)) return false;
-
-  const cred = await createUserWithEmailAndPassword(auth, loginId, firebasePassword(password));
-  await updateProfile(cred.user, { displayName: username });
-  await updateDoc(ref, { uid: cred.user.uid, version: 2, passHash: deleteField() });
-  return true;
 }
 
 // ---------- session ----------
