@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RedlineStudio — Mod Desk</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="page guide">
+    <h1 class="page-title">🛡 Mod Desk</h1>
+    <p class="page-sub">The ⚑ reports players filed, newest first. Every action here is also enforced by the database rules.</p>
+
+    <div class="panel">
+      <h2>Reports</h2>
+      <div id="report-list"><p class="hint">Loading…</p></div>
+    </div>
+
+    <div class="panel">
+      <h2>What you can do from here (and from any game page)</h2>
+      <p class="hint">On any game's page you get a 🛡 row: unlist/relist, re-rate, or delete it. Comments and
+      forum posts grow a mod ✕. Removing a whole ACCOUNT stays deliberate, console-only work: Firebase console →
+      Firestore → <span class="code">users</span> → delete that doc, then Authentication → that user → delete.
+      Handing out or removing mod status is console-only too: the <span class="code">mods</span> collection,
+      one doc per uid — the site itself can never write it.</p>
+    </div>
+  </main>
+
+  <script type="module">
+    import { renderNav, toast, $, fmtDate } from "./js/ui.js";
+    import { requireLogin } from "./js/auth.js";
+    import { amIMod, listReports, resolveReport } from "./js/mod.js";
+
+    renderNav("");
+    const user = requireLogin("login.html");
+    if (!user) throw new Error("redirecting");
+    if (!(await amIMod())) { window.location.href = "index.html"; throw new Error("not a mod"); }
+
+    async function load() {
+      const mount = $("#report-list");
+      try {
+        const reports = await listReports();
+        mount.innerHTML = "";
+        if (reports.length === 0) { mount.innerHTML = '<p class="hint">Inbox zero — the arcade behaves.</p>'; return; }
+        for (const r of reports) {
+          const row = document.createElement("div");
+          row.className = "my-game-row";
+          const info = document.createElement("div");
+          const head = document.createElement("strong");
+          head.textContent = r.title || r.game;
+          const meta = document.createElement("div");
+          meta.className = "hint";
+          meta.textContent = `by ${r.owner || "?"} · reported by ${r.by || "?"} · ${fmtDate(r.at)}`;
+          const why = document.createElement("div");
+          why.textContent = "“" + (r.reason || "") + "”";
+          info.append(head, meta, why);
+
+          const actions = document.createElement("div");
+          const open = document.createElement("a");
+          open.className = "btn btn-small btn-ghost";
+          open.textContent = "Open game";
+          open.href = "play.html?id=" + encodeURIComponent(r.game);
+          const done = document.createElement("button");
+          done.className = "btn btn-small btn-ghost";
+          done.style.marginLeft = "6px";
+          done.textContent = "Resolve ✓";
+          done.addEventListener("click", async () => {
+            try { await resolveReport(r.id); toast("Resolved."); load(); }
+            catch (err) { toast(err.message, true); }
+          });
+          actions.append(open, done);
+          row.append(info, actions);
+          mount.appendChild(row);
+        }
+      } catch (err) {
+        mount.innerHTML = "";
+        toast("Couldn't load reports: " + err.message, true);
+      }
+    }
+    load();
+  </script>
+</body>
+</html>

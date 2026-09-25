@@ -17,6 +17,7 @@
       <h2>Who you are here</h2>
       <p><b id="acc-name">…</b> — that name is the whole identity the site knows.
       <a id="acc-profile" href="#" style="color:#ff8f8c">View profile</a></p>
+      <p class="hint">Login id (uid): <span class="code" id="acc-uid">…</span><span id="acc-mod"></span></p>
     </div>
 
     <div class="panel">
@@ -112,6 +113,17 @@
     await authReady;
 
     $("#acc-name").textContent = user;
+    import("./js/mod.js").then(async ({ amIMod }) => {
+      const { auth } = await import("./js/auth.js");
+      $("#acc-uid").textContent = auth.currentUser?.uid || "…";
+      if (await amIMod()) {
+        const a = document.createElement("a");
+        a.href = "mods.html";
+        a.textContent = " · 🛡 Mod Desk";
+        a.style.color = "#ff8f8c";
+        $("#acc-mod").appendChild(a);
+      }
+    });
     $("#acc-profile").href = "profile.html?u=" + encodeURIComponent(user);
     const uref = doc(db, "users", userDocId(user));
     let udata = {};

@@ -41,6 +41,9 @@
     import { transferCoins, getCoins } from "./js/economy.js";
     import { renderVotes, renderComments } from "./js/social.js";
     import { ratingInfo, canPlay } from "./js/ratings.js";
+    import { amIMod, modUnlistGame, modRateGame } from "./js/mod.js";
+    import { RATINGS } from "./js/ratings.js";
+    import { deleteGame } from "./js/games.js";
     import { emailStatus, userDocId } from "./js/auth.js";
     import { doc, getDoc, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { db } from "./js/firebase.js";
@@ -640,6 +643,52 @@
           });
           metaEl.appendChild(rep);
         }
+      }
+
+      // ---- 🛡 the mod row (only moderators ever see it; the rules enforce it)
+      if (await amIMod()) {
+        const bar = document.createElement("p");
+        bar.className = "hint";
+        bar.append("🛡 ");
+        const unlist = document.createElement("button");
+        unlist.className = "btn btn-small btn-ghost";
+        unlist.textContent = game.unlisted ? "Relist" : "Unlist";
+        unlist.addEventListener("click", async () => {
+          try {
+            await modUnlistGame(id, !game.unlisted);
+            game.unlisted = !game.unlisted;
+            unlist.textContent = game.unlisted ? "Relist" : "Unlist";
+            toast(game.unlisted ? "Unlisted — hidden from the public pages." : "Relisted.");
+          } catch (err) { toast(err.message, true); }
+        });
+        const rateSel = document.createElement("select");
+        rateSel.className = "blk-add";
+        rateSel.style.margin = "0 6px";
+        for (const r of RATINGS) {
+          const o = document.createElement("option");
+          o.value = r.id; o.textContent = "Rate: " + r.badge;
+          rateSel.appendChild(o);
+        }
+        rateSel.value = game.casino ? "A18" : (game.rating || "E");
+        rateSel.addEventListener("change", async () => {
+          try { await modRateGame(id, rateSel.value); toast("Re-rated " + rateSel.value + "."); }
+          catch (err) { toast(err.message, true); }
+        });
+        const nuke = document.createElement("button");
+        nuke.className = "btn btn-small btn-ghost";
+        nuke.style.color = "#ff8f8c";
+        nuke.textContent = "Delete game";
+        nuke.addEventListener("click", async () => {
+          if (!confirm(`MOD DELETE "${game.title}" by ${game.owner} — forever?`)) return;
+          try { await deleteGame(id); toast("Deleted."); setTimeout(() => window.location.href = "index.html", 700); }
+          catch (err) { toast(err.message, true); }
+        });
+        const desk = document.createElement("a");
+        desk.href = "mods.html";
+        desk.textContent = "Mod Desk";
+        desk.style.marginLeft = "8px";
+        bar.append(unlist, rateSel, nuke, desk);
+        metaEl.after(bar);
       }
       if (game.description) {
         const d = document.createElement("p");

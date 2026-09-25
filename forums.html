@@ -58,6 +58,7 @@
     import { renderNav, toast, $, fmtDate } from "./js/ui.js";
     import { currentUser } from "./js/auth.js";
     import { listThreads, getThread, createThread, listPosts, replyToThread, deletePost, deleteThread } from "./js/forum.js";
+    import { amIMod } from "./js/mod.js";
 
     renderNav("");
     const me = currentUser();
@@ -117,7 +118,7 @@
         $("#th-title").textContent = t.title;
         document.title = "RedlineStudio — " + t.title;
         $("#th-meta").textContent = `started by ${t.author} · ${fmtDate(t.createdAt)}`;
-        if (me === t.author) {
+        if (me === t.author || await amIMod()) {
           const del = document.createElement("a");
           del.href = "#";
           del.style.color = "#ff8f8c";
@@ -139,6 +140,7 @@
     }
 
     async function loadPosts() {
+      const mod = await amIMod();
       const mount = $("#posts");
       const posts = await listPosts(threadId);
       mount.innerHTML = "";
@@ -155,7 +157,7 @@
         when.className = "hint";
         when.textContent = fmtDate(p.createdAt);
         head.append(who, when);
-        if (me === p.author) {
+        if (me === p.author || mod) {
           const del = document.createElement("button");
           del.className = "blk-mini blk-del";
           del.textContent = "✕";

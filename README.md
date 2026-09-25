@@ -57,7 +57,9 @@ A game platform by Redline Digital — players make accounts, build games in the
 | `guide.html` | The Coding Guide — full RedScript + Studio reference |
 | `privacy.html` | Privacy policy (required for ads; linked under every ad) |
 | `terms.html` | Terms of Service — conduct rules, content ratings, coins, the casino |
+| `mods.html` | 🛡 Mod Desk — the ⚑ reports inbox (moderators only) |
 | `account.html` | ⚙ Account settings: password, optional email verification, age bracket, self-serve deletion |
+| `js/mod.js` | Moderation: amIMod (console-only /mods collection), unlist/re-rate, the reports inbox |
 | `js/ratings.js` | Content ratings + the age gate (E · 13+ · 16+ · 18+), pure logic |
 | `js/ads.js` | Advertising, off until AD_CONFIG is filled in — bottom-of-page slots only |
 | `othergames.html` | More Games — Redline Digital's GPS games + future downloads |

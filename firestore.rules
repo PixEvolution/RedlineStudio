@@ -30,6 +30,12 @@ service cloud.firestore {
     function changedKeys() {
       return request.resource.data.diff(resource.data).affectedKeys();
     }
+    // MODERATORS: a doc in /mods keyed by the login's uid. That collection is
+    // console-only (no client can write it), so nobody can promote themselves.
+    function isMod() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/mods/$(request.auth.uid));
+    }
     function utcToday() {
       return string(request.time.year()) + '-' + string(request.time.month()) + '-' + string(request.time.day());
     }
@@ -81,8 +87,10 @@ service cloud.firestore {
       && (!('ageBracket' in resource.data)
           || request.resource.data.get('ageBracket', '') == resource.data.ageBracket);
 
-      // the owner may erase their own account (the ⚙ Account delete button)
-      allow delete: if signedIn() && resource.data.get('uid', '') == request.auth.uid;
+      // the owner may erase their own account (the ⚙ Account delete button) —
+      // and a moderator may erase an account's data (its login is then removed
+      // in the Firebase console: Authentication → that user → delete)
+      allow delete: if isMod() || (signedIn() && resource.data.get('uid', '') == request.auth.uid);
     }
 
     // ------------------------------------------------------------- games
@@ -97,6 +105,8 @@ service cloud.firestore {
       allow update: if
         // the play counter: anyone, even logged out
         changedKeys().hasOnly(['plays'])
+        // a moderator may unlist or re-rate — and touch NOTHING else
+        || (isMod() && changedKeys().hasOnly(['unlisted', 'rating']))
         || (signedIn() && (
           // the owner — everything EXCEPT conjuring pool coins
           (resource.data.ownerUid == request.auth.uid
@@ -120,9 +130,9 @@ service cloud.firestore {
                     + (resource.data.get('pool', 0) - request.resource.data.get('pool', 0)))
         ));
 
-      allow delete: if signedIn()
+      allow delete: if isMod() || (signedIn()
         && (resource.data.ownerUid == request.auth.uid
-            || !('ownerUid' in resource.data));
+            || !('ownerUid' in resource.data)));
     }
 
     // ------------------------------------------------------------- models
@@ -141,9 +151,9 @@ service cloud.firestore {
         || changedKeys().hasOnly(['votes', 'likes', 'dislikes'])
       );
 
-      allow delete: if signedIn()
+      allow delete: if isMod() || (signedIn()
         && (resource.data.ownerUid == request.auth.uid
-            || !('ownerUid' in resource.data));
+            || !('ownerUid' in resource.data)));
     }
 
     // ---------------------------------------------------------- comments
@@ -154,9 +164,9 @@ service cloud.firestore {
         && request.resource.data.text is string
         && request.resource.data.text.size() <= 300;
       allow update: if false;
-      allow delete: if signedIn()
+      allow delete: if isMod() || (signedIn()
         && (resource.data.authorUid == request.auth.uid
-            || !('authorUid' in resource.data));
+            || !('authorUid' in resource.data)));
     }
 
     // ------------------------------------------------------------ forums
@@ -169,9 +179,9 @@ service cloud.firestore {
         || resource.data.authorUid == request.auth.uid
         || !('authorUid' in resource.data)
       );
-      allow delete: if signedIn()
+      allow delete: if isMod() || (signedIn()
         && (resource.data.authorUid == request.auth.uid
-            || !('authorUid' in resource.data));
+            || !('authorUid' in resource.data)));
     }
 
     match /posts/{postId} {
@@ -182,11 +192,11 @@ service cloud.firestore {
         && request.resource.data.text.size() <= 1000;
       allow update: if false;
       // the post's author — or the thread's author cleaning their thread
-      allow delete: if signedIn() && (
+      allow delete: if isMod() || (signedIn() && (
         resource.data.authorUid == request.auth.uid
         || !('authorUid' in resource.data)
         || get(/databases/$(database)/documents/threads/$(resource.data.thread)).data.authorUid == request.auth.uid
-      );
+      ));
     }
 
     // -------------------------------------------- the arcade floor: seats
@@ -218,7 +228,7 @@ service cloud.firestore {
         && request.resource.data.user == resource.data.user
         && request.resource.data.score is number
         && request.resource.data.score > resource.data.score;
-      allow delete: if false;
+      allow delete: if isMod();   // striking a cheated score
     }
 
     // --------------------------------------- one account, one machine
@@ -232,19 +242,27 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ---------------------------------------------------------- moderators
+    // Doc id = a Firebase Auth uid. Created ONLY in the Firebase console.
+    match /mods/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;   // "am I a mod?"
+      allow create, update, delete: if false;
+    }
+
     // ------------------------------------------------------------- reports
     // the ⚑ button: anyone signed in can flag a game for moderation.
     // Reports are write-only from the site — the moderator reads them in the
     // Firebase console. Nobody can read, edit or scrub them from out here.
     match /reports/{reportId} {
-      allow read: if false;
+      allow read: if isMod();
       allow create: if signedIn()
         && request.resource.data.by is string
         && request.resource.data.reason is string
         && request.resource.data.reason.size() >= 1
         && request.resource.data.reason.size() <= 300
         && request.resource.data.game is string;
-      allow update, delete: if false;
+      allow update: if false;
+      allow delete: if isMod();   // resolving a report
     }
 
     // everything else: denied

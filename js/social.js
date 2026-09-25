@@ -3,6 +3,7 @@
 // Votes live ON the target doc (a votes map + cached like/dislike counts), so
 // lists can show counts with no extra reads. Comments are their own collection.
 
+import { amIMod } from "./mod.js";
 import { db } from "./firebase.js";
 import { auth } from "./auth.js";
 import { userDocId } from "./auth.js";
@@ -157,6 +158,7 @@ export function renderComments(mount, kind, id, me, { heading = "Comments" } = {
   mount.appendChild(list);
 
   async function load() {
+      const mod = await amIMod();
     try {
       const comments = await listComments(kind, id);
       list.innerHTML = "";
@@ -175,11 +177,11 @@ export function renderComments(mount, kind, id, me, { heading = "Comments" } = {
         text.className = "comment-text";
         text.textContent = c.text;
         row.append(who, text);
-        if (me === c.author) {
+        if (me === c.author || mod) {
           const del = document.createElement("button");
           del.className = "blk-mini blk-del";
           del.textContent = "✕";
-          del.title = "Delete my comment";
+          del.title = me === c.author ? "Delete my comment" : "Remove (moderation)";
           del.addEventListener("click", async () => { await deleteComment(c.id); load(); });
           row.appendChild(del);
         }
