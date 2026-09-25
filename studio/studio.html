@@ -1048,12 +1048,25 @@
     $("#btn-tocode").addEventListener("click", () =>
       flipScript("📜 Printed as RedScript", scriptToCode));
 
-    // 🎓 the tutorial: a guided walk for people who've never made a game
+    // 🎓 the tutorial: a guided walk for people who've never made a game.
+    // A BRAND-NEW maker gets it automatically on their first visit — no tour
+    // taken on this device, an empty workspace, and nothing published yet.
+    // Anyone with work in progress or games to their name just gets a nudge,
+    // and the ✕ skips out of the auto-tour in one tap either way.
     $("#btn-tour").addEventListener("click", () => startTour());
     if (!pageMode) {
       try {
         if (!localStorage.getItem("rl_tour_done")) {
-          setTimeout(() => toast("First time in the Studio? The 🎓 button up top walks you through everything."), 800);
+          setTimeout(async () => {
+            try {
+              if (localStorage.getItem("rl_tour_done")) return;
+              if (scenes.game.objects.length === 0 && scenes.screen.objects.length === 0) {
+                const mine = await listGamesBy(user).catch(() => [{}]);
+                if (mine.length === 0) { startTour(); return; }
+              }
+              toast("New here? The 🎓 button up top walks you through everything.");
+            } catch {}
+          }, 700);
         }
       } catch {}
     }
