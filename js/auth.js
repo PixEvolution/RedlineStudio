@@ -146,14 +146,23 @@ export async function createAccount(username, password) {
 export async function login(username, password) {
   if (!username || !password) throw new Error("Enter your username and password.");
 
-  // an email in the username box = email login (accounts with a linked email)
+  // an email in the username box = email login (accounts with a linked email).
+  // Passwords set on the SITE carry a hidden prefix; passwords set on
+  // Firebase's reset page are raw — so we try both spellings.
   if (username.includes("@")) {
+    let cred;
     try {
-      const cred = await signInWithEmailAndPassword(auth, username.trim(), firebasePassword(password));
-      const name = cred.user.displayName || username;
-      setSession(name);
-      return name;
-    } catch (err) { throw new Error(friendlyError(err)); }
+      cred = await signInWithEmailAndPassword(auth, username.trim(), firebasePassword(password));
+    } catch (err) {
+      const code = err && err.code;
+      if (code !== "auth/invalid-credential" && code !== "auth/wrong-password") throw new Error(friendlyError(err));
+      try {
+        cred = await signInWithEmailAndPassword(auth, username.trim(), password);
+      } catch (err2) { throw new Error(friendlyError(err2)); }
+    }
+    const name = cred.user.displayName || username;
+    setSession(name);
+    return name;
   }
 
   const loginId = await loginIdFor(username);
@@ -192,7 +201,12 @@ async function reauth(currentPassword) {
   try {
     await reauthenticateWithCredential(u, EmailAuthProvider.credential(u.email, firebasePassword(currentPassword)));
   } catch (err) {
-    throw new Error("Current password is wrong. (Caps matter!)");
+    // a password set on Firebase's reset page has no prefix — try it raw
+    try {
+      await reauthenticateWithCredential(u, EmailAuthProvider.credential(u.email, currentPassword));
+    } catch (err2) {
+      throw new Error("Current password is wrong. (Caps matter!)");
+    }
   }
   return u;
 }
