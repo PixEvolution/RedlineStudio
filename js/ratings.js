@@ -3,8 +3,9 @@
 // Every game carries a rating its maker picks (the casino is always 18+).
 // Players declare a birth date ONCE in Account settings; only the resulting
 // AGE BRACKET is ever stored ("u13" / "13" / "16" / "18") — never the date,
-// never a real identity. Adult content additionally requires a VERIFIED
-// EMAIL, so "18+" means declared adult AND a reachable, confirmed inbox.
+// never a real identity — and it's stored PRIVATELY (see age.js). Adult
+// content additionally requires a VERIFIED EMAIL, so "18+" means declared
+// adult AND a reachable, confirmed inbox.
 //
 // Someone with NO declared age (guests, old accounts) can play E and Teen
 // content — the platform is for everyone — but 16+ and 18+ stay shut until
@@ -51,7 +52,7 @@ export function bracketAge(bracket) {
   return null;   // never declared
 }
 
-// The gate. bracket: from the player's users doc (null = never declared).
+// The gate. bracket: from myBracket() in age.js (null = never declared).
 // emailVerified: the player's own auth state. Returns { ok, why }:
 //   why "age"     → too young (or undeclared, for 16+/18+)
 //   why "declare" → undeclared age where 16+/18+ needs one
@@ -70,3 +71,26 @@ export function canLinkEmail(bracket) {
   const age = bracketAge(bracket);
   return age !== null && age >= 13;
 }
+
+// TYPING FREELY where other players read it — comments, forum threads and
+// posts, machine chat — is for a DECLARED 13+. Under-13 and undeclared
+// accounts use QUICK_CHAT at the machines instead (they can't type personal
+// info into a fixed phrase). The database rules enforce this for comments
+// and the forums too.
+export function canUseFreeText(bracket) {
+  const age = bracketAge(bracket);
+  return age !== null && age >= 13;
+}
+
+export const QUICK_CHAT = [
+  "Hi!",
+  "Good game!",
+  "Nice move!",
+  "Well played!",
+  "Your turn!",
+  "One more round?",
+  "Watch this!",
+  "Oops!",
+  "Thanks!",
+  "Bye!"
+];

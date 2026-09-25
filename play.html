@@ -12,6 +12,7 @@
   <meta property="og:url" content="https://redlinestudio.dev/play.html">
   <meta property="og:type" content="website">
   <link rel="stylesheet" href="css/style.css">
+  <script>(window.adsbygoogle = window.adsbygoogle || []).requestNonPersonalizedAds = 1;</script>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2208639648972390"
      crossorigin="anonymous"></script>
 </head>
@@ -45,6 +46,7 @@
     import { RATINGS } from "./js/ratings.js";
     import { deleteGame } from "./js/games.js";
     import { emailStatus, userDocId } from "./js/auth.js";
+    import { myBracket } from "./js/age.js";
     import { doc, getDoc, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { db } from "./js/firebase.js";
     import { attachTerminalInput } from "./js/terminal.js";
@@ -68,6 +70,35 @@
       : b.reason === "line" ? `There's a line — ${b.next} is up next. Get in line below.`
       : (b.message || "Couldn't take the seat.");
 
+    // ---- the age gate: EVERY machine checks the viewer at the door ----
+    // (casino machines are always A18). Returns true if the viewer may play;
+    // otherwise shows why in `mount` and returns false.
+    async function ageGate(game, mount) {
+      const rating = game.casino ? "A18" : (game.rating || "E");
+      const viewer = currentUser();
+      let bracket = null, verified = false;
+      if (viewer) {
+        try { bracket = await myBracket(); } catch {}   // PRIVATE — see age.js
+        if (ratingInfo(rating).needsEmail) {
+          try { verified = (await emailStatus()).verified; } catch {}
+        }
+      }
+      const verdict = canPlay(rating, bracket, verified);
+      if (verdict.ok) return true;
+      const info = ratingInfo(rating);
+      const blockEl = document.createElement("div");
+      blockEl.className = "gate-block";
+      blockEl.innerHTML = !viewer
+        ? `<b>Rated ${info.badge}</b> — <a href="login.html">log in</a> and declare your age in ⚙ Account to enter.`
+        : verdict.why === "declare"
+          ? `<b>Rated ${info.badge}</b> — declare your age once in <a href="account.html">⚙ Account</a> to enter.`
+          : verdict.why === "verify"
+            ? `<b>Rated ${info.badge}</b> — adult machines need a declared 18+ AND a <a href="account.html">verified email</a>.`
+            : `<b>Rated ${info.badge}</b> — this machine is for ${info.badge} players.`;
+      mount.appendChild(blockEl);
+      return false;
+    }
+
     const renderers = {
       // v0: the original "welcome message" games
       v0(game, mount) {
@@ -86,6 +117,11 @@
       casino(game, mount) {
         mount.innerHTML = "";
         mount.style.display = "block";
+        // the Casino is 18+ with a verified email — same door as every machine
+        return ageGate(game, mount).then((ok) => { if (ok) renderers.casinoFloor(game, mount); });
+      },
+
+      casinoFloor(game, mount) {
 
         const stage = document.createElement("div");
         stage.className = "stage";
@@ -268,32 +304,7 @@
         mount.style.display = "block";
 
         // ---- the age gate: rated machines check the viewer at the door ----
-        const rating = game.casino ? "A18" : (game.rating || "E");
-        {
-          const viewer = currentUser();
-          let bracket = null, verified = false;
-          if (viewer) {
-            try { bracket = (await getDoc(doc(db, "users", userDocId(viewer)))).data()?.ageBracket || null; } catch {}
-            if (ratingInfo(rating).needsEmail) {
-              try { verified = (await emailStatus()).verified; } catch {}
-            }
-          }
-          const verdict = canPlay(rating, bracket, verified);
-          if (!verdict.ok) {
-            const info = ratingInfo(rating);
-            const blockEl = document.createElement("div");
-            blockEl.className = "gate-block";
-            blockEl.innerHTML = !viewer
-              ? `<b>Rated ${info.badge}</b> — <a href="login.html">log in</a> and declare your age in ⚙ Account to enter.`
-              : verdict.why === "declare"
-                ? `<b>Rated ${info.badge}</b> — declare your age once in <a href="account.html">⚙ Account</a> to enter.`
-                : verdict.why === "verify"
-                  ? `<b>Rated ${info.badge}</b> — adult machines need a declared 18+ AND a <a href="account.html">verified email</a>.`
-                  : `<b>Rated ${info.badge}</b> — this machine is for ${info.badge} players.`;
-            mount.appendChild(blockEl);
-            return;
-          }
-        }
+        if (!(await ageGate(game, mount))) return;
 
         const stage = document.createElement("div");
         stage.className = "stage";

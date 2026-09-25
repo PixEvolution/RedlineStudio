@@ -3,85 +3,270 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RedlineStudio — Privacy</title>
-  <meta name="description" content="RedlineStudio's privacy policy: no personal info required, optional email verification, age brackets, self-serve deletion, and how advertising works.">
+  <title>RedlineStudio — Privacy Policy</title>
+  <meta name="description" content="RedlineStudio's Privacy Policy: exactly what the platform stores, what is public, who processes it, age brackets, advertising, children's privacy, retention and deletion.">
   <link rel="canonical" href="https://redlinestudio.dev/privacy.html">
   <meta property="og:site_name" content="RedlineStudio">
-  <meta property="og:title" content="Privacy — RedlineStudio">
-  <meta property="og:description" content="No personal info required. What RedlineStudio stores, optional email verification, age brackets, and how advertising works.">
+  <meta property="og:title" content="Privacy Policy — RedlineStudio">
+  <meta property="og:description" content="Exactly what RedlineStudio stores, what is public, who processes it, and how to delete it.">
   <meta property="og:url" content="https://redlinestudio.dev/privacy.html">
   <meta property="og:type" content="website">
   <link rel="stylesheet" href="css/style.css">
+  <script>(window.adsbygoogle = window.adsbygoogle || []).requestNonPersonalizedAds = 1;</script>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2208639648972390"
      crossorigin="anonymous"></script>
 </head>
 <body>
   <main class="page guide">
-    <h1 class="page-title">Privacy</h1>
-    <p class="page-sub">The short version: we never ask who you are.</p>
+    <h1 class="page-title">Privacy Policy</h1>
+    <p class="page-sub">Effective September 25, 2026 · Applies to redlinestudio.dev and everything on it.</p>
 
     <div class="panel">
-      <h2>What an account is</h2>
-      <p>A RedlineStudio account is a <b>username and a password — nothing else required</b>. No real name, no
-      phone number, no recovery questions. Pick a username that isn't your real name and the site has no idea
-      who you are, which is exactly how we like it. Passwords are handled by Google's Firebase Authentication
-      and are never stored in our own database.</p>
-      <p><b>Email is optional (13+ only).</b> You can link an email in ⚙ Account; it's held by Firebase
-      Authentication (not our public database), used only for verification and password recovery, and never
-      shown to other players, used for mailing lists, or shared. No email = no recovery, by design.</p>
-      <p><b>Age.</b> To unlock rated content you declare a birth date once — and only the resulting
-      <b>age bracket</b> (under 13 / 13+ / 16+ / 18+) is stored. The date itself is never saved anywhere.</p>
+      <h2>1. Who we are</h2>
+      <p>RedlineStudio (the "Service") is a browser-based game platform operated by <b>Redline Digital</b>, an
+      independent game studio based in Michigan, USA ("Redline Digital", "we", "us"). Redline Digital decides
+      what data the Service collects and why. For any privacy question or request, email
+      <b>REPLACE-ME@proton.me</b>.</p>
+      <p><b>In short:</b> an account needs only a username and a password. We never ask for your real name,
+      address, phone number or birth date. Most of what you do on the Service is <b>public by design</b>. This
+      policy lists exactly what is stored, who can see it, and how to remove it.</p>
     </div>
 
     <div class="panel">
-      <h2>What the site stores</h2>
-      <p>Things you make on the site are stored in our database (Google Firebase) and most of them are
-      <b>public by design</b> — that's what a game platform is: your username, the games and models you publish,
-      your profile page, comments, forum posts, likes and votes, high scores, machine chat, and your coin
-      balance (play money — it can't be bought and isn't worth anything).</p>
-      <p>Your browser also keeps a few conveniences on your own device (never sent to us): screen size,
-      touch-control layouts, and collapsed Studio panels.</p>
+      <h2>2. What we collect</h2>
+
+      <h3>2.1 Your account</h3>
+      <ul>
+        <li><b>Username.</b> 1–10 characters, chosen by you and shown publicly. Don't use your real name.</li>
+        <li><b>Password.</b> Sent to and stored only by Google Firebase Authentication, which stores it in hashed
+        form. Redline Digital never receives, stores or can read your password.</li>
+        <li><b>Login identifier.</b> Firebase Authentication needs an email-format login ID, so the Service
+        derives one from a one-way hash of your username (<span class="code">…@users.redlinestudio.dev</span>).
+        It is not a real mailbox and never receives mail.</li>
+        <li><b>Account record.</b> Stored in our database: your username, your Firebase user ID (uid), when
+        the account was created, your coin balance, the date of your last daily coin claim, and whether an
+        email is linked (yes/no only, never the address).</li>
+      </ul>
+
+      <h3>2.2 Email (optional, 13+ only)</h3>
+      <p>If you link an email in ⚙ Account, the address is stored <b>only in Firebase Authentication</b>,
+      never in our database. It becomes a second way to log in, and it's used to send verification and
+      password-reset messages through Firebase. We don't use it for newsletters or marketing, don't show it
+      to anyone, and don't share it. Accounts with a declared under-13 age bracket cannot link an email.</p>
+
+      <h3>2.3 Age bracket</h3>
+      <p>To unlock age-rated content you enter a birth date once in ⚙ Account. Your browser turns it into an
+      <b>age bracket</b> (under 13, 13+, 16+ or 18+). Only the bracket is saved, in a <b>private record that
+      only your login can read</b>. Other players can't see it. <b>The birth date is never sent to or stored
+      by us.</b> Once saved, the bracket cannot be changed from the site. Accounts created before September 25,
+      2026 kept their bracket on the public account record; it moves to the private record automatically the
+      next time that account visits.</p>
+
+      <h3>2.4 Things you make and do</h3>
+      <ul>
+        <li><b>Games</b> you publish, including their scripts, content rating, play count, and like/dislike counts.
+        Casino machines also store a coin pool and the most recent spin.</li>
+        <li><b>Models</b> you save, list on the Market, or buy (buying copies the model into your inventory).</li>
+        <li><b>Profile</b> information and the custom profile page you build in the Page Studio.</li>
+        <li><b>Comments</b> (up to 300 characters) on games, players and models; <b>forum threads and posts</b>
+        (up to 1,000 characters); <b>likes and dislikes</b>.</li>
+        <li><b>High scores:</b> your username, uid and personal-best score on each game that keeps scores.</li>
+        <li><b>Coin activity:</b> daily claims, Market purchases, and Casino spins, funding and collections,
+        recorded as changes to account balances and machine pools.</li>
+      </ul>
+
+      <h3>2.5 The arcade floor, live watching and multiplayer</h3>
+      <ul>
+        <li><b>Seats and the line.</b> For each game, the database records who is seated or waiting in line
+        (by username), when they sat down or joined, periodic "still here" timestamps, and any "wrap it up"
+        requests or skip votes.</li>
+        <li><b>Your current machine.</b> One record per account stores your username, uid, the game you're
+        currently at (or none), whether you're seated or in line, and when that last changed. This enforces
+        "one account, one machine."</li>
+        <li><b>Machine chat.</b> Messages (up to 120 characters) are stored with your username and a
+        timestamp. Each machine keeps its most recent 50 messages. Accounts without a declared 13+ bracket
+        send only fixed quick-chat phrases.</li>
+        <li><b>Watch window.</b> While you're the main player at a machine, your browser publishes images
+        of your game screen with your username: about 5 per second to a live feed, plus a slower snapshot
+        stored with the machine's seat record. These show <b>only the game canvas</b>, never your camera,
+        desktop or other tabs.</li>
+        <li><b>Online multiplayer.</b> In duels and multi-seat rooms, your browser exchanges game state
+        (positions, inputs, events) with other players through Firebase Realtime Database, tagged with your
+        uid and a timestamp.</li>
+      </ul>
+
+      <h3>2.6 Reports and moderation</h3>
+      <p>If you use ⚑ Report, we store your username, the game reported, and your reason (up to 300
+      characters). Only moderators can read reports.</p>
+
+      <h3>2.7 Technical data collected by our service providers</h3>
+      <p>Redline Digital does not run its own analytics or tracking. When you use the Service, our providers
+      automatically receive technical data that any website visit produces: your <b>IP address</b>,
+      browser and device information, and request logs. They use it to deliver the Service, keep it secure,
+      and prevent abuse (for example, Firebase Authentication rate-limits repeated failed logins). See
+      section 5 for who they are.</p>
+
+      <h3>2.8 Stored on your own device</h3>
+      <p>The Service uses your browser's local storage, not cookies, for:</p>
+      <ul>
+        <li>your logged-in username (a display shortcut; access is controlled by your Firebase login);</li>
+        <li>Firebase Authentication's own session data, which keeps you logged in;</li>
+        <li>if you've linked an email: which email belongs to which username, so username login keeps working
+        in that browser. <b>On a shared computer, log out and clear site data</b> if you don't want this
+        remembered;</li>
+        <li>preferences: screen size, on-screen control layouts, and collapsed Studio panels.</li>
+      </ul>
+      <p>Advertising cookies are covered in section 6.</p>
     </div>
 
     <div class="panel">
-      <h2>Advertising</h2>
-      <p>RedlineStudio may show ads through <b>Google AdSense</b> to keep the site free. Google and its
-      partners may use cookies and similar tools to show ads based on your visits to this and other sites;
-      in regions that require it, you'll be asked for consent first. You can control ad personalization at
-      <a href="https://adssettings.google.com" target="_blank" rel="noopener" style="color:#ff8f8c">adssettings.google.com</a>,
-      and read how Google uses data from partner sites at
-      <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener" style="color:#ff8f8c">policies.google.com/technologies/partner-sites</a>.
-      Ads only ever appear at the bottom of pages — never over a game screen.</p>
+      <h2>3. What is public</h2>
+      <p>RedlineStudio is a public platform. <b>Anyone, including visitors who aren't logged in, can see
+      or technically retrieve:</b></p>
+      <ul>
+        <li>your account record: username, uid, coin balance, account creation date, and whether an email is
+        linked;</li>
+        <li>your published games, listed models, profile and profile page, comments, forum posts, likes,
+        and high scores;</li>
+        <li>which machine you're at, seat and line activity, machine chat, and the watch-window images of
+        your game screen;</li>
+        <li>multiplayer game data you send during online play.</li>
+      </ul>
+      <p>Your password, your linked email address, your age bracket, and your reports are <b>not</b> public.
+      Don't put personal information in anything you publish, chat or post.</p>
     </div>
 
     <div class="panel">
-      <h2>What we don't do</h2>
-      <p>No analytics trackers of our own, no selling of data (there's nothing to sell — see above), no email
-      lists (a linked email is for verification and recovery only), and nothing to buy: coins are free play money, so the site never asks
-      for payment details.</p>
+      <h2>4. How we use information</h2>
+      <p>We use the information above only to:</p>
+      <ul>
+        <li>run the Service: accounts, publishing, the Studio, the Market, coins, the Casino, the arcade floor, and multiplayer;</li>
+        <li>enforce age ratings, the Terms of Service, and database security rules;</li>
+        <li>send account emails (verification, password reset) to a linked email;</li>
+        <li>moderate content and respond to reports and legal requests;</li>
+        <li>keep the Service secure and prevent cheating and abuse.</li>
+      </ul>
+      <p>We do <b>not</b> sell or rent personal information, do not "share" it for cross-context behavioral
+      advertising, do not build profiles of players, and do not use your content to train AI models.</p>
     </div>
 
     <div class="panel">
-      <h2>Removing your stuff — including all of it</h2>
-      <p>You can delete your own games, models, comments, and posts anytime — and you can delete your
-      <b>entire account yourself</b> in ⚙ Account: login, coins, games, models and profile are erased
-      immediately and permanently. Forum posts and comments remain, attributed to a name that no longer
-      exists. This is a general-audience site — keep names, games, and comments reasonable, and don't put
-      personal information in public content.</p>
+      <h2>5. Service providers</h2>
+      <p>These companies process data for us to deliver the Service, each under its own terms and privacy
+      policy:</p>
+      <ul>
+        <li><b>Google Firebase</b> (Google LLC): Authentication (logins, passwords, linked emails), Cloud
+        Firestore (the main database), and Realtime Database (live watching and multiplayer). The Firebase code
+        libraries are loaded from Google's servers (gstatic.com).</li>
+        <li><b>GitHub Pages</b> (GitHub, Inc.): hosts the website's files. GitHub receives visitors' IP
+        addresses when serving pages.</li>
+        <li><b>Google AdSense</b> (Google LLC): advertising (section 6).</li>
+      </ul>
+      <p>We may also disclose information if required by law, to protect the safety of players or the
+      public, or to enforce our Terms. If Redline Digital's business is ever transferred, this policy would
+      continue to apply to data collected under it.</p>
     </div>
 
     <div class="panel">
-      <h2>Children</h2>
-      <p>Accounts require no personal information at all, which is how a site can be open to everyone.
-      Players who declare an under-13 bracket additionally <b>cannot link an email</b> — their accounts stay
-      contact-free — and 16+/18+ content and the Casino are locked away from them. Parents: an account's
-      entire footprint is its public creations, and the delete button in ⚙ Account removes all of it.</p>
+      <h2>6. Advertising</h2>
+      <p>To keep the Service free, pages load Google AdSense code. Ads only ever appear at the <b>bottom of
+      pages</b>, never beside or over a game. As of the effective date, ads are not yet being served.</p>
+      <p>When ads run, Redline Digital requests <b>non-personalized ads only</b>, for every visitor. These
+      ads are chosen from general context such as the page, not from your browsing history. Google may still
+      use cookies or similar technologies, and receive your IP address, to limit how often an ad is shown,
+      report ad performance, and detect fraud. Where the law requires consent (such as in the EEA, UK or
+      Switzerland), Google's consent message asks you first.</p>
+      <p>Learn more at
+      <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener" style="color:#ff8f8c">how Google uses information from sites that use its services</a>,
+      and manage Google ad settings at
+      <a href="https://adssettings.google.com" target="_blank" rel="noopener" style="color:#ff8f8c">adssettings.google.com</a>.</p>
     </div>
 
     <div class="panel">
-      <h2>Changes</h2>
-      <p>If this policy changes, this page changes — check the date. <span class="hint">Last updated:
-      September 25, 2026.</span></p>
+      <h2>7. Children's privacy</h2>
+      <p>The Service is open to all ages and is built to collect as little as possible from children:</p>
+      <ul>
+        <li>no account requires a real name, email, phone number, address or birth date;</li>
+        <li>age brackets are private, so no one can look up which players are children;</li>
+        <li>under-13 accounts <b>cannot link an email</b> and so have no way to be contacted off the Service;</li>
+        <li><b>typing messages other players can read</b> (comments, forum threads and posts, and typed machine
+        chat) requires a declared 13+ bracket. Under-13 and undeclared accounts chat at the machines only by
+        picking from a fixed list of phrases, so they can't type personal information into chat;</li>
+        <li>16+ and 18+ content and the Casino are locked for under-13 players, and for anyone who hasn't
+        declared an age;</li>
+        <li>ads are non-personalized for everyone (section 6).</li>
+      </ul>
+      <p>Children should never put personal information in usernames, games, profile pages, or anything else
+      they publish. Moderators remove content that does. <b>Parents and guardians:</b> an account's footprint is
+      what's described in this policy. You can delete your child's account with ⚙ Account → Delete (you'll
+      need the password), or email <b>REPLACE-ME@proton.me</b> and we will review your child's account and
+      delete it and its content. If we learn we've collected personal information from a child under 13
+      beyond what's described here, we will delete it.</p>
+    </div>
+
+    <div class="panel">
+      <h2>8. How long we keep data, and deleting it</h2>
+      <p>We keep account data until you delete it. <b>⚙ Account → Delete</b> is immediate and permanent. It
+      erases:</p>
+      <ul>
+        <li>your Firebase login (username login, password, and any linked email);</li>
+        <li>your account record: coins and profile page;</li>
+        <li>your private age record and your current-machine record;</li>
+        <li>your published games (and their comments and scores, which become unreachable) and your models.</li>
+      </ul>
+      <p><b>What remains after self-deletion</b> unless you ask us to remove it:</p>
+      <ul>
+        <li>comments you posted on other people's games, players and models, and your forum threads and posts,
+        still showing your former username;</li>
+        <li>your high-score rows on other players' games;</li>
+        <li>machine chat messages, until pushed out by newer ones (each machine keeps its latest 50);</li>
+        <li>likes and dislikes you cast, and copies of models other players bought from you (those belong to
+        their inventories);</li>
+        <li>reports you filed, until a moderator resolves them.</li>
+      </ul>
+      <p>To have any of that removed too, email <b>REPLACE-ME@proton.me</b> from your linked email, or tell us
+      your username if you have none. We'll act within 30 days. A casino machine that still holds coins must
+      be emptied before its account can be deleted.</p>
+      <p><b>Automatically temporary data:</b> live watch-window frames are deleted when the player
+      disconnects; seat and line entries expire within minutes of the last "still here" signal; the stored
+      snapshot and multiplayer slot data are overwritten by later play. Service providers keep their own
+      logs under their own retention policies.</p>
+    </div>
+
+    <div class="panel">
+      <h2>9. Your rights and choices</h2>
+      <p>You can view and edit most of your data on the site, and delete your account yourself at any
+      time. Depending on where you live, you may also have the right to access, correct, delete or receive a
+      copy of your personal information, to object to or restrict its processing, and not to be treated
+      differently for using these rights. To make a request, email <b>REPLACE-ME@proton.me</b>. Because
+      accounts have no identity attached, we may ask you to prove you control the account, for example by
+      emailing from its linked address or by confirming a detail only the account holder would know.</p>
+      <p><b>Visitors in the EEA, UK and Switzerland:</b> we process data to provide the Service you asked for
+      (performance of a contract), for our legitimate interests in running a safe, working platform (security,
+      moderation, abuse prevention), to comply with legal obligations, and, for advertising where
+      required, with your consent. You may complain to your local data protection authority. Data is processed
+      in the United States by the providers in section 5, which rely on recognized transfer safeguards.</p>
+    </div>
+
+    <div class="panel">
+      <h2>10. Security</h2>
+      <p>Passwords are handled only by Firebase Authentication. Database security rules enforce who may
+      change what: no player can edit another player's games, models, comments, posts or profile, and coin
+      balances cannot be created from nothing. No system is perfectly secure. Because passwords may be as
+      short as one character, <b>choose a longer one</b> and link a verified email so you can recover your
+      account.</p>
+    </div>
+
+    <div class="panel">
+      <h2>11. Changes to this policy</h2>
+      <p>If we change this policy, we'll update the effective date at the top. If a change materially affects
+      how existing data is used, we'll also announce it on the Forums before it takes effect.</p>
+    </div>
+
+    <div class="panel">
+      <h2>12. Contact</h2>
+      <p>Redline Digital · Michigan, USA · <b>REPLACE-ME@proton.me</b><br>
+      See also the <a href="terms.html" style="color:#ff8f8c">Terms of Service</a>.</p>
     </div>
   </main>
 

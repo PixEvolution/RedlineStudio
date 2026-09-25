@@ -25,9 +25,10 @@
       <p id="age-now" class="hint">Loading…</p>
       <div id="age-set" style="display:none">
         <p>Declare your birth date <b>once</b>. Only the resulting age bracket is saved
-        (<span class="code">under 13 · 13+ · 16+ · 18+</span>) — the date itself is never stored, and the
-        bracket can't be edited later, so get it right. It unlocks content by rating: 16+ games need a
-        declared 16+, and the Casino and 18+ games need a declared 18+ <b>with a verified email</b>.</p>
+        (<span class="code">under 13 · 13+ · 16+ · 18+</span>), <b>privately</b>: only you can see it. The
+        date itself is never stored, and the bracket can't be edited later, so get it right. It unlocks
+        content by rating: 16+ games need a declared 16+, and the Casino and 18+ games need a declared 18+
+        <b>with a verified email</b>. Comments, the Forums and typed machine chat need a declared 13+.</p>
         <label for="dob">Birth date</label>
         <input type="date" id="dob" style="max-width:220px">
         <br><br>
@@ -78,9 +79,11 @@
 
     <div class="panel" style="border-color:#8a2f2d">
       <h2 style="color:#ff8f8c">Danger zone — delete this account</h2>
-      <p>Deletion is <b>immediate and forever</b>: your login, coins, published games, models and profile page
-      are erased. Forum posts and comments stay, attributed to a name that no longer exists. A casino machine
-      still holding coins blocks deletion — collect its pool first.</p>
+      <p>Deletion is <b>immediate and forever</b>: your login, coins, age record, published games, models and
+      profile page are erased. Comments, forum posts and high scores you left on other players' things stay,
+      attributed to a name that no longer exists (the <a href="privacy.html" style="color:#ff8f8c">Privacy
+      Policy</a> says how to have those removed too). A casino machine still holding coins blocks deletion —
+      collect its pool first.</p>
       <label for="del-name">Type your username to confirm</label>
       <input type="text" id="del-name" maxlength="10" style="max-width:220px" autocomplete="off">
       <label for="del-pass">Password</label>
@@ -104,6 +107,7 @@
     import { db } from "./js/firebase.js";
     import { doc, getDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { bracketFromBirthdate, bracketAge, canLinkEmail } from "./js/ratings.js";
+    import { myBracket, declareBracket, eraseMyAge } from "./js/age.js";
     import { listGamesBy, deleteGame } from "./js/games.js";
     import { listMyModels, deleteModel } from "./js/models.js";
 
@@ -128,16 +132,18 @@
     const uref = doc(db, "users", userDocId(user));
     let udata = {};
     try { udata = (await getDoc(uref)).data() || {}; } catch {}
+    // the bracket is PRIVATE (age.js) — this also moves an old public copy
+    let bracket = await myBracket();
 
     // ---- age ----
     const AGE_WORDS = { u13: "under 13", "13": "13+", "16": "16+", "18": "18+ (adult)" };
     const renderAge = () => {
-      const b = udata.ageBracket;
+      const b = bracket;
       if (b) {
-        $("#age-now").innerHTML = `Declared bracket: <b>${AGE_WORDS[b] || b}</b> — set once, locked for good.`;
+        $("#age-now").innerHTML = `Declared bracket: <b>${AGE_WORDS[b] || b}</b> — set once, locked for good, visible only to you.`;
         $("#age-set").style.display = "none";
       } else {
-        $("#age-now").textContent = "No age declared yet — 16+ and 18+ content stays locked until you do.";
+        $("#age-now").textContent = "No age declared yet — 16+ and 18+ content, comments, the Forums and typed chat stay locked until you do.";
         $("#age-set").style.display = "";
       }
     };
@@ -147,10 +153,9 @@
       if (!b) { toast("Enter a real birth date.", true); return; }
       if (!confirm(`Save your age bracket as "${AGE_WORDS[b]}"? This is set ONCE and can't be changed.`)) return;
       try {
-        await updateDoc(uref, { ageBracket: b });
-        udata.ageBracket = b;
+        bracket = await declareBracket(b);
         renderAge(); renderEmail(await emailStatus());
-        toast("Age bracket saved. Only the bracket was stored — never the date.");
+        toast("Age bracket saved privately. Only the bracket was stored — never the date.");
       } catch (err) { toast(err.message, true); }
     });
 
@@ -162,8 +167,8 @@
           : `Linked: <b>${st.email}</b> — <b style="color:#ff9d4a">not verified yet</b>. Click the link in the mail we sent.`;
         $("#email-link").style.display = "none";
         $("#email-verify").style.display = st.verified ? "none" : "";
-      } else if (!canLinkEmail(udata.ageBracket)) {
-        $("#email-now").textContent = udata.ageBracket
+      } else if (!canLinkEmail(bracket)) {
+        $("#email-now").textContent = bracket
           ? "Email linking is 13+ — younger accounts stay contact-free, by design."
           : "Declare your age first (above) — linking an email is 13+.";
         $("#email-link").style.display = "none";
@@ -245,6 +250,7 @@
         for (const g of games) { try { await deleteGame(g.id); } catch {} }
         try { for (const m of await listMyModels(user)) { try { await deleteModel(m.id); } catch {} } } catch {}
         try { await deleteDoc(doc(db, "present", userDocId(user))); } catch {}
+        try { await eraseMyAge(); } catch {}
         try { await deleteDoc(uref); } catch (err) { throw new Error("Couldn't erase the account data: " + err.message); }
         // …then the login itself (re-proves the password), and out
         await deleteLogin($("#del-pass").value);

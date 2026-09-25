@@ -9,9 +9,16 @@
 
 import { db } from "./firebase.js";
 import { userDocId, auth } from "./auth.js";
+import { myBracket } from "./age.js";
+import { canUseFreeText, QUICK_CHAT } from "./ratings.js";
 import {
   doc, onSnapshot, runTransaction, setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// Free typing at the machine is for a declared 13+; everyone else picks from
+// QUICK_CHAT (see ratings.js). Looked up once per page.
+let _freeText = null;
+const freeTextAllowed = () => (_freeText ??= myBracket().then(canUseFreeText).catch(() => false));
 
 export {
   STALE_MS, BEAT_MS, QBEAT_MS, HOG_MS, NUDGE_COOLDOWN_MS, MAX_SEATS,
@@ -327,6 +334,8 @@ export function createFloor(gameId, me, { hogMs = HOG_MS, seats = 1 } = {}) {
     async chat(text) {
       text = String(text || "").trim().slice(0, 120);
       if (!me || !text) return;
+      // under-13 / undeclared: fixed phrases only
+      if (!(await freeTextAllowed()) && !QUICK_CHAT.includes(text)) return;
       try {
         await runTransaction(db, async (tx) => {
           const s = await tx.get(ref);
@@ -388,15 +397,40 @@ export function renderFloorPanel(mount, floor, me) {
   send.className = "btn btn-small";
   send.textContent = "Chat";
   send.disabled = !me;
-  chatRow.append(input, send);
+  // quick chat: the phrase picker shown instead of the text box for
+  // under-13 and undeclared accounts
+  const quick = document.createElement("select");
+  quick.style.display = "none";
+  quick.style.flex = "1";
+  for (const phrase of QUICK_CHAT) {
+    const o = document.createElement("option");
+    o.value = o.textContent = phrase;
+    quick.appendChild(o);
+  }
+  chatRow.append(input, quick, send);
   chatBox.append(msgs, chatRow);
 
   panel.append(statusRow, note, chatBox);
   mount.appendChild(panel);
 
-  const doSend = () => { floor.chat(input.value); input.value = ""; input.focus(); };
+  let useQuick = false;
+  if (me) {
+    freeTextAllowed().then((free) => {
+      if (free) return;
+      useQuick = true;
+      input.style.display = "none";
+      quick.style.display = "";
+      quick.title = "Typing your own messages is for players who've declared 13+ in ⚙ Account.";
+    });
+  }
+
+  const doSend = () => {
+    if (useQuick) { floor.chat(quick.value); return; }
+    floor.chat(input.value); input.value = ""; input.focus();
+  };
   send.addEventListener("click", doSend);
   input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); doSend(); } e.stopPropagation(); });
+  quick.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); doSend(); } e.stopPropagation(); });
 
   let lastChatLen = -1;
   const hogMins = Math.round((floor.hogMs || HOG_MS) / 60000);

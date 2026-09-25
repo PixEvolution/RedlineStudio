@@ -7,10 +7,14 @@ import { amIMod } from "./mod.js";
 import { db } from "./firebase.js";
 import { auth } from "./auth.js";
 import { userDocId } from "./auth.js";
+import { myBracket } from "./age.js";
+import { canUseFreeText } from "./ratings.js";
 import {
   collection, doc, addDoc, getDocs, getDoc, deleteDoc, updateDoc,
   query, where, serverTimestamp, runTransaction, increment
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const NEED_13 = "Commenting is for players who've declared 13+ in ⚙ Account.";
 
 function targetRef(kind, id) {
   // players are addressed by username; games/models by doc id
@@ -95,6 +99,8 @@ export async function addComment(kind, id, author, text) {
   if (!author) throw new Error("Log in to comment.");
   if (!text) throw new Error("Write something first.");
   if (text.length > 300) throw new Error("Comments max out at 300 characters.");
+  // typing where others read it is 13+ (the database rules enforce it too)
+  if (!canUseFreeText(await myBracket())) throw new Error(NEED_13);
   const ref = await addDoc(collection(db, "comments"), {
     kind, target: String(id), author, authorUid: auth.currentUser?.uid || null,
     text, createdAt: serverTimestamp()
@@ -148,6 +154,14 @@ export function renderComments(mount, kind, id, me, { heading = "Comments" } = {
     input.addEventListener("keydown", (e) => { if (e.key === "Enter") submit(); });
     row.append(input, send);
     mount.appendChild(row);
+    // under-13 / undeclared: no comment box — say why instead
+    myBracket().then((b) => {
+      if (canUseFreeText(b)) return;
+      const hint = document.createElement("p");
+      hint.className = "hint";
+      hint.innerHTML = `Commenting is for players who've declared 13+ in <a href="account.html" style="color:#ff8f8c">⚙ Account</a>.`;
+      row.replaceWith(hint);
+    }).catch(() => {});
   } else {
     const hint = document.createElement("p");
     hint.className = "hint";

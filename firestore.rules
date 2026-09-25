@@ -39,6 +39,13 @@ service cloud.firestore {
     function utcToday() {
       return string(request.time.year()) + '-' + string(request.time.month()) + '-' + string(request.time.day());
     }
+    // TYPING WHERE OTHERS READ IT (comments, forum threads and posts) is for
+    // a declared 13+ only. The bracket lives in the PRIVATE /ages/{uid} doc.
+    function canSpeak() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/ages/$(request.auth.uid))
+        && get(/databases/$(database)/documents/ages/$(request.auth.uid)).data.ageBracket in ['13', '16', '18'];
+    }
 
     // ------------------------------------------------------------- users
     match /users/{userId} {
@@ -83,9 +90,17 @@ service cloud.firestore {
             && changedKeys().hasOnly(['coins', 'votes', 'likes', 'dislikes'])
             && request.resource.data.get('coins', 0) >= resource.data.get('coins', 0))
       )
-      // the age bracket is declared ONCE — after that, frozen forever
-      && (!('ageBracket' in resource.data)
-          || request.resource.data.get('ageBracket', '') == resource.data.ageBracket);
+      // THE AGE BRACKET IS PRIVATE NOW (/ages/{uid}). The public record may
+      // never gain one; an old public copy stays frozen until its owner moves
+      // it out — allowed only when the private copy (same batch) matches.
+      && (
+        (!('ageBracket' in resource.data) && !('ageBracket' in request.resource.data))
+        || ('ageBracket' in resource.data
+            && request.resource.data.get('ageBracket', '') == resource.data.ageBracket)
+        || ('ageBracket' in resource.data
+            && !('ageBracket' in request.resource.data)
+            && getAfter(/databases/$(database)/documents/ages/$(request.auth.uid)).data.ageBracket == resource.data.ageBracket)
+      );
 
       // the owner may erase their own account (the ⚙ Account delete button) —
       // and a moderator may erase an account's data (its login is then removed
@@ -159,7 +174,7 @@ service cloud.firestore {
     // ---------------------------------------------------------- comments
     match /comments/{commentId} {
       allow read: if true;
-      allow create: if signedIn()
+      allow create: if canSpeak()
         && request.resource.data.authorUid == request.auth.uid
         && request.resource.data.text is string
         && request.resource.data.text.size() <= 300;
@@ -172,7 +187,7 @@ service cloud.firestore {
     // ------------------------------------------------------------ forums
     match /threads/{threadId} {
       allow read: if true;
-      allow create: if signedIn()
+      allow create: if canSpeak()
         && request.resource.data.authorUid == request.auth.uid;
       allow update: if signedIn() && (
         changedKeys().hasOnly(['replies', 'lastAt'])   // reply counters
@@ -186,7 +201,7 @@ service cloud.firestore {
 
     match /posts/{postId} {
       allow read: if true;
-      allow create: if signedIn()
+      allow create: if canSpeak()
         && request.resource.data.authorUid == request.auth.uid
         && request.resource.data.text is string
         && request.resource.data.text.size() <= 1000;
@@ -238,8 +253,29 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid;
       allow update: if signedIn()
         && request.resource.data.uid == request.auth.uid
-        && resource.data.get('uid', request.auth.uid) == request.auth.uid;
-      allow delete: if false;
+        && (resource.data.get('uid', request.auth.uid) == request.auth.uid
+            // the account was recreated: whoever owns users/{id} NOW may
+            // reclaim its presence doc (only that account's real owner can)
+            || get(/databases/$(database)/documents/users/$(presenceId)).data.get('uid', '') == request.auth.uid);
+      // the owner clears it (account deletion) — so a deleted-and-recreated
+      // account can never be locked out by its own old presence doc
+      allow delete: if isMod() || (signedIn()
+        && (resource.data.get('uid', '') == request.auth.uid
+            || get(/databases/$(database)/documents/users/$(presenceId)).data.get('uid', '') == request.auth.uid));
+    }
+
+    // ------------------------------------------------------ age brackets
+    // PRIVATE: one doc per login (id = Firebase Auth uid), readable only by
+    // that login. Declared once from ⚙ Account; the owner may erase it when
+    // deleting the account. (A technical user could erase and re-declare —
+    // the same as making a new account, which honest self-declaration allows.)
+    match /ages/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['ageBracket'])
+        && request.resource.data.ageBracket in ['u13', '13', '16', '18'];
+      allow update: if false;
+      allow delete: if isMod() || (signedIn() && request.auth.uid == uid);
     }
 
     // ---------------------------------------------------------- moderators

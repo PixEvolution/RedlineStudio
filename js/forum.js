@@ -1,11 +1,23 @@
 // forum.js — the Forums: threads and replies. Simple, honest, modular.
+//
+// Posting (a new thread or a reply) is for a declared 13+ — typing where
+// other players read it. The database rules enforce the same thing.
 
 import { db } from "./firebase.js";
 import { auth } from "./auth.js";
+import { myBracket } from "./age.js";
+import { canUseFreeText } from "./ratings.js";
 import {
   collection, doc, addDoc, getDoc, getDocs, updateDoc, deleteDoc,
   query, where, serverTimestamp, increment
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const NEED_13 = "Posting on the Forums is for players who've declared 13+ in ⚙ Account.";
+
+// Can the logged-in player post? (forums.html can use this to hide the form.)
+export async function canPost() {
+  try { return canUseFreeText(await myBracket()); } catch { return false; }
+}
 
 export async function listThreads() {
   const snap = await getDocs(collection(db, "threads"));
@@ -24,6 +36,7 @@ export async function createThread(author, title, body) {
   title = String(title || "").trim();
   body = String(body || "").trim();
   if (!author) throw new Error("Log in to post.");
+  if (!(await canPost())) throw new Error(NEED_13);
   if (!title) throw new Error("Your thread needs a title.");
   if (title.length > 60) throw new Error("Title must be 60 characters or less.");
   if (!body) throw new Error("Write the first post.");
@@ -49,6 +62,7 @@ export async function listPosts(threadId) {
 export async function replyToThread(threadId, author, text) {
   text = String(text || "").trim();
   if (!author) throw new Error("Log in to reply.");
+  if (!(await canPost())) throw new Error(NEED_13);
   if (!text) throw new Error("Write something first.");
   if (text.length > 1000) throw new Error("Posts max out at 1000 characters.");
   await addDoc(collection(db, "posts"), {
