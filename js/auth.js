@@ -27,7 +27,14 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  updateProfile
+  updateProfile,
+  updatePassword,
+  updateEmail,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  deleteUser
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   doc, getDoc, setDoc, updateDoc, deleteField, serverTimestamp
@@ -137,6 +144,17 @@ export async function createAccount(username, password) {
 
 export async function login(username, password) {
   if (!username || !password) throw new Error("Enter your username and password.");
+
+  // an email in the username box = email login (accounts with a linked email)
+  if (username.includes("@")) {
+    try {
+      const cred = await signInWithEmailAndPassword(auth, username.trim(), firebasePassword(password));
+      const name = cred.user.displayName || username;
+      setSession(name);
+      return name;
+    } catch (err) { throw new Error(friendlyError(err)); }
+  }
+
   const loginId = await loginIdFor(username);
 
   try {
@@ -153,8 +171,88 @@ export async function login(username, password) {
       setSession(username);
       return username;
     }
+    // an account with a LINKED EMAIL logs in with the email, not the username
+    try {
+      const snap = await getDoc(doc(db, "users", userDocId(username)));
+      if (snap.exists() && snap.data().hasEmail) {
+        throw new Error("This account has a linked email — type your EMAIL in the username box to log in.");
+      }
+    } catch (e2) { if (String(e2.message).includes("linked email")) throw e2; }
     throw new Error(friendlyError(err));
   }
+}
+
+// ---------- account settings (account.html) ----------
+
+// Sensitive changes re-prove the password first, whatever the auth email is.
+async function reauth(currentPassword) {
+  const u = auth.currentUser;
+  if (!u) throw new Error("You're not logged in.");
+  try {
+    await reauthenticateWithCredential(u, EmailAuthProvider.credential(u.email, firebasePassword(currentPassword)));
+  } catch (err) {
+    throw new Error("Current password is wrong. (Caps matter!)");
+  }
+  return u;
+}
+
+export async function changePassword(currentPassword, newPassword) {
+  const passErr = validateName(newPassword, "New password");
+  if (passErr) throw new Error(passErr);
+  const u = await reauth(currentPassword);
+  await updatePassword(u, firebasePassword(newPassword));
+}
+
+// Link a real email: it becomes the account's login email (username + password
+// keeps working until the link, then login is EMAIL + password), it receives
+// the verification mail, and it enables password recovery.
+export async function linkEmail(currentPassword, email) {
+  email = String(email || "").trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("That doesn't look like an email address.");
+  const u = await reauth(currentPassword);
+  try {
+    await updateEmail(u, email);
+  } catch (err) {
+    if (err && err.code === "auth/email-already-in-use") throw new Error("That email is already on another account.");
+    if (err && err.code === "auth/operation-not-allowed") throw new Error("Firebase wants the email verified first — check the console setting, or try again.");
+    throw new Error(friendlyError(err));
+  }
+  try { await sendEmailVerification(u); } catch {}
+}
+
+export async function resendVerification() {
+  const u = auth.currentUser;
+  if (!u) throw new Error("You're not logged in.");
+  await sendEmailVerification(u);
+}
+
+// Fresh truth about the login: linked email (if any) and whether it's verified.
+export async function emailStatus() {
+  const u = auth.currentUser;
+  if (!u) return { linked: false, email: "", verified: false };
+  try { await u.reload(); } catch {}
+  const real = u.email && !u.email.endsWith("@" + EMAIL_DOMAIN);
+  return { linked: !!real, email: real ? u.email : "", verified: !!(real && u.emailVerified) };
+}
+
+export async function sendReset(email) {
+  email = String(email || "").trim();
+  if (!email.includes("@")) throw new Error("Enter the email linked to your account.");
+  await sendPasswordResetEmail(auth, email);
+}
+
+// Proves the password without changing anything — account.html checks this
+// BEFORE it starts erasing, so a typo can never leave a half-deleted account.
+export async function verifyPassword(currentPassword) {
+  await reauth(currentPassword);
+}
+
+// Deletes the LOGIN. The caller (account.html) erases the account's data
+// first — this is the last, irreversible step.
+export async function deleteLogin(currentPassword) {
+  const u = await reauth(currentPassword);
+  await deleteUser(u);
+  clearSession();
 }
 
 // Old accounts have passHash and no uid. If the old password matches, create the

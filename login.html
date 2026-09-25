@@ -25,8 +25,9 @@
 
       <form id="auth-form">
         <label for="username">Username</label>
-        <input type="text" id="username" maxlength="10" autocomplete="off" spellcheck="false">
-        <p class="hint">1–10 characters. Any character allowed. Caps matter.</p>
+        <input type="text" id="username" maxlength="60" autocomplete="off" spellcheck="false">
+        <p class="hint">1–10 characters. Any character allowed. Caps matter.
+        (Linked an email in Account settings? Log in with the email instead.)</p>
 
         <label for="password">Password</label>
         <input type="password" id="password" maxlength="10" autocomplete="off">
@@ -35,12 +36,18 @@
         <br>
         <button class="btn" id="submit" type="submit" style="width:100%">Log in</button>
       </form>
+      <p class="hint" style="margin-top:12px; text-align:center">
+        <a href="#" id="forgot" style="color:#ff8f8c">Forgot password?</a> — works once an email is linked in ⚙ Account.
+      </p>
+      <p class="hint" style="text-align:center">By creating an account you agree to the
+        <a href="terms.html" style="color:#ff8f8c">Terms of Service</a> and
+        <a href="privacy.html" style="color:#ff8f8c">Privacy Policy</a>.</p>
     </div>
   </main>
 
   <script type="module">
     import { renderNav, toast, $ } from "./js/ui.js";
-    import { createAccount, login, currentUser } from "./js/auth.js";
+    import { createAccount, login, currentUser, sendReset } from "./js/auth.js";
 
     renderNav("");
     if (currentUser()) window.location.href = "index.html";
@@ -56,6 +63,15 @@
       tabCreate.classList.toggle("active", m === "create");
       submit.textContent = m === "login" ? "Log in" : "Create account";
     }
+    $("#forgot").addEventListener("click", async (e) => {
+      e.preventDefault();
+      const email = prompt("The EMAIL linked to your account (no email linked = no recovery, by design):");
+      if (email == null || !email.trim()) return;
+      try {
+        await sendReset(email);
+        toast("If that email is on an account, a reset mail is on its way.");
+      } catch (err) { toast(err.message, true); }
+    });
     tabLogin.addEventListener("click", () => setMode("login"));
     tabCreate.addEventListener("click", () => setMode("create"));
 

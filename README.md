@@ -56,6 +56,9 @@ A game platform by Redline Digital — players make accounts, build games in the
 | `forums.html` | Forums — threads and replies |
 | `guide.html` | The Coding Guide — full RedScript + Studio reference |
 | `privacy.html` | Privacy policy (required for ads; linked under every ad) |
+| `terms.html` | Terms of Service — conduct rules, content ratings, coins, the casino |
+| `account.html` | ⚙ Account settings: password, optional email verification, age bracket, self-serve deletion |
+| `js/ratings.js` | Content ratings + the age gate (E · 13+ · 16+ · 18+), pure logic |
 | `js/ads.js` | Advertising, off until AD_CONFIG is filled in — bottom-of-page slots only |
 | `othergames.html` | More Games — Redline Digital's GPS games + future downloads |
 | `about.html` | About the platform |

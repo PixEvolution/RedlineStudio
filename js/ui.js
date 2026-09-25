@@ -50,6 +50,10 @@ export function renderNav(rootPath = "") {
     name.textContent = user; // textContent = safe for any character
     name.href = rootPath + "profile.html?u=" + encodeURIComponent(user);
     name.title = user + " — my profile";
+    const gear = document.createElement("a");
+    gear.href = rootPath + "account.html";
+    gear.textContent = "⚙";
+    gear.title = "Account settings — password, email, age, delete";
     const out = document.createElement("a");
     out.href = "#";
     out.textContent = "Log out";
@@ -58,7 +62,7 @@ export function renderNav(rootPath = "") {
       logout();
       window.location.href = rootPath + "index.html";
     });
-    userSlot.append(name, out);
+    userSlot.append(name, gear, out);
   } else {
     const login = document.createElement("a");
     login.href = rootPath + "login.html";
@@ -68,6 +72,14 @@ export function renderNav(rootPath = "") {
   }
 
   document.body.prepend(nav);
+
+  // the legal footer, on every page
+  const foot = document.createElement("footer");
+  foot.className = "site-foot";
+  foot.innerHTML = `<a href="${rootPath}terms.html">Terms of Service</a> ·
+    <a href="${rootPath}privacy.html">Privacy</a> ·
+    <a href="${rootPath}about.html">About</a> · © Redline Digital`;
+  document.body.appendChild(foot);
 }
 
 let toastTimer = null;

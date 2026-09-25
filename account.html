@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RedlineStudio — Account</title>
+  <meta name="description" content="Your RedlineStudio account: password, email verification, age, and account deletion.">
+  <link rel="canonical" href="https://redlinestudio.dev/account.html">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="page guide">
+    <h1 class="page-title">⚙ Account</h1>
+    <p class="page-sub">Your account, your rules — everything here is yours to change, prove, or erase.</p>
+
+    <div class="panel">
+      <h2>Who you are here</h2>
+      <p><b id="acc-name">…</b> — that name is the whole identity the site knows.
+      <a id="acc-profile" href="#" style="color:#ff8f8c">View profile</a></p>
+    </div>
+
+    <div class="panel">
+      <h2>Age</h2>
+      <p id="age-now" class="hint">Loading…</p>
+      <div id="age-set" style="display:none">
+        <p>Declare your birth date <b>once</b>. Only the resulting age bracket is saved
+        (<span class="code">under 13 · 13+ · 16+ · 18+</span>) — the date itself is never stored, and the
+        bracket can't be edited later, so get it right. It unlocks content by rating: 16+ games need a
+        declared 16+, and the Casino and 18+ games need a declared 18+ <b>with a verified email</b>.</p>
+        <label for="dob">Birth date</label>
+        <input type="date" id="dob" style="max-width:220px">
+        <br><br>
+        <button class="btn" id="btn-age">Save my age bracket</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Email &amp; recovery</h2>
+      <p id="email-now" class="hint">Loading…</p>
+      <div id="email-link" style="display:none">
+        <p>Linking an email is optional (13+ only) and does three things: it becomes your <b>login</b>
+        (email + password instead of username + password), it makes <b>password recovery</b> possible,
+        and once <b>verified</b> it unlocks the adult side of the site (Casino, 18+ games).</p>
+        <label for="li-email">Email</label>
+        <input type="email" id="li-email" style="max-width:320px" autocomplete="email">
+        <label for="li-pass">Current password</label>
+        <input type="password" id="li-pass" maxlength="10" style="max-width:220px" autocomplete="current-password">
+        <br><br>
+        <button class="btn" id="btn-email">Link email &amp; send verification</button>
+      </div>
+      <div id="email-verify" style="display:none">
+        <button class="btn btn-ghost" id="btn-resend">Resend verification mail</button>
+        <button class="btn btn-ghost" id="btn-refresh">I clicked the link — refresh</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Password</h2>
+      <label for="pw-cur">Current password</label>
+      <input type="password" id="pw-cur" maxlength="10" style="max-width:220px" autocomplete="current-password">
+      <label for="pw-new">New password</label>
+      <input type="password" id="pw-new" maxlength="10" style="max-width:220px" autocomplete="new-password">
+      <label for="pw-new2">New password, again</label>
+      <input type="password" id="pw-new2" maxlength="10" style="max-width:220px" autocomplete="new-password">
+      <br><br>
+      <button class="btn" id="btn-pass">Change password</button>
+      <p class="hint">Forgot it instead? Log out and use “Forgot password?” on the login page — it works
+      once an email is linked. No email linked = no recovery, by design.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Two-step verification</h2>
+      <p class="hint">True two-step login (an authenticator code on top of the password) needs the platform's
+      identity upgrade and isn't switched on yet. Today the second step IS the verified email: password
+      recovery and everything rated 18+ only work through an inbox you've proven is yours.</p>
+    </div>
+
+    <div class="panel" style="border-color:#8a2f2d">
+      <h2 style="color:#ff8f8c">Danger zone — delete this account</h2>
+      <p>Deletion is <b>immediate and forever</b>: your login, coins, published games, models and profile page
+      are erased. Forum posts and comments stay, attributed to a name that no longer exists. A casino machine
+      still holding coins blocks deletion — collect its pool first.</p>
+      <label for="del-name">Type your username to confirm</label>
+      <input type="text" id="del-name" maxlength="10" style="max-width:220px" autocomplete="off">
+      <label for="del-pass">Password</label>
+      <input type="password" id="del-pass" maxlength="10" style="max-width:220px" autocomplete="current-password">
+      <br><br>
+      <button class="btn" id="btn-delete" style="border-color:#8a2f2d;color:#ff8f8c">Delete my account forever</button>
+    </div>
+
+    <p class="hint" style="text-align:center">
+      <a href="terms.html" style="color:#ff8f8c">Terms of Service</a> ·
+      <a href="privacy.html" style="color:#ff8f8c">Privacy</a>
+    </p>
+  </main>
+
+  <script type="module">
+    import { renderNav, toast, $ } from "./js/ui.js";
+    import {
+      requireLogin, userDocId, authReady, changePassword, linkEmail,
+      resendVerification, emailStatus, deleteLogin, verifyPassword
+    } from "./js/auth.js";
+    import { db } from "./js/firebase.js";
+    import { doc, getDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { bracketFromBirthdate, bracketAge, canLinkEmail } from "./js/ratings.js";
+    import { listGamesBy, deleteGame } from "./js/games.js";
+    import { listMyModels, deleteModel } from "./js/models.js";
+
+    renderNav("");
+    const user = requireLogin("login.html");
+    if (!user) throw new Error("redirecting");
+    await authReady;
+
+    $("#acc-name").textContent = user;
+    $("#acc-profile").href = "profile.html?u=" + encodeURIComponent(user);
+    const uref = doc(db, "users", userDocId(user));
+    let udata = {};
+    try { udata = (await getDoc(uref)).data() || {}; } catch {}
+
+    // ---- age ----
+    const AGE_WORDS = { u13: "under 13", "13": "13+", "16": "16+", "18": "18+ (adult)" };
+    const renderAge = () => {
+      const b = udata.ageBracket;
+      if (b) {
+        $("#age-now").innerHTML = `Declared bracket: <b>${AGE_WORDS[b] || b}</b> — set once, locked for good.`;
+        $("#age-set").style.display = "none";
+      } else {
+        $("#age-now").textContent = "No age declared yet — 16+ and 18+ content stays locked until you do.";
+        $("#age-set").style.display = "";
+      }
+    };
+    renderAge();
+    $("#btn-age").addEventListener("click", async () => {
+      const b = bracketFromBirthdate($("#dob").value);
+      if (!b) { toast("Enter a real birth date.", true); return; }
+      if (!confirm(`Save your age bracket as "${AGE_WORDS[b]}"? This is set ONCE and can't be changed.`)) return;
+      try {
+        await updateDoc(uref, { ageBracket: b });
+        udata.ageBracket = b;
+        renderAge(); renderEmail(await emailStatus());
+        toast("Age bracket saved. Only the bracket was stored — never the date.");
+      } catch (err) { toast(err.message, true); }
+    });
+
+    // ---- email ----
+    const renderEmail = (st) => {
+      if (st.linked) {
+        $("#email-now").innerHTML = st.verified
+          ? `Linked: <b>${st.email}</b> — <b style="color:#7dff9e">✔ verified</b>. Recovery works, and the 18+ gate knows you.`
+          : `Linked: <b>${st.email}</b> — <b style="color:#ff9d4a">not verified yet</b>. Click the link in the mail we sent.`;
+        $("#email-link").style.display = "none";
+        $("#email-verify").style.display = st.verified ? "none" : "";
+      } else if (!canLinkEmail(udata.ageBracket)) {
+        $("#email-now").textContent = udata.ageBracket
+          ? "Email linking is 13+ — younger accounts stay contact-free, by design."
+          : "Declare your age first (above) — linking an email is 13+.";
+        $("#email-link").style.display = "none";
+        $("#email-verify").style.display = "none";
+      } else {
+        $("#email-now").textContent = "No email linked. Your account has no recovery and can't enter 18+ areas.";
+        $("#email-link").style.display = "";
+        $("#email-verify").style.display = "none";
+      }
+    };
+    renderEmail(await emailStatus());
+    $("#btn-email").addEventListener("click", async () => {
+      const btn = $("#btn-email");
+      btn.disabled = true;
+      try {
+        await linkEmail($("#li-pass").value, $("#li-email").value);
+        await updateDoc(uref, { hasEmail: true });
+        udata.hasEmail = true;
+        renderEmail(await emailStatus());
+        toast("Verification mail sent — from now on, log in with this EMAIL + your password.");
+      } catch (err) { toast(err.message, true); }
+      btn.disabled = false;
+    });
+    $("#btn-resend").addEventListener("click", async () => {
+      try { await resendVerification(); toast("Verification mail sent again."); }
+      catch (err) { toast(err.message, true); }
+    });
+    $("#btn-refresh").addEventListener("click", async () => {
+      const st = await emailStatus();
+      renderEmail(st);
+      toast(st.verified ? "✔ Verified — the 18+ gate opens for you now." : "Not verified yet — click the link in the mail first.");
+    });
+
+    // ---- password ----
+    $("#btn-pass").addEventListener("click", async () => {
+      if ($("#pw-new").value !== $("#pw-new2").value) { toast("The new passwords don't match.", true); return; }
+      const btn = $("#btn-pass");
+      btn.disabled = true;
+      try {
+        await changePassword($("#pw-cur").value, $("#pw-new").value);
+        $("#pw-cur").value = $("#pw-new").value = $("#pw-new2").value = "";
+        toast("Password changed.");
+      } catch (err) { toast(err.message, true); }
+      btn.disabled = false;
+    });
+
+    // ---- delete ----
+    $("#btn-delete").addEventListener("click", async () => {
+      if ($("#del-name").value !== user) { toast("Type your username exactly to confirm.", true); return; }
+      if (!confirm("Really delete this account FOREVER? There is no undo, no recovery, no support ticket.")) return;
+      const btn = $("#btn-delete");
+      btn.disabled = true;
+      try {
+        // prove the password BEFORE anything is erased
+        await verifyPassword($("#del-pass").value);
+        // a funded casino machine blocks deletion — those coins belong somewhere
+        const games = await listGamesBy(user);
+        const funded = games.find(g => g.casino && Number(g.pool) > 0);
+        if (funded) throw new Error(`"${funded.title}" still holds ◎${funded.pool} — collect its pool first.`);
+        // erase the account's world…
+        for (const g of games) { try { await deleteGame(g.id); } catch {} }
+        try { for (const m of await listMyModels(user)) { try { await deleteModel(m.id); } catch {} } } catch {}
+        try { await deleteDoc(doc(db, "present", userDocId(user))); } catch {}
+        try { await deleteDoc(uref); } catch (err) { throw new Error("Couldn't erase the account data: " + err.message); }
+        // …then the login itself (re-proves the password), and out
+        await deleteLogin($("#del-pass").value);
+        alert("Account deleted. Thanks for playing.");
+        window.location.href = "index.html";
+      } catch (err) { toast(err.message, true); btn.disabled = false; }
+    });
+  </script>
+</body>
+</html>

@@ -3,6 +3,7 @@
 // Every game document is saved with a version number and an open-ended `data`
 // field, so the studio can grow new powers later without breaking old games.
 
+import { cleanRating } from "./ratings.js";
 import { db } from "./firebase.js";
 import { auth } from "./auth.js";
 import {
@@ -16,7 +17,7 @@ const GAMES = "games";
 // `price` = coins to insert per play (0 = free, arcade style).
 // `screen` = the attract screen shown on the card and before playing:
 //            { mode: "none"|"static"|"live", objects: [...] }
-export async function publishGame({ title, owner, data, engine = "v1", description = "", price = 0, screen = null, casino = false, unlisted = false, hogmins = 15, seats = 1 }) {
+export async function publishGame({ title, owner, data, engine = "v1", description = "", price = 0, screen = null, casino = false, unlisted = false, hogmins = 15, seats = 1, rating = "E" }) {
   if (!title || title.trim().length === 0) throw new Error("Your game needs a title.");
   if (title.length > 40) throw new Error("Title must be 40 characters or less.");
 
@@ -26,6 +27,7 @@ export async function publishGame({ title, owner, data, engine = "v1", descripti
     unlisted: !!unlisted,                            // unlisted = saved but off the public pages
     hogmins: Math.max(1, Math.min(120, Math.floor(Number(hogmins) || 15))),   // line patience (minutes)
     seats: casino ? 1 : Math.max(1, Math.min(8, Math.floor(Number(seats) || 1))),   // players at once (multi-seat machines)
+    rating: casino ? "A18" : cleanRating(rating),   // content rating (the casino is always adult)
     version: 1,           // game format version — bump when the studio evolves
     engine,               // which engine/player understands this game
     title: title.trim(),
@@ -42,8 +44,9 @@ export async function publishGame({ title, owner, data, engine = "v1", descripti
 }
 
 // Overwrite an existing game with new content (republish/update).
-export async function updateGame(gameId, { title, data, engine, description, price, screen, casino, unlisted, hogmins, seats }) {
+export async function updateGame(gameId, { title, data, engine, description, price, screen, casino, unlisted, hogmins, seats, rating = "E" }) {
   await updateDoc(doc(db, GAMES, gameId), {
+    rating: casino ? "A18" : cleanRating(rating),
     ownerUid: auth.currentUser?.uid || null,   // stamps legacy games on their next save
     ...(title !== undefined ? { title: title.trim() } : {}),
     ...(data !== undefined ? { data } : {}),

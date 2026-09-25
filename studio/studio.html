@@ -106,6 +106,16 @@
         <p class="hint" style="margin:6px 0 0">Seats at this machine — 2+ makes it an online multiplayer cabinet.</p>
       </div>
       <div>
+        <label for="g-rating">Content rating</label>
+        <select id="g-rating" class="blk-add" style="margin:0; width:100%">
+          <option value="E">E — Everyone</option>
+          <option value="T13">T — Teen (13+)</option>
+          <option value="M16">M — Mature (16+)</option>
+          <option value="A18">A — Adult (18+, verified)</option>
+        </select>
+        <p class="hint" style="margin:6px 0 0">Rate it honestly — misrated games get moderated. Casino is always 18+.</p>
+      </div>
+      <div>
         <label for="g-screenmode">Arcade screen</label>
         <select id="g-screenmode" class="blk-add" style="margin:0; width:100%">
           <option value="none">None</option>
@@ -816,6 +826,7 @@
             unlisted: isUnlisted,
             hogmins: $("#g-hogmins").value,
             seats: isCasino ? 1 : $("#g-seats").value,
+            rating: isCasino ? "A18" : $("#g-rating").value,
             screen: { mode: $("#g-screenmode").value, objects: JSON.parse(JSON.stringify(scenes.screen.objects)) }
           };
           if (check.errors.length) toast("Published, but check scripts:\n" + check.errors.slice(0, 3).join("\n"), true);
@@ -909,6 +920,7 @@
         $("#g-public").value = "public";
         $("#g-hogmins").value = "15";
         $("#g-seats").value = "1";
+        $("#g-rating").value = "E";
         syncTypeUi();
       }
       setTarget("game");
@@ -1153,6 +1165,7 @@
             $("#g-public").value = g.unlisted ? "unlisted" : "public";
             $("#g-hogmins").value = String(g.hogmins || 15);
             $("#g-seats").value = String(g.seats || 1);
+            $("#g-rating").value = g.rating || "E";
             syncTypeUi();
             setTarget("game");
             select(scene.objects[0]?.id || null);

@@ -76,9 +76,13 @@ service cloud.firestore {
         || (resource.data.get('uid', '') != request.auth.uid
             && changedKeys().hasOnly(['coins', 'votes', 'likes', 'dislikes'])
             && request.resource.data.get('coins', 0) >= resource.data.get('coins', 0))
-      );
+      )
+      // the age bracket is declared ONCE — after that, frozen forever
+      && (!('ageBracket' in resource.data)
+          || request.resource.data.get('ageBracket', '') == resource.data.ageBracket);
 
-      allow delete: if false;
+      // the owner may erase their own account (the ⚙ Account delete button)
+      allow delete: if signedIn() && resource.data.get('uid', '') == request.auth.uid;
     }
 
     // ------------------------------------------------------------- games
@@ -226,6 +230,21 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && resource.data.get('uid', request.auth.uid) == request.auth.uid;
       allow delete: if false;
+    }
+
+    // ------------------------------------------------------------- reports
+    // the ⚑ button: anyone signed in can flag a game for moderation.
+    // Reports are write-only from the site — the moderator reads them in the
+    // Firebase console. Nobody can read, edit or scrub them from out here.
+    match /reports/{reportId} {
+      allow read: if false;
+      allow create: if signedIn()
+        && request.resource.data.by is string
+        && request.resource.data.reason is string
+        && request.resource.data.reason.size() >= 1
+        && request.resource.data.reason.size() <= 300
+        && request.resource.data.game is string;
+      allow update, delete: if false;
     }
 
     // everything else: denied

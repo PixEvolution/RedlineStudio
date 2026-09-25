@@ -40,6 +40,10 @@
     import { attachDuel, guestSlotOpen, duelAvailable } from "./js/duel.js";
     import { transferCoins, getCoins } from "./js/economy.js";
     import { renderVotes, renderComments } from "./js/social.js";
+    import { ratingInfo, canPlay } from "./js/ratings.js";
+    import { emailStatus, userDocId } from "./js/auth.js";
+    import { doc, getDoc, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { db } from "./js/firebase.js";
     import { attachTerminalInput } from "./js/terminal.js";
     import { attachCasinoLoop } from "./js/casino-odds.js";
     import { spinMachine, fundMachine, collectPool } from "./js/casino.js";
@@ -259,6 +263,34 @@
       async v1(game, mount) {
         mount.innerHTML = "";
         mount.style.display = "block";
+
+        // ---- the age gate: rated machines check the viewer at the door ----
+        const rating = game.casino ? "A18" : (game.rating || "E");
+        {
+          const viewer = currentUser();
+          let bracket = null, verified = false;
+          if (viewer) {
+            try { bracket = (await getDoc(doc(db, "users", userDocId(viewer)))).data()?.ageBracket || null; } catch {}
+            if (ratingInfo(rating).needsEmail) {
+              try { verified = (await emailStatus()).verified; } catch {}
+            }
+          }
+          const verdict = canPlay(rating, bracket, verified);
+          if (!verdict.ok) {
+            const info = ratingInfo(rating);
+            const blockEl = document.createElement("div");
+            blockEl.className = "gate-block";
+            blockEl.innerHTML = !viewer
+              ? `<b>Rated ${info.badge}</b> — <a href="login.html">log in</a> and declare your age in ⚙ Account to enter.`
+              : verdict.why === "declare"
+                ? `<b>Rated ${info.badge}</b> — declare your age once in <a href="account.html">⚙ Account</a> to enter.`
+                : verdict.why === "verify"
+                  ? `<b>Rated ${info.badge}</b> — adult machines need a declared 18+ AND a <a href="account.html">verified email</a>.`
+                  : `<b>Rated ${info.badge}</b> — this machine is for ${info.badge} players.`;
+            mount.appendChild(blockEl);
+            return;
+          }
+        }
 
         const stage = document.createElement("div");
         stage.className = "stage";
@@ -580,6 +612,35 @@
         (game.casino ? ` · 🎰 pool ◎ ${Number(game.pool) || 0}` : "") +
         (game.engine === "v1" || game.casino ? ` · ⏳ line patience: ${clampHogMins(game.hogmins)} min` : "") +
         (clampSeats(game.seats) > 1 && !game.casino ? ` · 👥 ${clampSeats(game.seats)} seats` : "")));
+      {
+        const rInfo = ratingInfo(game.casino ? "A18" : (game.rating || "E"));
+        const badge = document.createElement("span");
+        badge.className = "rate-badge r" + rInfo.id;
+        badge.textContent = rInfo.badge;
+        badge.title = rInfo.label;
+        metaEl.appendChild(document.createTextNode(" · "));
+        metaEl.appendChild(badge);
+        if (currentUser() && currentUser() !== game.owner) {
+          const rep = document.createElement("a");
+          rep.href = "#";
+          rep.textContent = " ⚑";
+          rep.title = "Report this game (wrong rating, broken, or breaks the rules)";
+          rep.style.color = "#7a8894";
+          rep.addEventListener("click", async (e) => {
+            e.preventDefault();
+            const reason = prompt("What's wrong with this game? (wrong rating, rule-breaking content, broken…)");
+            if (reason == null || !reason.trim()) return;
+            try {
+              await addDoc(collection(db, "reports"), {
+                game: id, title: game.title, owner: game.owner,
+                by: currentUser(), reason: reason.trim().slice(0, 300), at: serverTimestamp()
+              });
+              toast("Reported — a moderator will look at it.");
+            } catch (err) { toast(err.message, true); }
+          });
+          metaEl.appendChild(rep);
+        }
+      }
       if (game.description) {
         const d = document.createElement("p");
         d.className = "page-sub";

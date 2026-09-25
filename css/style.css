@@ -1090,3 +1090,37 @@ a.nav-username:hover { border-color: var(--red); color: #fff; }
   outline-offset: 2px;
 }
 .ctl-edit-tip { color: var(--text-dim); font-size: 11px; align-self: center; }
+
+/* ---------- the legal footer ---------- */
+.site-foot {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 11px;
+  padding: 26px 12px 18px;
+}
+.site-foot a { color: var(--text-dim); }
+.site-foot a:hover { color: var(--text); }
+/* rating badges on games */
+.rate-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 1px 7px;
+  border-radius: 7px;
+  border: 1px solid;
+  vertical-align: middle;
+}
+.rate-badge.rE   { color: #7dff9e; border-color: #1f8f3c; }
+.rate-badge.rT13 { color: #8fd0ff; border-color: #2b5f8a; }
+.rate-badge.rM16 { color: #ffcf7d; border-color: #8a6a1f; }
+.rate-badge.rA18 { color: #ff8f8c; border-color: #8a2f2d; }
+.gate-block {
+  border: 1px solid #8a2f2d;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  color: #ff8f8c;
+  margin: 10px 0;
+}
+.gate-block a { color: #ff8f8c; font-weight: 800; }

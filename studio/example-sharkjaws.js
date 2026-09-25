@@ -31,6 +31,7 @@ function brainCode() {
   push("set st to 0");
   push("set svx to -1");
   push("set svy to 0");
+  push("set sfc to -1");
   for (let f = 1; f <= FISH; f++) {
     push(`set f${f}vx to ${(f % 2 ? 1 : -1)} * 1.4`);
     push(`set f${f}vy to 0.6`);
@@ -103,10 +104,20 @@ function brainCode() {
   push(`    change shark.y by svy / svm * ${SHARK_SPD}`);
   push(`    set shark.x to max(15, min(${W - 15}, shark.x))`);
   push(`    set shark.y to max(40, min(${H - 15}, shark.y))`);
-  push("    if svx > 0 then");
-  push("      set shark.angle to svy * 30");
+  // the shark's nose: facing flips only on a REAL horizontal push (no
+  // jitter when it hunts straight up or down), and the pitch is the
+  // vertical FRACTION of its swim — always between level and ±40°
+  push("    if svx > 0.15 then");
+  push("      set sfc to 1");
+  push("    end");
+  push("    if svx < -0.15 then");
+  push("      set sfc to -1");
+  push("    end");
+  push("    set spit to svy / max(0.5, abs(svx) + abs(svy)) * 40");
+  push("    if sfc == 1 then");
+  push("      set shark.angle to spit");
   push("    else");
-  push("      set shark.angle to 180 - svy * 30");
+  push("      set shark.angle to 180 - spit");
   push("    end");
 
   // the shark gets its bite in
