@@ -2,7 +2,7 @@
 //
 // Rules (unchanged from v1):
 //   Username: 1-10 characters, ANY character allowed, caps matter, must be unique (exact match).
-//   Password: 1-10 characters, ANY character allowed, caps matter.
+//   Password: 1-20 characters, ANY character allowed, caps matter.
 //
 // Logins go through Firebase Authentication. Each username becomes a hidden
 // login ID (<hash>@users.redlinestudio.dev); passwords are sent with a fixed
@@ -68,6 +68,14 @@ export function validateName(value, label) {
   return null; // any character is allowed
 }
 
+// Passwords may be longer than usernames: 1-20 characters, any character.
+// (Old 1-10 passwords keep working — only the upper limit grew.)
+export function validatePassword(value, label) {
+  if (typeof value !== "string" || value.length < 1) return `${label} can't be empty.`;
+  if (value.length > 20) return `${label} must be 20 characters or less.`;
+  return null;
+}
+
 // ---------- internals ----------
 
 // Unchanged from v1: other modules (economy, models) use this to find user docs.
@@ -122,7 +130,7 @@ function friendlyError(err) {
 export async function createAccount(username, password) {
   const nameErr = validateName(username, "Username");
   if (nameErr) throw new Error(nameErr);
-  const passErr = validateName(password, "Password");
+  const passErr = validatePassword(password, "Password");
   if (passErr) throw new Error(passErr);
 
   const ref = doc(db, "users", userDocId(username));
@@ -251,7 +259,7 @@ async function reauth(currentPassword) {
 }
 
 export async function changePassword(currentPassword, newPassword) {
-  const passErr = validateName(newPassword, "New password");
+  const passErr = validatePassword(newPassword, "New password");
   if (passErr) throw new Error(passErr);
   const u = await reauth(currentPassword);
   await updatePassword(u, firebasePassword(newPassword));
