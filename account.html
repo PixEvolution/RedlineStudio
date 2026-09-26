@@ -40,10 +40,11 @@
       <h2>Email &amp; recovery</h2>
       <p id="email-now" class="hint">Loading…</p>
       <div id="email-link" style="display:none">
-        <p>Linking an email is optional (13+ only) and does three things: it becomes a <b>second way to
+        <p id="email-intro">Linking an email is optional (13+ only) and does three things: it becomes a <b>second way to
         log in</b> (your username keeps working too), it makes <b>password recovery</b> possible, and once
-        <b>verified</b> it unlocks the adult side of the site (Casino, 18+ games).</p>
-        <label for="li-email">Email</label>
+        <b>verified</b> it unlocks the adult side of the site (Casino, 18+ games). Each email can be linked to
+        <b>one account</b> at a time.</p>
+        <label for="li-email" id="li-email-label">Email</label>
         <input type="email" id="li-email" style="max-width:320px" autocomplete="email">
         <label for="li-pass">Current password</label>
         <input type="password" id="li-pass" maxlength="20" style="max-width:220px" autocomplete="current-password">
@@ -165,7 +166,15 @@
         $("#email-now").innerHTML = st.verified
           ? `Linked: <b>${st.email}</b> — <b style="color:#7dff9e">✔ verified</b>. Recovery works, and the 18+ gate knows you.`
           : `Linked: <b>${st.email}</b> — <b style="color:#ff9d4a">not verified yet</b>. Click the link in the mail we sent.`;
-        $("#email-link").style.display = "none";
+        // CHANGE EMAIL: the same form, reworded. Switching frees the old
+        // address, so it can be linked to another account afterward.
+        $("#email-intro").innerHTML = `Want a different email? Enter the new one below. Your old address is
+          released the moment the new one takes over, so it can be used on another account. The new email has
+          to be verified before recovery and the 18+ gate use it. Each email can be linked to <b>one account</b>
+          at a time.`;
+        $("#li-email-label").textContent = "New email";
+        $("#btn-email").textContent = "Change email & send verification";
+        $("#email-link").style.display = "";
         $("#email-verify").style.display = st.verified ? "none" : "";
       } else if (!canLinkEmail(bracket)) {
         $("#email-now").textContent = bracket
@@ -194,17 +203,22 @@
       const btn = $("#btn-email");
       btn.disabled = true;
       try {
+        const before = await emailStatus();
         const how = await linkEmail($("#li-pass").value, $("#li-email").value);
         const st = await emailStatus();
         await syncEmailFlag(st);
         renderEmail(st);
+        $("#li-email").value = $("#li-pass").value = "";
         if (how === "pending") {
           $("#email-now").innerHTML = `<b style="color:#ff9d4a">Check your inbox</b> — clicking the link in the
-            mail links AND verifies the email in one go. It may log you out — log back in with your
-            <b>username or the email</b> + your password, then come back here.`;
-          toast("Mail sent — the link in it does the linking. Check spam too.");
+            mail ${before.linked ? "switches to" : "links"} AND verifies the new email in one go. Until then your
+            ${before.linked ? "old email stays linked" : "account stays as it is"}. It may log you out — log back
+            in with your <b>username or the new email</b> + your password, then come back here.`;
+          toast("Mail sent — the link in it does the switch. Check spam too.");
         } else {
-          toast("Email linked, verification mail sent — log in with your username or this email, same password.");
+          toast(before.linked
+            ? "Email changed. Verification mail sent to the new address — the old one is free now."
+            : "Email linked, verification mail sent — log in with your username or this email, same password.");
         }
       } catch (err) { toast(err.message, true); }
       btn.disabled = false;

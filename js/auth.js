@@ -276,9 +276,22 @@ export async function changePassword(currentPassword, newPassword) {
 // We try classic and fall back to protected, so it works either way.
 // Returns "linked" (attached now, verify mail sent) or "pending" (the mail
 // does the attaching — nothing changes until it's clicked).
+//
+// CHANGING an email is the same call on an account that already has one:
+// the new address replaces the old, and the old one is released — Firebase
+// allows ONE account per email, so it can then be linked elsewhere. Firebase
+// also mails the OLD address a notice (with an undo link), so a stolen
+// password can't quietly move someone's recovery email.
+const EMAIL_TAKEN = "That email is already linked to another RedlineStudio account. Each email can only be on one account — use a different one, or remove it from the other account first (⚙ Account → change email).";
+
 export async function linkEmail(currentPassword, email) {
   email = String(email || "").trim();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("That doesn't look like an email address.");
+  if (email.toLowerCase().endsWith("@" + EMAIL_DOMAIN)) throw new Error("That doesn't look like an email address.");
+  const cur = auth.currentUser;
+  if (cur && cur.email && cur.email.toLowerCase() === email.toLowerCase()) {
+    throw new Error("That's already the email on this account.");
+  }
   const u = await reauth(currentPassword);
   try {
     await updateEmail(u, email);
@@ -286,15 +299,15 @@ export async function linkEmail(currentPassword, email) {
     if (u.displayName) rememberLoginEmail(u.displayName, email);
     return "linked";
   } catch (err) {
-    if (err && err.code === "auth/email-already-in-use") throw new Error("That email is already on another account.");
+    if (err && err.code === "auth/email-already-in-use") throw new Error(EMAIL_TAKEN);
     if (err && err.code === "auth/operation-not-allowed") {
       // the protected flow: the mail's link performs the linking
       try {
         await verifyBeforeUpdateEmail(u, email);
-        if (u.displayName) rememberLoginEmail(u.displayName, email);
+        // don't remember it on this device yet — it isn't linked until clicked
         return "pending";
       } catch (err2) {
-        if (err2 && err2.code === "auth/email-already-in-use") throw new Error("That email is already on another account.");
+        if (err2 && err2.code === "auth/email-already-in-use") throw new Error(EMAIL_TAKEN);
         throw new Error(friendlyError(err2));
       }
     }
