@@ -30,7 +30,7 @@
 
 export const AD_CONFIG = {
   client: "ca-pub-2208639648972390",   // RedlineStudio's AdSense publisher id
-  slot: ""      // ← your responsive Display ad unit's id, e.g. "1234567890"
+  slot: "9012730367"   // "RedlineStudio page bottom" — responsive Display ad unit
 };
 
 // set as early as this module runs — before any ad is requested
