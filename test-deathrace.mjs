@@ -119,7 +119,9 @@ console.log("The scandal itself:");
   e.keys["w"] = false;
   check("running one over NEVER stops the car", car(e).x > e.lists.crossx[0] + 30);
   car(e).x = 60; car(e).y = 60;            // park away while it matures
-  for (let i = 0; i < 40; i++) e.step();
+  for (let i = 0; i < 25; i++) e.step();   // ~47 ticks since the kill
+  check("a full second, not sooner", Number(e.byName.cross1.visible) === 0);
+  for (let i = 0; i < 30; i++) e.step();
   check("…then the cross surfaces", Number(e.byName.cross1.visible) === 1);
   // and NOW it's solid: drive at it and go nowhere
   car(e).x = e.lists.crossx[0] - 20; car(e).y = e.lists.crossy[0]; car(e).angle = 0;

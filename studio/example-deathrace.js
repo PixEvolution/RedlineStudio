@@ -25,7 +25,7 @@
 const W = 480, H = 360;
 const L = 16, R = 464, T = 40, B = 344;       // the fence
 const CARSPD = 2.6, TURN = 4, GSPD = 1.25, PLAYSECS = 60;
-const GRAVE_DELAY = 36;   // ticks before a fresh grave appears and turns solid (~0.6s)
+const GRAVE_DELAY = 60;   // ticks before a fresh grave appears and turns solid (a full second)
 const NCROSS = 16, NGREM = 6;
 const WHITE = "#ffffff", DIM = "#7a8894", GREEN = "#7dff9e", ORANGE = "#ff9d4a";
 
@@ -253,7 +253,7 @@ export function buildDeathraceExample() {
     objects.push({
       id: "dr_c" + k, name: "cross" + (k + 1), type: "text",
       x: -50, y: -50, size: 14, color: DIM, glow: 8, visible: 0, text: "†",
-      script: [{ event: "code", source: `when tick\nset self.x to crossx[${k}]\nset self.y to crossy[${k}]\nset self.visible to (crosson[${k}] == 1 and game != 9 and tk - crossat[${k}] >= ${36})\nend` }]
+      script: [{ event: "code", source: `when tick\nset self.x to crossx[${k}]\nset self.y to crossy[${k}]\nset self.visible to (crosson[${k}] == 1 and game != 9 and tk - crossat[${k}] >= ${GRAVE_DELAY})\nend` }]
     });
   }
 
