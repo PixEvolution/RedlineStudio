@@ -109,21 +109,24 @@ console.log("The scandal itself:");
     && Math.abs(e.lists.crossx[0] - 240) < 15 && Math.abs(e.lists.crossy[0] - 180) < 15);
   check("the gremlin respawns somewhere else", Math.abs(g.x - 240) > 10 || Math.abs(g.y - 180) > 10);
   e.step();
-  check("the cross object lights up at the spot", Number(e.byName.cross1.visible) === 1);
+  check("a FRESH grave hasn't surfaced yet (the kill is the explosion)", Number(e.byName.cross1.visible) === 0);
   check("the ★ score follows the wheel", e.vars.score === 1);
 
-  // the fresh grave appeared UNDER the car — 1976 rules: it never pins you
+  // the grave matures ~0.6s later — the killer is long gone by then
   car(e).x = e.lists.crossx[0]; car(e).y = e.lists.crossy[0]; car(e).angle = 0;
   e.keys["w"] = true;
-  for (let i = 0; i < 20; i++) e.step();
+  for (let i = 0; i < 20; i++) e.step();   // drive straight through the fresh kill
   e.keys["w"] = false;
-  check("your own fresh grave never traps you — drive right off it", car(e).x > e.lists.crossx[0] + 20);
-  // …but from the OUTSIDE graves are solid: drive at it and go nowhere
+  check("running one over NEVER stops the car", car(e).x > e.lists.crossx[0] + 30);
+  car(e).x = 60; car(e).y = 60;            // park away while it matures
+  for (let i = 0; i < 40; i++) e.step();
+  check("…then the cross surfaces", Number(e.byName.cross1.visible) === 1);
+  // and NOW it's solid: drive at it and go nowhere
   car(e).x = e.lists.crossx[0] - 20; car(e).y = e.lists.crossy[0]; car(e).angle = 0;
   e.keys["w"] = true;
   for (let i = 0; i < 20; i++) e.step();
   e.keys["w"] = false;
-  check("graves are solid — the car can't drive through one", car(e).x < e.lists.crossx[0] - 8);
+  check("a matured grave is solid — the car can't drive through it", car(e).x < e.lists.crossx[0] - 8);
 }
 
 console.log("Gremlins flee:");

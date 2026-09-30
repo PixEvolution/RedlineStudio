@@ -25,6 +25,7 @@
 const W = 480, H = 360;
 const L = 16, R = 464, T = 40, B = 344;       // the fence
 const CARSPD = 2.6, TURN = 4, GSPD = 1.25, PLAYSECS = 60;
+const GRAVE_DELAY = 36;   // ticks before a fresh grave appears and turns solid (~0.6s)
 const NCROSS = 16, NGREM = 6;
 const WHITE = "#ffffff", DIM = "#7a8894", GREEN = "#7dff9e", ORANGE = "#ff9d4a";
 
@@ -46,7 +47,7 @@ function carCode(n, left, right, gas, stick) {
   push("  set blocked to 0");
   push("  set i to 0");
   push(`  repeat ${NCROSS}`);
-  push("    if crosson[i] == 1 and abs(nx - crossx[i]) < 12 and abs(ny - crossy[i]) < 12 then");
+  push(`    if crosson[i] == 1 and tk - crossat[i] >= ${GRAVE_DELAY} and abs(nx - crossx[i]) < 12 and abs(ny - crossy[i]) < 12 then`);
   push("      if abs(self.x - crossx[i]) >= 12 or abs(self.y - crossy[i]) >= 12 then");
   push("        set blocked to 1");
   push("      end");
@@ -114,6 +115,7 @@ function gremlinCode() {
     push("    set crossx[ci] to self.x");
     push("    set crossy[ci] to self.y");
     push("    set crosson[ci] to 1");
+    push("    set crossat[ci] to tk");
     push('    set status.text to "† GOT ONE — THE CROSS STAYS"');
     push(`    set self.x to rand(${L + 20}, ${R - 20})`);
     push(`    set self.y to rand(${T + 20}, ${B - 20})`);
@@ -136,9 +138,11 @@ function brainCode() {
     push(`${pad}set i to 0`);
     push(`${pad}repeat ${NCROSS}`);
     push(`${pad}  set crosson[i] to 0`);
+    push(`${pad}  set crossat[i] to 0`);
     push(`${pad}  set i to i + 1`);
     push(`${pad}end`);
     push(`${pad}set ci to ${NCROSS - 1}`);
+    push(`${pad}set tk to 0`);
   };
   const startMatch = (pad, mode) => {
     push(`${pad}set mode to ${mode}`);
@@ -176,6 +180,7 @@ function brainCode() {
   push("end");
 
   push("when tick");
+  push("set tk to tk + 1");
   push('set s1tx.text to "P1 " + score1');
   push('set s2tx.text to "P2 " + score2');
   push('set timetx.text to "TIME " + floor(tleft / 60)');
@@ -248,7 +253,7 @@ export function buildDeathraceExample() {
     objects.push({
       id: "dr_c" + k, name: "cross" + (k + 1), type: "text",
       x: -50, y: -50, size: 14, color: DIM, glow: 8, visible: 0, text: "†",
-      script: [{ event: "code", source: `when tick\nset self.x to crossx[${k}]\nset self.y to crossy[${k}]\nset self.visible to crosson[${k}] * (game != 9)\nend` }]
+      script: [{ event: "code", source: `when tick\nset self.x to crossx[${k}]\nset self.y to crossy[${k}]\nset self.visible to (crosson[${k}] == 1 and game != 9 and tk - crossat[${k}] >= ${36})\nend` }]
     });
   }
 
