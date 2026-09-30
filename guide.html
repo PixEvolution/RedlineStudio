@@ -55,7 +55,7 @@
       blocks back as RedScript — same program, whichever view you read best. The flip is only accepted when both
       views compile to the identical program, and ↶ undo reverses it. The best way to learn from the museum:
       load an example, select its brain object, hit 🧱 To blocks, and read a real 1970s machine as blocks.</p>
-      <p>Fastest way to learn: in the Studio, use <b>Load example…</b> to open any of the 26 reference games — the whole prehistory of video
+      <p>Fastest way to learn: in the Studio, use <b>Load example…</b> to open any of the 27 reference games — the whole prehistory of video
       games, 1947–1976, plus Redline Slots for casino machines — click their objects, and read their scripts.
       Every one is built from the pieces on this page.</p>
     </div>
@@ -144,7 +144,10 @@ xor(a, b)             binary XOR (NIMROD's whole brain)
 time()                seconds since the game started
 answer()              what the player just typed (in "when answer")
 upper("m")            uppercase a string — answer comparisons ignore caps
-len(x)                length of a string</pre>
+len(x)                length of a string
+word(s, n)            the nth word of a sentence ("" past the end) —
+                      word(answer(), 1) is the VERB, word(answer(), 2)
+                      the NOUN: a two-word parser in two expressions</pre>
     </div>
 
     <div class="panel">
@@ -221,9 +224,14 @@ end</pre>
       <span class="code">mode</span> variable for "what question am I asking?", you can build interactive
       fiction, quizzes, dungeon crawls — anything made of words. Loose comparisons help:
       <span class="code">answer() == 12</span> is true when they type 12, and
-      <span class="code">upper(answer()) == "M"</span> ignores caps.</p>
+      <span class="code">upper(answer()) == "M"</span> ignores caps. For full sentences,
+      <span class="code">word(answer(), 1)</span> and <span class="code">word(answer(), 2)</span>
+      split the input into VERB and NOUN — the classic two-word adventure parser
+      (<span class="code">GET LAMP</span>, <span class="code">UNLOCK DOOR</span>) in two expressions.</p>
       <p>Load <b>Hunt the Wumpus (Teletype)</b> — the real 1973 game, prompts and all — and read its one
-      script: a state machine of questions. The Map version is the same cave with graphics; the teletype
+      script: a state machine of questions. Then load <b>Echo Cave</b> — a full 1976-style adventure
+      (rooms, a lantern, puzzles, treasure, a two-word parser built on <span class="code">word()</span>) —
+      and read how one brain object runs a whole world. The Map version is the same cave with graphics; the teletype
       is how it actually shipped.</p>
     </div>
 

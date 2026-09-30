@@ -41,6 +41,7 @@
           <option value="sharkjaws">Shark Jaws (1975)</option>
           <option value="breakout">Breakout (1976)</option>
           <option value="deathrace">Death Race (1976)</option>
+          <option value="echocave">Echo Cave (1976 style)</option>
           <option value="wumpus">Hunt the Wumpus (Map)</option>
           <option value="wumpus2">Hunt the Wumpus (Teletype)</option>
           <option value="slots">Redline Slots (casino)</option>
@@ -259,6 +260,7 @@
     import { buildSharkjawsExample } from "./example-sharkjaws.js";
     import { buildBreakoutExample } from "./example-breakout.js";
     import { buildDeathraceExample } from "./example-deathrace.js";
+    import { buildEchocaveExample } from "./example-echocave.js";
     import { buildWumpusExample } from "./example-wumpus.js";
     import { buildWumpus2Example } from "./example-wumpus2.js";
     import { buildSlotsExample } from "./example-slots.js";
@@ -1125,6 +1127,7 @@
       sharkjaws: { build: buildSharkjawsExample, screen: "live", tip: "Hit ▶ Test, press DIVE. WASD or the stick — grab fish, and remember the shark is FASTER than you, so turn hard and never swim straight. Sold by 'Horror Games', a company that absolutely existed." },
       breakout: { build: buildBreakoutExample, screen: "live", tip: "Hit ▶ Test, click PLAY, SPACE serves. A/D or the stick (the 1976 knob) — dig to the red rows for 7 points, mind the speed-ups, and DON'T touch the top wall unless you like a half-size paddle. 896 is a perfect game." },
       deathrace: { build: buildDeathraceExample, screen: "live", rating: "T13", tip: "The 1976 moral panic — loads rated 13+, which is the joke AND the lesson. A/D + W (or wheel 1) to drive, catch the gremlins, and every one you get leaves a SOLID cross to crash into. 2 PLAYERS = two wheels, most gremlins wins." },
+      echocave: { build: buildEchocaveExample, screen: "static", tip: "1976 named the text-adventure genre — this is our OWN cave in that style (a text game is its prose, so we wrote ours). Hit ▶ Test and TYPE: two words, a lantern, a bear, five treasures back to the cabin. Read the brain: word() makes the whole parser." },
       wumpus:{ build: buildWumpusExample, screen: "static", tip: "Hit ▶ Test. Walk the lit rooms and hunt by ear — smell, drafts, bats. SHOOT mode fires into a tunnel." },
       wumpus2: { build: buildWumpus2Example, screen: "static", tip: "Hit ▶ Test. The 1973 original: type M or S, then a room number. Draw your map on paper!" },
       slots: { build: buildSlotsExample, screen: "live", casino: true, tip: "Hit ▶ Test for FREE PLAY. Publish to the Casino floor and fund the pool to open for business." }

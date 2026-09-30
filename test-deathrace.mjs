@@ -112,7 +112,13 @@ console.log("The scandal itself:");
   check("the cross object lights up at the spot", Number(e.byName.cross1.visible) === 1);
   check("the ★ score follows the wheel", e.vars.score === 1);
 
-  // graves are SOLID: drive at the fresh cross and go nowhere
+  // the fresh grave appeared UNDER the car — 1976 rules: it never pins you
+  car(e).x = e.lists.crossx[0]; car(e).y = e.lists.crossy[0]; car(e).angle = 0;
+  e.keys["w"] = true;
+  for (let i = 0; i < 20; i++) e.step();
+  e.keys["w"] = false;
+  check("your own fresh grave never traps you — drive right off it", car(e).x > e.lists.crossx[0] + 20);
+  // …but from the OUTSIDE graves are solid: drive at it and go nowhere
   car(e).x = e.lists.crossx[0] - 20; car(e).y = e.lists.crossy[0]; car(e).angle = 0;
   e.keys["w"] = true;
   for (let i = 0; i < 20; i++) e.step();

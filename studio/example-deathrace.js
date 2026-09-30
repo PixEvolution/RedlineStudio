@@ -40,12 +40,16 @@ function carCode(n, left, right, gas, stick) {
   push(`  set gas to max(0, min(1, keydown("${gas}") + (0 - sticky(${stick}))))`);
   push(`  set nx to self.x + cos(self.angle) * gas * ${CARSPD}`);
   push(`  set ny to self.y + sin(self.angle) * gas * ${CARSPD}`);
-  // graves are solid: clip through no one's memorial
+  // graves are solid — but like the 1976 board, only from the OUTSIDE:
+  // the cross that appears under your own car never pins you (drive off it,
+  // then it's a wall like the rest). No getting stuck on your fresh kill.
   push("  set blocked to 0");
   push("  set i to 0");
   push(`  repeat ${NCROSS}`);
   push("    if crosson[i] == 1 and abs(nx - crossx[i]) < 12 and abs(ny - crossy[i]) < 12 then");
-  push("      set blocked to 1");
+  push("      if abs(self.x - crossx[i]) >= 12 or abs(self.y - crossy[i]) >= 12 then");
+  push("        set blocked to 1");
+  push("      end");
   push("    end");
   push("    set i to i + 1");
   push("  end");

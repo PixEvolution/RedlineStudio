@@ -678,6 +678,14 @@ export class Engine {
           case "sin": return Math.sin(Number(args[0]) * Math.PI / 180);   // degrees
           case "cos": return Math.cos(Number(args[0]) * Math.PI / 180);   // degrees
           case "answer": return String(this.lastAnswer ?? "");
+          case "word": {
+            // word(text, n) — the nth word of a sentence ("" past the end).
+            // Taught to the engine by Colossal Cave Adventure (1976): the
+            // two-word parser (GET LAMP) needs the sentence taken apart.
+            const ws = String(args[0] ?? "").trim().split(/\s+/);
+            const n = Math.floor(Number(args[1]) || 0);
+            return (ws[0] !== "" && n >= 1 && n <= ws.length) ? ws[n - 1] : "";
+          }
           case "upper": return String(args[0] ?? "").toUpperCase();
           case "len": return String(args[0] ?? "").length;
           case "mousex": return this.mouse.x;
