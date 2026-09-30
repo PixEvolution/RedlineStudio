@@ -32,7 +32,8 @@ A game platform by Redline Digital — players make accounts, build games in the
 | `js/convert.js` | 🧱⇄📜 blocks ↔ RedScript conversion — accepted only when both views compile identically |
 | `js/gamefile.js` | The sealed .rlgame file: pack/verify/sanitize — imports are scene data, never code |
 | `js/export-studio.js` | 📦 Offline Studio: bundles the whole editor into one offline HTML file |
-| `js/export.js` | ⬇ Download: bundles a game into one standalone offline HTML file |
+| `js/intro.js` | The REDLINE DIGITAL intro (tach sweep + synthesized V8), played by downloaded games and the offline Studio |
+ | ⬇ Download: bundles a game into one standalone offline HTML file |
 | `js/terminal.js` | The teletype input row for text-adventure games |
 | `js/casino-odds.js` | THE HOUSE RULES — fixed public odds (92% RTP) + the casino loop |
 | `js/casino.js` | Casino money: atomic spin/fund/collect transactions on machine pools |

@@ -16,7 +16,7 @@ export function stripModules(source) {
     .join("\n");
 }
 
-const BUNDLE_FILES = ["js/redscript.js", "js/engine.js", "js/touch-controls.js", "js/terminal.js", "js/casino-odds.js"];
+const BUNDLE_FILES = ["js/redscript.js", "js/engine.js", "js/touch-controls.js", "js/terminal.js", "js/casino-odds.js", "js/intro.js"];
 
 export async function buildStandaloneHtml({ title, objects, w, h }, { rootPath = "", fetchText } = {}) {
   const get = fetchText || (async (path) => {
@@ -158,8 +158,11 @@ document.addEventListener("fullscreenchange", () => {
   if (!document.fullscreenElement && _stage.classList.contains("fs")) _setFs(false);
 });
 
-document.getElementById("startbtn").addEventListener("click", () => {
+document.getElementById("startbtn").addEventListener("click", async () => {
   _overlay.remove();
+  // the REDLINE DIGITAL intro — the click above unlocks the engine audio;
+  // any key or tap skips it. Then the game takes the glass.
+  try { await playIntro(); } catch {}
   const engine = new Engine(_canvas, GAME.objects || [], { w: _W, h: _H });
   if (engine.usesCasino()) attachCasinoLoop(engine, localWallet(100, 1000));  // offline = free play
   engine.start();

@@ -10,7 +10,7 @@ import { stripModules } from "./export.js";
 const STUDIO_BUNDLE = [
   "js/redscript.js", "js/engine.js", "js/convert.js", "js/blocks.js", "js/behaviors.js",
   "js/studio-tools.js", "js/gamefile.js", "js/touch-controls.js",
-  "js/terminal.js", "js/casino-odds.js"
+  "js/terminal.js", "js/casino-odds.js", "js/intro.js"
 ];
 
 export async function buildOfflineStudioHtml({ rootPath = "", fetchText } = {}) {
@@ -466,6 +466,9 @@ ${sources.join("\n\n")}
   applyDims();
   hist.seed(snap()); syncUndo();
   renderAll();
+  // the REDLINE DIGITAL intro — the workshop opens on brand. Any key or
+  // tap skips it (and browsers that block cold autoplay just run it silent).
+  try { playIntro(); } catch (e) {}
 })();
 </script>
 </body>
