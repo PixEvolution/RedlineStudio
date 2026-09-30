@@ -27,7 +27,6 @@ export function renderNav(rootPath = "") {
       <a href="${rootPath}forums.html">Forums</a>
       <a href="${rootPath}othergames.html">More Games</a>
       <a href="${rootPath}guide.html">Guide</a>
-      <a href="${rootPath}about.html">About</a>
       <span class="nav-user"></span>
     </div>
   `;
