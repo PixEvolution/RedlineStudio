@@ -100,12 +100,12 @@
         </select>
         <p class="hint" style="margin:6px 0 0">Your game's whole world. Old games stay classic.</p>
       </div>
-      <div>
+      <div id="seats-cell">
         <label for="g-seats">Players (seats)</label>
         <input type="number" id="g-seats" min="1" max="8" value="1">
         <p class="hint" style="margin:6px 0 0">Seats at this machine — 2+ makes it an online multiplayer cabinet.</p>
       </div>
-      <div>
+      <div id="rating-cell">
         <label for="g-rating">Content rating</label>
         <select id="g-rating" class="blk-add" style="margin:0; width:100%">
           <option value="E">E — Everyone</option>
@@ -113,7 +113,13 @@
           <option value="M16">M — Mature (16+)</option>
           <option value="A18">A — Adult (18+, verified)</option>
         </select>
-        <p class="hint" style="margin:6px 0 0">Rate it honestly — misrated games get moderated. Casino is always 18+.</p>
+        <p class="hint" style="margin:6px 0 0">Rate it honestly — misrated games get moderated.
+          <a href="../ratings.html" target="_blank" style="color:#ff8f8c">ⓘ what each rating means</a></p>
+      </div>
+      <div id="casino-fixed" style="display:none">
+        <label>Rating &amp; seats</label>
+        <p style="margin:4px 0 0"><b>18+ · 1 seat</b></p>
+        <p class="hint" style="margin:6px 0 0">Casino machines are always rated 18+ and always one seat — that's the floor's rule, not a choice.</p>
       </div>
       <div>
         <label for="g-screenmode">Arcade screen</label>
@@ -139,6 +145,10 @@
           <button class="btn btn-small btn-ghost" data-add="tri">+ Ship</button>
         </div>
         <input type="search" id="obj-search" class="filter-search obj-search" placeholder="Search objects…">
+        <div style="display:flex; gap:6px; margin-bottom:6px">
+          <button class="btn btn-small btn-ghost" id="btn-check-all" title="Check every object shown below">☑ All</button>
+          <button class="btn btn-small btn-ghost" id="btn-check-none" title="Uncheck everything">☐ None</button>
+        </div>
         <div id="obj-list"></div>
         <button class="btn btn-small btn-ghost" id="btn-save-model" style="width:100%;margin-top:10px">
           💾 Save checked as Model
@@ -183,6 +193,16 @@
       <div id="script-editor" class="hint">Select an object to edit its script.</div>
     </div>
 
+    <!-- 🐞 DEBUG: script problems, out loud. Compile errors when a Test starts,
+         runtime errors as they happen (object + event + message), no guessing. -->
+    <div class="panel" id="debug-panel" style="margin-top:16px">
+      <div class="script-head-row">
+        <h3>🐞 Debug</h3>
+        <button class="btn btn-small btn-ghost" id="btn-debug-clear">Clear</button>
+      </div>
+      <div id="debug-log" class="hint">Hit ▶ Test — anything your scripts do wrong shows up here, named: which object, which event, what went wrong. A repeating error counts up instead of flooding.</div>
+    </div>
+
     <div class="my-games">
       <h2>My Games</h2>
       <div id="my-games-list"><p class="hint">Loading…</p></div>
@@ -209,7 +229,10 @@
     import { attachLocalParty } from "../js/localwire.js";
     import { BEHAVIORS, getBehavior, applyBehavior } from "../js/behaviors.js";
     import { startTour } from "../js/tour.js";
-    import { createHistory, snapCoord, GRID } from "../js/studio-tools.js";
+    import { createHistory, snapCoord, GRID, ensureUniqueIds } from "../js/studio-tools.js";
+    import { userDocId } from "../js/auth.js";
+    import { db } from "../js/firebase.js";
+    import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { buildCrtExample } from "./example-crt.js";
     import { buildBertieExample } from "./example-bertie.js";
     import { buildNimrodExample } from "./example-nimrod.js";
@@ -246,6 +269,11 @@
     const syncTypeUi = () => {
       const isC = typeSel.value === "casino";
       $("#price-cell").style.display = isC ? "none" : "";
+      // the floor's rules replace the choices: casino = 18+ and one seat, always
+      $("#rating-cell").style.display = isC ? "none" : "";
+      $("#seats-cell").style.display = isC ? "none" : "";
+      $("#casino-fixed").style.display = isC ? "" : "none";
+      if (isC) { $("#g-rating").value = "A18"; $("#g-seats").value = "1"; }
       $("#type-hint").textContent = isC
         ? "Needs the casino loop (bet/spin/result) to go public — load Redline Slots."
         : "Arcade & regular games.";
@@ -257,6 +285,7 @@
     setupPanel(document.querySelector(".explorer"), { key: "explorer" });
     setupPanel($("#props"), { key: "props" });
     setupPanel($("#script-panel"), { key: "script" });
+    const debugPanelCtl = setupPanel($("#debug-panel"), { key: "debug" });
 
     // ---- mode: "game" (default) or "page" (the Page Studio — same editor
     // and same powers, but it saves to your profile page, not the games list) ----
@@ -404,14 +433,30 @@
       if (mod && k === "c") { if (o) { clip = JSON.parse(JSON.stringify(o)); toast(`Copied "${o.name}".`); } return; }
       if (mod && k === "v") { if (clip) { e.preventDefault(); addCopy(clip, "Pasted as"); } return; }
       if ((e.key === "Delete" || e.key === "Backspace") && o) { e.preventDefault(); deleteObj(o); return; }
-      if (o && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
-        e.preventDefault();
-        const step = e.shiftKey ? 10 : 1;   // Shift = big nudge
-        if (e.key === "ArrowLeft") o.x -= step;
-        if (e.key === "ArrowRight") o.x += step;
-        if (e.key === "ArrowUp") o.y -= step;
-        if (e.key === "ArrowDown") o.y += step;
-        renderProps(); redraw(); commitSoon();
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+        // Ctrl+arrows NUDGE the selected object (Ctrl+Shift = 10px);
+        // bare ↑/↓ walk the Explorer list, like every modern studio
+        if (mod && o) {
+          e.preventDefault();
+          const step = e.shiftKey ? 10 : 1;
+          if (e.key === "ArrowLeft") o.x -= step;
+          if (e.key === "ArrowRight") o.x += step;
+          if (e.key === "ArrowUp") o.y -= step;
+          if (e.key === "ArrowDown") o.y += step;
+          renderProps(); redraw(); commitSoon();
+          return;
+        }
+        if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+          if (scene.objects.length === 0) return;
+          e.preventDefault();
+          const i = scene.objects.findIndex(x => x.id === selectedId);
+          const next = e.key === "ArrowDown"
+            ? Math.min(scene.objects.length - 1, i < 0 ? 0 : i + 1)
+            : Math.max(0, i < 0 ? 0 : i - 1);
+          select(scene.objects[next].id);
+          // keep the selected row in view inside the Explorer's scroll
+          document.querySelector("#obj-list .obj-row.selected")?.scrollIntoView({ block: "nearest" });
+        }
       }
     });
 
@@ -537,6 +582,27 @@
         list.appendChild(row);
       }
     }
+
+    // ☑ All / ☐ None — checks every object the Explorer is showing (the
+    // search filter narrows what "all" means, so you can check "all bullets")
+    $("#btn-check-all").addEventListener("click", () => {
+      const shown = objFilter
+        ? scene.objects.filter(o => (o.name || "").toLowerCase().includes(objFilter) || o.type.includes(objFilter))
+        : scene.objects;
+      for (const o of shown) checkedIds.add(o.id);
+      renderExplorer();
+    });
+    $("#btn-check-none").addEventListener("click", () => {
+      checkedIds.clear();
+      renderExplorer();
+    });
+
+    // ids must be unique (selection is BY id) — heal any scene on its way in:
+    // an old import, a hand-edited file, a copy bug from anywhere
+    const healIds = () => {
+      const fixed = ensureUniqueIds(scenes.game.objects) + ensureUniqueIds(scenes.screen.objects);
+      if (fixed) console.warn(`studio: regenerated ${fixed} duplicate/missing object id(s)`);
+    };
 
     document.querySelectorAll("[data-add]").forEach(btn => {
       btn.addEventListener("click", () => {
@@ -694,6 +760,45 @@
     window.addEventListener("pointerup", () => { if (dragging) { dragging = null; commit(); } });
     window.addEventListener("pointercancel", () => { if (dragging) { dragging = null; commit(); } });
 
+    // ------------------------------------------------------------ 🐞 debug log
+    // Compile errors when a Test starts, runtime errors as they happen —
+    // each entry names the object and event. A repeating error (a bad line
+    // in `when tick` fires 60×/s) counts up on one row instead of flooding.
+    const debugMount = $("#debug-log");
+    const debugRows = new Map();   // message -> { row, n }
+    let debugCount = 0;
+    const debugClear = () => {
+      debugRows.clear(); debugCount = 0;
+      debugMount.className = "hint";
+      debugMount.textContent = "Hit ▶ Test — anything your scripts do wrong shows up here, named: which object, which event, what went wrong.";
+    };
+    const debugLog = (kind, msg) => {
+      if (debugCount === 0) { debugMount.className = ""; debugMount.innerHTML = ""; }
+      const known = debugRows.get(msg);
+      if (known) {
+        known.n++;
+        known.badge.textContent = "×" + known.n;
+        return;
+      }
+      if (debugCount >= 200) return;   // enough is enough
+      debugCount++;
+      const row = document.createElement("div");
+      row.className = "debug-row";
+      const tag = document.createElement("b");
+      tag.textContent = kind === "error" ? "✕ " : kind === "warn" ? "⚠ " : "· ";
+      tag.style.color = kind === "error" ? "#ff8f8c" : kind === "warn" ? "#ff9d4a" : "#7a8894";
+      const text = document.createElement("span");
+      text.textContent = msg;
+      const badge = document.createElement("span");
+      badge.className = "hint";
+      badge.style.marginLeft = "8px";
+      row.append(tag, text, badge);
+      debugMount.appendChild(row);
+      debugRows.set(msg, { row, n: 1, badge });
+      if (kind === "error" && debugPanelCtl) debugPanelCtl.setCollapsed(false);
+    };
+    $("#btn-debug-clear").addEventListener("click", debugClear);
+
     // ------------------------------------------------------------ test mode
     const testBtn = $("#btn-test");
     let testControls = null, testTerminal = null, testCasino = null;
@@ -775,8 +880,12 @@
         return;
       }
       engine = new Engine(canvas, scene.objects, gameDims());
+      debugClear();
+      debugLog("info", `▶ Test started — ${scene.objects.length} object(s)`);
+      for (const err of engine.errors) debugLog("error", err);
+      engine.onError = (msg) => debugLog("error", msg);
       if (engine.errors.length) {
-        toast("Script problems:\n" + engine.errors.slice(0, 4).join("\n"), true);
+        toast("Script problems — see the 🐞 Debug panel below.", true);
       }
       // casino machines test in FREE PLAY: pretend coins, the real odds
       if (engine.usesCasino()) testCasino = attachCasinoLoop(engine, localWallet(100, 1000));
@@ -796,6 +905,59 @@
               : "Testing — your game is live. Click Stop to go back to editing.";
     });
 
+    // ------------------------------------------------ the rating-rules gate
+    // The FIRST public publish shows the content-rating requirements and
+    // requires a real tick — recorded on the ACCOUNT (ratingsAck), so it
+    // follows the maker to any device and never asks twice.
+    let ratingsAck = null;   // null = not looked up yet
+    async function confirmRatingRules() {
+      if (ratingsAck === true) return true;
+      const uref = doc(db, "users", userDocId(user));
+      if (ratingsAck === null) {
+        try { ratingsAck = !!(await getDoc(uref)).data()?.ratingsAck; } catch { ratingsAck = false; }
+        if (ratingsAck) return true;
+      }
+      return new Promise((resolve) => {
+        const overlay = document.createElement("div");
+        overlay.className = "ack-overlay";
+        const box = document.createElement("div");
+        box.className = "panel ack-box";
+        box.innerHTML = `
+          <h3 style="margin-top:0">One-time thing: the content rating rules</h3>
+          <p>Every game you publish carries a rating, and <b>you</b> pick it. Players are gated by it,
+          so a wrong rating puts the wrong content in front of kids — that's the one thing this
+          platform moderates hard. The short version:</p>
+          <pre class="codeblock">E    everyone — no blood, no swearing, no gambling themes, no scares
+13+  cartoon violence, mild language, spooky is fine — nothing gory or sexual
+16+  blood, strong language, dark or intense themes — still nothing sexual
+18+  gambling themes, gore, mature content — and NEVER anything illegal</pre>
+          <p>The full requirements, with examples, live on the
+          <a href="../ratings.html" target="_blank" style="color:#ff8f8c"><b>Content Ratings</b></a> page —
+          read it once, it's short. Misrated games get re-rated or unlisted by moderators;
+          repeat misraters lose publishing.</p>
+          <label style="display:flex; gap:8px; align-items:flex-start; font-weight:normal; cursor:pointer">
+            <input type="checkbox" id="ack-cb" style="width:auto; margin-top:3px">
+            <span>I've read the content rating requirements and I'll rate my games honestly.</span>
+          </label>
+          <div style="display:flex; gap:8px; margin-top:14px">
+            <button class="btn" id="ack-go" disabled>Publish</button>
+            <button class="btn btn-ghost" id="ack-no">Cancel</button>
+          </div>`;
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+        const cb = box.querySelector("#ack-cb");
+        const go = box.querySelector("#ack-go");
+        cb.addEventListener("change", () => { go.disabled = !cb.checked; });
+        go.addEventListener("click", async () => {
+          overlay.remove();
+          ratingsAck = true;
+          try { await updateDoc(uref, { ratingsAck: 1 }); } catch {}
+          resolve(true);
+        });
+        box.querySelector("#ack-no").addEventListener("click", () => { overlay.remove(); resolve(false); });
+      });
+    }
+
     // ------------------------------------------------------------ publish / new / example
     $("#btn-publish").addEventListener("click", async () => {
       const btn = $("#btn-publish");
@@ -809,6 +971,12 @@
         // but the casino loop is required to go PUBLIC on the floor
         if (isCasino && !isUnlisted && !new Engine(null, scenes.game.objects).usesCasino()) {
           throw new Error("To go PUBLIC on the Casino floor a machine must use the casino loop: set bet, set spin to 1, and read result. Save it Unlisted to keep working, or load Redline Slots to see the pattern.");
+        }
+        // first PUBLIC publish: the rating rules, read and ticked, once ever
+        if (!pageMode && !isUnlisted && !(await confirmRatingRules())) {
+          toast("Publish cancelled — the rating rules come first (they're short).", true);
+          btn.disabled = false;
+          return;
         }
         if (pageMode) {
           await savePageScene(user, JSON.parse(JSON.stringify(scene)));
@@ -883,6 +1051,7 @@
           scenes.game = { objects: g.objects };
           if (g.w && g.h) { scenes.game.w = g.w; scenes.game.h = g.h; }
           scenes.screen = { objects: g.screen ? g.screen.objects : [] };
+          healIds();
           if (!pageMode && g.screen) $("#g-screenmode").value = g.screen.mode;
           editingId = null;
           titleInput.value = g.title;
@@ -985,6 +1154,7 @@
         scenes.screen = { objects: shot };
         $("#g-screenmode").value = smode;
       }
+      healIds();
       select(scene.objects[0].id);
       commit();
       toast(`${ex.title} loaded — ${EXAMPLES[pick].tip}`);
@@ -1171,6 +1341,7 @@
               scenes.game.objects.push(t);
             }
             scenes.screen = { objects: JSON.parse(JSON.stringify(g.screen?.objects || [])) };
+            healIds();
             $("#g-desc").value = g.description || "";
             $("#g-price").value = String(g.price || 0);
             $("#g-screenmode").value = g.screen?.mode || "none";
@@ -1238,6 +1409,7 @@
         const p = await getProfile(user);
         if (p.pageScene?.objects) {
           scenes.game = JSON.parse(JSON.stringify(p.pageScene));
+          healIds();
           scene = scenes.game;
           select(scene.objects[0]?.id || null);
         }
@@ -1250,6 +1422,7 @@
         const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
         if (d && d.scenes && (d.scenes.game?.objects?.length || d.scenes.screen?.objects?.length || d.title)) {
           scenes = { game: d.scenes.game || { objects: [] }, screen: d.scenes.screen || { objects: [] } };
+          healIds();
           scene = scenes[editTarget];
           editingId = d.editingId || null;
           titleInput.value = d.title || "";

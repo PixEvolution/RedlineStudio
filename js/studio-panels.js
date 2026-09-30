@@ -7,7 +7,7 @@
 const memo = (k) => "rl_panel_" + k;
 
 export function setupPanel(panel, { key, title, float = true } = {}) {
-  if (!panel) return;
+  if (!panel) return null;
 
   // ---- build the header out of the panel's first heading ----
   const h = panel.querySelector("h3, h2");
@@ -44,8 +44,19 @@ export function setupPanel(panel, { key, title, float = true } = {}) {
   });
 
   // ---- float (desktop only) ----
-  if (!float) return;
-  let placeholder = null, dockBtn = null, moved = false;
+  if (!float) return { setCollapsed };
+  let placeholder = null, dockBtn = null, resz = null, moved = false;
+
+  // a floated panel is RESIZABLE (◢ corner, like the touch buttons) —
+  // wide Explorer, wide Properties, real names at last. Size is remembered.
+  const sizeKey = memo(key) + "_wh";
+  const applySavedSize = () => {
+    try {
+      const s = JSON.parse(localStorage.getItem(sizeKey) || "null");
+      if (s && s.w) { panel.style.width = s.w + "px"; }
+      if (s && s.h) { panel.style.height = s.h + "px"; panel.style.maxHeight = s.h + "px"; }
+    } catch {}
+  };
 
   const dock = () => {
     if (!placeholder) return;
@@ -53,7 +64,9 @@ export function setupPanel(panel, { key, title, float = true } = {}) {
     placeholder = null;
     panel.classList.remove("floating");
     panel.style.left = panel.style.top = panel.style.width = "";
+    panel.style.height = panel.style.maxHeight = "";
     if (dockBtn) { dockBtn.remove(); dockBtn = null; }
+    if (resz) { resz.disconnect(); resz = null; }
   };
 
   drag.addEventListener("pointerdown", (e) => {
@@ -79,6 +92,20 @@ export function setupPanel(panel, { key, title, float = true } = {}) {
       dockBtn.title = "Dock this panel back";
       dockBtn.addEventListener("click", (ev) => { ev.stopPropagation(); dock(); });
       head.appendChild(dockBtn);
+
+      // native resize grip (CSS resize: both) — remember the chosen size
+      applySavedSize();
+      let saveTimer = null;
+      resz = new ResizeObserver(() => {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => {
+          if (!panel.classList.contains("floating")) return;
+          const r2 = panel.getBoundingClientRect();
+          panel.style.maxHeight = "none";   // the user's size wins over the 80vh cap
+          try { localStorage.setItem(sizeKey, JSON.stringify({ w: Math.round(r2.width), h: Math.round(r2.height) })); } catch {}
+        }, 300);
+      });
+      resz.observe(panel);
     }
     const place = (ev) => {
       panel.style.left = Math.max(4, Math.min(window.innerWidth - 80, ev.clientX - ox)) + "px";
@@ -96,4 +123,6 @@ export function setupPanel(panel, { key, title, float = true } = {}) {
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
   });
+
+  return { setCollapsed };
 }

@@ -43,3 +43,33 @@ export function snapCoord(v, on, grid = GRID) {
   const n = Number(v) || 0;
   return on ? Math.round(n / grid) * grid : Math.round(n);
 }
+
+// ---- unique object ids -----------------------------------------------------
+// Selection is by id, so two objects sharing one (a hand-edited file, an old
+// import, a copy bug from anywhere) select TOGETHER. This sweep heals any
+// list of objects on its way into the editor: missing or repeated ids get
+// fresh ones; names are untouched (names may repeat — ids may not).
+// Returns how many ids it had to fix.
+export function ensureUniqueIds(objects) {
+  if (!Array.isArray(objects)) return 0;
+  const seen = new Set();
+  let fixed = 0, n = 0;
+  for (const o of objects) {
+    if (!o || typeof o !== "object") continue;
+    if (!o.id || typeof o.id !== "string" || seen.has(o.id)) {
+      let id;
+      do { id = "o" + Date.now().toString(36) + (n++) + Math.random().toString(36).slice(2, 6); }
+      while (seen.has(id));
+      o.id = id;
+      fixed++;
+    }
+    seen.add(o.id);
+  }
+  return fixed;
+}
+
+// ---- percent-of-pool helper (the owner's till) ------------------------------
+export function poolShare(pool, pct) {
+  const p = Math.max(0, Math.floor(Number(pool) || 0));
+  return Math.max(0, Math.floor(p * pct / 100));
+}

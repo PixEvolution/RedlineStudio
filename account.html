@@ -155,6 +155,7 @@
       if (!confirm(`Save your age bracket as "${AGE_WORDS[b]}"? This is set ONCE and can't be changed.`)) return;
       try {
         bracket = await declareBracket(b);
+        try { sessionStorage.removeItem("rl_adult_ok"); } catch {}   // the nav re-checks
         renderAge(); renderEmail(await emailStatus());
         toast("Age bracket saved privately. Only the bracket was stored — never the date.");
       } catch (err) { toast(err.message, true); }
@@ -190,6 +191,7 @@
     };
     // sync the public hasEmail flag with the truth whenever we see it
     const syncEmailFlag = async (st) => {
+      try { sessionStorage.removeItem("rl_adult_ok"); } catch {}   // email truth changed — the nav re-checks
       if (st.linked && !udata.hasEmail) {
         try { await updateDoc(uref, { hasEmail: true }); udata.hasEmail = true; } catch {}
       }

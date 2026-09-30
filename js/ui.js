@@ -1,8 +1,9 @@
 // ui.js — shared UI helpers: the top nav bar, toasts, small utilities.
 // Every page calls renderNav() so login state shows everywhere consistently.
 
-import { currentUser, logout } from "./auth.js";
+import { currentUser, logout, auth, authReady } from "./auth.js";
 import { getCoins } from "./economy.js";
+import { myBracket } from "./age.js";
 
 export const COIN = "◎";   // the coin symbol — renders on every platform (the coin emoji does not on Windows)
 
@@ -21,7 +22,7 @@ export function renderNav(rootPath = "") {
       <a href="${rootPath}index.html">Games</a>
       <a href="${rootPath}studio/studio.html">Studio</a>
       <a href="${rootPath}market.html">Market</a>
-      <a href="${rootPath}casino.html">Casino</a>
+      <a href="${rootPath}casino.html" class="nav-casino" style="display:none">Casino</a>
       <a href="${rootPath}profiles.html">Players</a>
       <a href="${rootPath}forums.html">Forums</a>
       <a href="${rootPath}othergames.html">More Games</a>
@@ -73,13 +74,46 @@ export function renderNav(rootPath = "") {
 
   document.body.prepend(nav);
 
+  // THE CASINO DOOR ISN'T ON THE MAP: the nav button only exists for a
+  // logged-in, declared-18+, email-verified player. Everyone else — kids,
+  // guests, undeclared accounts — never sees it. (casino.html itself checks
+  // again at the door, so a shared link grants nothing.)
+  maybeShowCasino(nav.querySelector(".nav-casino"), user);
+
   // the legal footer, on every page
   const foot = document.createElement("footer");
   foot.className = "site-foot";
   foot.innerHTML = `<a href="${rootPath}terms.html">Terms of Service</a> ·
     <a href="${rootPath}privacy.html">Privacy</a> ·
-    <a href="${rootPath}about.html">About</a> · © Redline Digital`;
+    <a href="${rootPath}ratings.html">Content Ratings</a> ·
+    <a href="${rootPath}about.html">About</a> · © Redline Digital LLC`;
   document.body.appendChild(foot);
+}
+
+// Is this player cleared for the 18+ side? (declared 18 bracket + verified
+// email). The answer is cached per browser session so most pages pay nothing;
+// account.html clears the cache when age or email changes.
+export async function adultCleared() {
+  if (!currentUser()) return false;
+  try {
+    const cached = sessionStorage.getItem("rl_adult_ok");
+    if (cached === "1") return true;
+    if (cached === "0") return false;
+  } catch {}
+  let ok = false;
+  try {
+    await authReady;
+    const u = auth.currentUser;
+    const verified = !!(u && u.email && !u.email.endsWith("@users.redlinestudio.dev") && u.emailVerified);
+    ok = verified && (await myBracket()) === "18";
+  } catch {}
+  try { sessionStorage.setItem("rl_adult_ok", ok ? "1" : "0"); } catch {}
+  return ok;
+}
+
+async function maybeShowCasino(link, user) {
+  if (!link || !user) return;
+  if (await adultCleared()) link.style.display = "";
 }
 
 let toastTimer = null;

@@ -47,7 +47,7 @@
     import { deleteGame } from "./js/games.js";
     import { emailStatus, userDocId } from "./js/auth.js";
     import { myBracket } from "./js/age.js";
-    import { doc, getDoc, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { doc, getDoc, addDoc, collection, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { db } from "./js/firebase.js";
     import { attachTerminalInput } from "./js/terminal.js";
     import { attachCasinoLoop } from "./js/casino-odds.js";
@@ -86,15 +86,15 @@
       const verdict = canPlay(rating, bracket, verified);
       if (verdict.ok) return true;
       const info = ratingInfo(rating);
+      // deliberately NO pointer to where age is set — an adult finds their own
+      // settings; a kid shouldn't be handed the map to the switch
       const blockEl = document.createElement("div");
       blockEl.className = "gate-block";
       blockEl.innerHTML = !viewer
-        ? `<b>Rated ${info.badge}</b> — <a href="login.html">log in</a> and declare your age in ⚙ Account to enter.`
-        : verdict.why === "declare"
-          ? `<b>Rated ${info.badge}</b> — declare your age once in <a href="account.html">⚙ Account</a> to enter.`
-          : verdict.why === "verify"
-            ? `<b>Rated ${info.badge}</b> — adult machines need a declared 18+ AND a <a href="account.html">verified email</a>.`
-            : `<b>Rated ${info.badge}</b> — this machine is for ${info.badge} players.`;
+        ? `<b>Rated ${info.badge}</b> — <a href="login.html">log in</a> to play. This machine only opens for ${info.badge} players.`
+        : verdict.why === "verify"
+          ? `<b>Rated ${info.badge}</b> — this machine only opens for verified adult accounts.`
+          : `<b>Rated ${info.badge}</b> — this machine only opens for ${info.badge} players.`;
       mount.appendChild(blockEl);
       return false;
     }
@@ -155,6 +155,20 @@
         let attract = null, engine = null, controls = null, term = null, loop = null;
         let gateBtn = null, liveUn = null;
         const livePub = createLivePublisher(game.id, me);   // 🔴 LIVE for the watchers
+
+        // THE POOL, LIVE: other players' bets and wins move this machine's
+        // pool while you look at it — the page tracks the game doc so the
+        // till, the door hint and a running machine's `pool` var stay true.
+        const poolWatchers = [];   // fns called with the fresh pool
+        onSnapshot(doc(db, "games", game.id), (s) => {
+          if (!s.exists()) return;
+          const p = Number(s.data().pool) || 0;
+          if (p === cachedPool) return;
+          cachedPool = p;
+          if (engine) engine.vars.pool = cachedPool;
+          if (!engine && gateBtn) hint.textContent = `This machine holds ◎ ${cachedPool}. Bets go in, winnings come out — capped by the pool, like a real cabinet.`;
+          for (const fn of poolWatchers) { try { fn(cachedPool); } catch {} }
+        }, () => {});
 
         function startAttract() {
           if (attract || engine) return;
@@ -221,6 +235,20 @@
           poolLbl.className = "hint";
           const showPool = () => { poolLbl.textContent = ` pool: ◎ ${cachedPool}`; };
           showPool();
+          poolWatchers.push(showPool);   // the till follows the live pool
+          // 25/50/75%: fill the amount box with that share of the CURRENT
+          // pool — for owners who want to skim, not drain
+          const pctWrap = document.createElement("span");
+          pctWrap.style.display = "inline-flex";
+          pctWrap.style.gap = "4px";
+          for (const pct of [25, 50, 75]) {
+            const pb = document.createElement("button");
+            pb.className = "btn btn-small btn-ghost";
+            pb.textContent = pct + "%";
+            pb.title = `Set the amount to ${pct}% of the pool right now`;
+            pb.addEventListener("click", () => { amt.value = String(Math.floor((Number(cachedPool) || 0) * pct / 100)); });
+            pctWrap.appendChild(pb);
+          }
           const op = async (fn) => {
             try {
               const out = await fn(game.id, me, amt.value);
@@ -232,7 +260,7 @@
           };
           fundBtn.addEventListener("click", () => op(fundMachine));
           takeBtn.addEventListener("click", () => op(collectPool));
-          till.append(amt, fundBtn, takeBtn, poolLbl);
+          till.append(amt, pctWrap, fundBtn, takeBtn, poolLbl);
           mount.appendChild(till);
         }
 

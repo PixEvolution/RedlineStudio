@@ -246,7 +246,13 @@ export class Engine {
         if (kind === "key" && !this.keyMatches(ev.key, key)) continue;
         this.budget = 200000;
         try { this.runStmts(ev.body, c.obj); }
-        catch (err) { /* budget exceeded or runtime error — stop this event quietly */ }
+        catch (err) {
+          // budget exceeded or runtime error — the game plays on, but the
+          // Studio's 🐞 Debug panel (or any host) can listen in via onError
+          if (this.onError) {
+            try { this.onError(`${c.obj.name} → when ${kind}${key ? ` "${key}"` : ""}: ${err.message}`); } catch {}
+          }
+        }
       }
     }
   }

@@ -2,14 +2,62 @@
 // If a game has an arcade screen, the card shows it: "live" runs the screen's
 // scripts right on the card (an attract mode, like a real cabinet), "static"
 // draws it once, "none" keeps the plain text card.
+//
+// LIVE SCREENS FOLLOW YOUR SCROLL: a live card only runs while it's near the
+// viewport (IntersectionObserver). Scroll past it and its engine stops;
+// scroll toward it and it wakes. So a page of 30 live cards costs what the
+// handful on screen cost — and the ones you're looking at are always the
+// ones running, not whichever loaded first. A hard cap stays as the seatbelt:
+// past MAX_LIVE running at once, newcomers show a static frame until a
+// running one scrolls away and frees the slot.
 
 import { Engine, drawFrame, CANVAS_W, CANVAS_H } from "./engine.js";
 import { fmtDate } from "./ui.js";
 
-const MAX_LIVE_CARDS = 12; // keep list pages smooth
-let liveCount = 0;
+const MAX_LIVE = 8;             // running at the same time, whole page
+const NEAR = "300px";           // start this far before the card scrolls in
 
-export function resetLiveCardBudget() { liveCount = 0; }
+const running = new Set();      // cards with a live engine right now
+const waiting = new Set();      // visible cards waiting for a free slot
+let observer = null;
+
+function stopCard(card) {
+  if (card._eng) { try { card._eng.stop(); } catch {} card._eng = null; }
+  if (running.delete(card) && waiting.size) {
+    // a slot freed — wake the longest-waiting visible card
+    const next = waiting.values().next().value;
+    waiting.delete(next);
+    startCard(next);
+  }
+}
+
+function startCard(card) {
+  if (card._eng || !card.isConnected) return;
+  if (running.size >= MAX_LIVE) { waiting.add(card); return; }
+  running.add(card);
+  card._eng = new Engine(card._canvas, card._screen.objects, { input: false, w: card._w, h: card._h });
+  card._eng.start();
+}
+
+function ensureObserver() {
+  if (observer || typeof IntersectionObserver === "undefined") return;
+  observer = new IntersectionObserver((entries) => {
+    for (const en of entries) {
+      const card = en.target;
+      if (en.isIntersecting) startCard(card);
+      else { waiting.delete(card); stopCard(card); }
+    }
+  }, { rootMargin: NEAR });
+}
+
+// Pages call this when they re-render their grid: every old card's engine
+// stops and the observer forgets them (removed nodes never report "left").
+export function resetLiveCardBudget() {
+  for (const card of [...running]) { if (card._eng) { try { card._eng.stop(); } catch {} card._eng = null; } }
+  running.clear();
+  waiting.clear();
+  if (observer) { observer.disconnect(); observer = null; }
+}
 
 export function gameCard(g, { rootPath = "", showOwner = true } = {}) {
   const card = document.createElement("a");
@@ -26,14 +74,16 @@ export function gameCard(g, { rootPath = "", showOwner = true } = {}) {
     canvas.height = h;
     canvas.className = "card-screen";
     card.appendChild(canvas);
-    if (screen.mode === "live" && liveCount < MAX_LIVE_CARDS) {
-      liveCount++;
-      // attract mode: the screen runs live but hears no input —
-      // you can't play a game from its card
-      const eng = new Engine(canvas, screen.objects, { input: false, w, h });
-      eng.start();
-    } else {
-      drawFrame(canvas.getContext("2d"), screen.objects, { w, h });
+    // every screen starts as a still frame; live ones wake when scrolled to
+    drawFrame(canvas.getContext("2d"), screen.objects, { w, h });
+    if (screen.mode === "live") {
+      card._canvas = canvas;
+      card._screen = screen;
+      card._w = w;
+      card._h = h;
+      ensureObserver();
+      if (observer) observer.observe(card);
+      else startCard(card);   // ancient browser: run it (still capped)
     }
   }
 

@@ -229,21 +229,29 @@ end</pre>
 
     <div class="panel">
       <h2>The Studio itself <span class="lvl l2">MEDIUM</span></h2>
-      <p><b>Explorer</b> — add and pick objects; checkboxes select several, and the <b>search box</b> filters by
+      <p><b>Explorer</b> — add and pick objects; checkboxes select several (<b>☑ All / ☐ None</b> check
+      everything at once — and with a search active, "All" means all MATCHES, so you can check every
+      "bullet" in one click) and the <b>search box</b> filters by
       name or type when a game gets big · <b>Workspace</b> — drag things into place, <b>▶ Test</b> plays your game
       right there (casino machines test in FREE PLAY: pretend coins, the real odds) · <b>Properties</b> — tune the
       selected object · <b>Script</b> — the block editor for whatever's selected.</p>
       <p><b>The panels are yours to arrange:</b> click any panel's header to collapse it, and on desktop drag the
-      <b>⠿</b> handle to pop it out into a floating window you can park anywhere (⟲ docks it back) — float
-      Properties next to the Script editor and thank yourself later.</p>
+      <b>⠿</b> handle to pop it out into a floating window you can park anywhere (⟲ docks it back) — and a
+      floating panel <b>resizes from its bottom-right corner</b>, so a wide Explorer shows whole object
+      names. Sizes are remembered. Float Properties next to the Script editor and thank yourself later.</p>
       <p><b>Impossible to break:</b> ↶ ↷ <b>undo and redo</b> every change (Ctrl+Z / Ctrl+Y, up to 60 steps),
       and the Studio <b>autosaves a draft</b> to your browser as you work — close the tab mid-build and it
-      recovers everything, settings and all. Editor shortcuts: <b>arrow keys</b> nudge the selected object
-      (Shift = 10px), <b>Delete</b> removes it, <b>Ctrl+D</b> duplicates (or the ⧉ button in the Explorer),
+      recovers everything, settings and all. Editor shortcuts: <b>↑/↓</b> walk the Explorer list (next /
+      previous object, like any modern studio), <b>Ctrl+arrows</b> nudge the selected object by a pixel
+      (Ctrl+Shift = 10px), <b>Delete</b> removes it, <b>Ctrl+D</b> duplicates (or the ⧉ button in the Explorer),
       <b>Ctrl+C / Ctrl+V</b> copies and pastes — scripts travel with every copy. <b>⌗ snap</b> under the
       screen makes drags land on a tidy 20px grid. In Properties, the color field has a real <b>color
       picker</b>, and the <b>layer buttons</b> (⤒ ↑ ↓ ⤓) choose what draws on top of what — objects draw in
       Explorer order, bottom of the list on top — plus ⌖ centers an object on the screen.</p>
+      <p><b>🐞 Debug</b> — the panel under the Script editor. Hit ▶ Test and every script problem shows up
+      there, named: compile errors when the test starts, runtime errors as they happen (which object, which
+      event, what went wrong) — and a repeating error counts up on one line instead of flooding. If a game
+      "does nothing", the Debug panel usually says why in plain words.</p>
       <p><b>📺 Screen</b> — a second scene that plays on your game's card in the Games list (the arcade "attract
       screen"). Loading any historic example fills the Screen automatically — the Atari coin-ops come with live
       attract reels; steal their setup.</p>
@@ -254,7 +262,7 @@ end</pre>
       <b>Line patience</b> (how long someone must wait at your machine before the line can vote to skip a player —
       1 to 120 minutes, shown on your game's page) · <b>Screen size</b> (your game's whole world: classic 480×360,
       wide, large 800×600, widescreen, or portrait for phone-first games — bigger screen = bigger maps; games
-      already published stay exactly the size they were built) · <b>Content rating</b> (E · 13+ · 16+ · 18+ — rate honestly: 16+ and 18+ games only open for players with a matching declared age bracket, 18+ additionally needs their verified email, and misrated games get moderated) · <b>Players (seats)</b> (1 is a classic cabinet;
+      already published stay exactly the size they were built) · <b>Content rating</b> (E · 13+ · 16+ · 18+ — rate honestly: 16+ and 18+ games only open for players with a matching declared age bracket, 18+ additionally needs their verified email, and misrated games get moderated; exactly what each rating requires is on the <a href="ratings.html" style="color:#ff8f8c">Content Ratings</a> page, which you confirm reading once before your first publish; a machine published to the <b>Casino floor</b> skips both choices — always 18+, always 1 seat) · <b>Players (seats)</b> (1 is a classic cabinet;
       2–8 makes it an online multiplayer cabinet where everyone seated shares one room — see the net contract
       below) · the <b>Arcade screen</b> mode (None / Static / Live).</p>
       <p><b>Models</b> — check objects → "Save checked as Model." Models keep their scripts, live in your inventory,
