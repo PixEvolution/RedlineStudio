@@ -111,6 +111,17 @@ console.log("Curves shove, the dark bites:");
   }
   e.keys["w"] = false;
   check("hands-off in a sweeper = CRASH", crashed);
+  // and the PHYSICS point the right way: in a LEFT turn with no steering,
+  // the car sails OUT to the RIGHT wall (never into the inside)
+  const e4 = fresh();
+  drive(e4);
+  for (let i = 0; i < 16; i++) e4.lists.trk[i] = -2;   // pin a LEFT sweeper
+  e4.keys["w"] = true;
+  let maxPx = 0;
+  for (let i = 0; i < 600 && e4.vars.crashes === 0; i++) { e4.step(); maxPx = Math.max(maxPx, e4.vars.px); }
+  e4.keys["w"] = false;
+  check("no steering in a LEFT turn drifts you to the RIGHT (outside) wall",
+    e4.vars.crashes > 0 && maxPx > 100);
   check("a crash stops the car and recenters it", e.vars.speed === 0 && Math.abs(e.vars.px) < 1);
   check("…with the thump on the soundtrack", e.beeps.some(b => b.freq === 82));
 }

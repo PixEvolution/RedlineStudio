@@ -84,7 +84,7 @@ function brainCode() {
   // attract: the car drives itself — gas on, steering glued to the curve
   push(`  set speed to 2.4`);
   push(`  change dist by speed`);
-  push(`  set px to px + kurv * speed * ${SHOVE} * 0.9`);
+  push(`  set px to px - kurv * speed * ${SHOVE} * 0.9`);
   push(`  set px to px - px * 0.08`);   // lazy perfect countersteer
   push("end");
 
@@ -98,7 +98,9 @@ function brainCode() {
   // THE WHEEL: A/D (or the stick) steers; the curve SHOVES you outward
   push(`  set st to max(-1, min(1, keydown("d") + keydown("ArrowRight") - keydown("a") - keydown("ArrowLeft") + stickx(1)))`);
   push(`  change px by st * ${STEER}`);
-  push(`  change px by kurv * speed * ${SHOVE}`);
+  // the road bends away under you: not steering in a LEFT turn drifts you
+  // OUT to the RIGHT wall — real-car physics, so the shove opposes the curve
+  push(`  change px by (0 - kurv) * speed * ${SHOVE}`);
   push("  change dist by speed");
   push(`  set score to floor(dist / 20)`);
   // off the road = into the dark = CRASH
