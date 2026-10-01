@@ -137,6 +137,18 @@ check("every mutation commits to history", (studio.match(/commit\(\)/g) || []).l
     !readFileSync("guide.html", "utf8").includes("25 machines"));
 }
 
+// live attract screens sized to the machine: PC runs the whole room,
+// phones keep a scroll-following budget of 5
+{
+  const cards = readFileSync("js/cards.js", "utf8");
+  check("PC runs all 24 cabinets in a room at once",
+    cards.includes("MAX_LIVE = SMALL ? 5 : 24") && cards.includes('SMALL ? "300px" : "2600px"'));
+  check("a phone is detected by coarse pointer or narrow screen",
+    cards.includes('matchMedia("(pointer: coarse)")') && cards.includes("max-width: 700px"));
+  check("the matchMedia probe is guarded for headless runs",
+    cards.includes('typeof matchMedia !== "undefined"'));
+}
+
 // the global ordering itself: thumbs-down sorts BEHIND every unrated game
 {
   const { applyFilter } = await import("./js/filterbar.js");

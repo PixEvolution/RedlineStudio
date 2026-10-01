@@ -3,19 +3,23 @@
 // scripts right on the card (an attract mode, like a real cabinet), "static"
 // draws it once, "none" keeps the plain text card.
 //
-// LIVE SCREENS FOLLOW YOUR SCROLL: a live card only runs while it's near the
-// viewport (IntersectionObserver). Scroll past it and its engine stops;
-// scroll toward it and it wakes. So a page of 30 live cards costs what the
-// handful on screen cost — and the ones you're looking at are always the
-// ones running, not whichever loaded first. A hard cap stays as the seatbelt:
-// past MAX_LIVE running at once, newcomers show a static frame until a
-// running one scrolls away and frees the slot.
+// LIVE SCREENS, SIZED TO THE MACHINE THEY RUN ON:
+//   · on a PC, a whole room's worth of attract screens runs at once — the
+//     reach margin is bigger than a room, so all 24 cabinets play together
+//     like a real arcade aisle
+//   · on a phone (coarse pointer or narrow screen), live cards follow the
+//     scroll instead: only the handful near the viewport run, capped at 5,
+//     and the ones you're looking at are always the ones running
+// Either way the cap is the seatbelt: past MAX_LIVE running at once,
+// newcomers show a static frame until a running one frees the slot.
 
 import { Engine, drawFrame, CANVAS_W, CANVAS_H } from "./engine.js";
 import { fmtDate } from "./ui.js";
 
-const MAX_LIVE = 8;             // running at the same time, whole page
-const NEAR = "300px";           // start this far before the card scrolls in
+const SMALL = typeof matchMedia !== "undefined"
+  && (matchMedia("(pointer: coarse)").matches || matchMedia("(max-width: 700px)").matches);
+const MAX_LIVE = SMALL ? 5 : 24;        // phone: a handful · PC: the whole room
+const NEAR = SMALL ? "300px" : "2600px"; // phone: follow the scroll · PC: the whole room is "near"
 
 const running = new Set();      // cards with a live engine right now
 const waiting = new Set();      // visible cards waiting for a free slot

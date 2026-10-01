@@ -166,7 +166,7 @@ console.log("The saucers:");
   }
   check("past 5000 the SMALL saucer starts hunting", got2);
   for (let i = 0; i < 40; i++) e.step();   // on-screen again
-  park(e, 400, e.byName.saucer.y, 0);          // ship to the saucer's right
+  park(e, 400, 200, 0);                        // ship to the saucer's right, clear of the test rock
   e.vars.shipdead = 0;
   e.vars.sshot = 0; e.vars.sfiret = 1;
   e.step();
