@@ -498,7 +498,7 @@ end` }]
 
   // attract furniture
   objects.push({ id: "sr_big", name: "bigtitle", type: "text", x: W / 2, y: 118, size: 40, color: CYAN, glow: 18, visible: 1, text: "STAR RAIDERS", script: [] });
-  objects.push({ id: "sr_sub", name: "subline", type: "text", x: W / 2, y: 150, size: 10, color: DIM, glow: 4, visible: 1, text: "ATARI 8-BIT · 1979 · THE FIRST FIRST-PERSON SPACE WAR", script: [] });
+  objects.push({ id: "sr_sub", name: "subline", type: "text", x: W / 2, y: 150, size: 10, color: DIM, glow: 4, visible: 1, text: "ATARI 8-BIT · 1979 · FIRST-PERSON SPACE COMBAT SIM", script: [] });
   objects.push({ id: "sr_coin", name: "coinline", type: "text", x: W / 2, y: 182, size: 12, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — CLICK TO LAUNCH ◎", script: [] });
   objects.push({ id: "sr_play", name: "playbtn", type: "text", x: W / 2, y: 220, size: 16, color: GREEN, glow: 12, visible: 1, text: "[ LAUNCH ]", script: [] });
   objects.push({

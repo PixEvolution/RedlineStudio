@@ -456,7 +456,7 @@ end` }]
 
   // attract furniture
   objects.push({ id: "as_big", name: "bigtitle", type: "text", x: W / 2, y: 130, size: 46, color: WHITE, glow: 18, visible: 1, text: "ASTEROIDS", script: [] });
-  objects.push({ id: "as_sub", name: "subline", type: "text", x: W / 2, y: 162, size: 10, color: DIM, glow: 4, visible: 1, text: "ATARI 1979 · THE BEST SELLER · SAME TUBE AS THE LANDER", script: [] });
+  objects.push({ id: "as_sub", name: "subline", type: "text", x: W / 2, y: 162, size: 10, color: DIM, glow: 4, visible: 1, text: "ATARI 1979 · ATARI'S BEST-SELLING ARCADE GAME", script: [] });
   objects.push({ id: "as_coin", name: "coinline", type: "text", x: W / 2, y: 192, size: 12, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — CLICK TO DRIFT ◎", script: [] });
   objects.push({ id: "as_play", name: "playbtn", type: "text", x: W / 2, y: 228, size: 16, color: GREEN, glow: 12, visible: 1, text: "[ DRIFT ]", script: [] });
   objects.push({

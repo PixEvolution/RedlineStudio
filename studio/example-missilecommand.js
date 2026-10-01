@@ -471,7 +471,7 @@ end` }]
 
   // attract
   objects.push({ id: "mc_big", name: "bigtitle", type: "text", x: W / 2, y: 112, size: 36, color: RED, glow: 18, visible: 1, text: "MISSILE COMMAND", script: [] });
-  objects.push({ id: "mc_sub", name: "subline", type: "text", x: W / 2, y: 144, size: 10, color: DIM, glow: 4, visible: 1, text: "ATARI 1980 · THE GAME THAT GAVE ITS MAKER NIGHTMARES", script: [] });
+  objects.push({ id: "mc_sub", name: "subline", type: "text", x: W / 2, y: 144, size: 10, color: DIM, glow: 4, visible: 1, text: "ATARI 1980 · COLD WAR NUCLEAR DEFENSE", script: [] });
   objects.push({ id: "mc_coin", name: "coinline", type: "text", x: W / 2, y: 176, size: 12, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — CLICK TO DEFEND ◎", script: [] });
   objects.push({ id: "mc_play", name: "playbtn", type: "text", x: W / 2, y: 214, size: 16, color: GREEN, glow: 12, visible: 1, text: "[ DEFEND ]", script: [] });
   objects.push({

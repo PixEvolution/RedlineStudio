@@ -568,7 +568,7 @@ end` }]
 
   // attract
   objects.push({ id: "bk_big", name: "bigtitle", type: "text", x: W / 2, y: 112, size: 42, color: RED, glow: 18, visible: 1, text: "BERZERK", script: [] });
-  objects.push({ id: "bk_sub", name: "subline", type: "text", x: W / 2, y: 144, size: 10, color: DIM, glow: 4, visible: 1, text: "STERN 1980 · THE MACHINE THAT TALKED BACK", script: [] });
+  objects.push({ id: "bk_sub", name: "subline", type: "text", x: W / 2, y: 144, size: 10, color: DIM, glow: 4, visible: 1, text: "STERN 1980 · ONE OF THE FIRST GAMES WITH SPEECH SYNTHESIS", script: [] });
   objects.push({ id: "bk_coin", name: "coinline", type: "text", x: W / 2, y: 176, size: 12, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — CLICK TO INTRUDE ◎", script: [] });
   objects.push({ id: "bk_play", name: "playbtn", type: "text", x: W / 2, y: 214, size: 16, color: GREEN, glow: 12, visible: 1, text: "[ INTRUDE ]", script: [] });
   objects.push({

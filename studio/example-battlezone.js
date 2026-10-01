@@ -478,7 +478,7 @@ end` }]
 
   // attract
   objects.push({ id: "bz_big", name: "bigtitle", type: "text", x: W / 2, y: 112, size: 40, color: GREEN, glow: 18, visible: 1, text: "BATTLEZONE", script: [] });
-  objects.push({ id: "bz_sub", name: "subline", type: "text", x: W / 2, y: 144, size: 10, color: DIM, glow: 4, visible: 1, text: "ATARI 1980 · THE FIRST 3D WORLD ANYONE STOOD INSIDE", script: [] });
+  objects.push({ id: "bz_sub", name: "subline", type: "text", x: W / 2, y: 144, size: 10, color: DIM, glow: 4, visible: 1, text: "ATARI 1980 · FIRST-PERSON 3D VECTOR TANK COMBAT", script: [] });
   objects.push({ id: "bz_coin", name: "coinline", type: "text", x: W / 2, y: 176, size: 12, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — CLICK TO ROLL OUT ◎", script: [] });
   objects.push({ id: "bz_play", name: "playbtn", type: "text", x: W / 2, y: 214, size: 16, color: GREEN, glow: 12, visible: 1, text: "[ ROLL OUT ]", script: [] });
   objects.push({

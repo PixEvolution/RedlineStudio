@@ -510,7 +510,7 @@ end`;
 
   // attract furniture
   objects.push({ id: "ad_big", name: "bigtitle", type: "text", x: W / 2, y: 120, size: 44, color: GOLD, glow: 18, visible: 1, text: "ADVENTURE", script: [] });
-  objects.push({ id: "ad_sub", name: "subline", type: "text", x: W / 2, y: 152, size: 10, color: DIM, glow: 4, visible: 1, text: "ATARI 2600 · 1979 · THE GAME THAT HID A SECRET IN ITS WALLS", script: [] });
+  objects.push({ id: "ad_sub", name: "subline", type: "text", x: W / 2, y: 152, size: 10, color: DIM, glow: 4, visible: 1, text: "ATARI 2600 · 1979 · HOME OF THE FIRST FAMOUS EASTER EGG", script: [] });
   objects.push({ id: "ad_coin", name: "coinline", type: "text", x: W / 2, y: 184, size: 12, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — CLICK TO QUEST ◎", script: [] });
   objects.push({ id: "ad_play", name: "playbtn", type: "text", x: W / 2, y: 222, size: 16, color: GREEN, glow: 12, visible: 1, text: "[ QUEST ]", script: [] });
   objects.push({

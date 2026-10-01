@@ -134,7 +134,7 @@ export function buildRogueExample() {
   const attractScreen = (pad) => {
     push(`${pad}clear`);
     push(`${pad}print ""`);
-    push(`${pad}print "  ██ ROGUE ██  — 1980, ON A TELETYPE NEAR YOU"`);
+    push(`${pad}print "  ██ ROGUE ██  — 1980"`);
     push(`${pad}print ""`);
     push(`${pad}print "  a NEW dungeon every time. death is FOREVER."`);
     push(`${pad}print "  the game that named the roguelike."`);
@@ -261,7 +261,7 @@ export function buildRogueExample() {
   push("        beep 1047 for 0.3");
   push('        print ""');
   push('        print "  ███ YOU HOLD THE AMULET ███"');
-  push('        print "  the run is WON. very few ever see this line."');
+  push('        print "  the run is WON."');
   push('        print "  CLICK to let someone else try."');
   push("      end");
   push("    end");
@@ -337,8 +337,8 @@ export function buildRogueExample() {
   push("        beep 98 for 0.3");
   push('        print ""');
   push('        print "  ██ YOU DIED ON FLOOR " + dfloor + " ██"');
-  push('        print "  permadeath is the point. this run is gone forever."');
-  push('        print "  CLICK to start a life that will also end."');
+  push('        print "  this run is gone forever. that is the rule."');
+  push('        print "  CLICK to try again."');
   push("      end");
   push("    end");
   push("    if game == 0 then");
