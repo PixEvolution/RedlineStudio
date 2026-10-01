@@ -54,6 +54,7 @@
           <option value="rallyx">Rally-X (1980)</option>
           <option value="sweeper">Sweeper (1980 style)</option>
           <option value="missilecommand">Missile Command (1980)</option>
+          <option value="battlezone">Battlezone (1980)</option>
           <option value="wumpus">Hunt the Wumpus (Map)</option>
           <option value="wumpus2">Hunt the Wumpus (Teletype)</option>
           <option value="slots">Redline Slots (casino)</option>
@@ -287,6 +288,7 @@
     import { buildRallyxExample } from "./example-rallyx.js";
     import { buildSweeperExample } from "./example-sweeper.js";
     import { buildMissilecommandExample } from "./example-missilecommand.js";
+    import { buildBattlezoneExample } from "./example-battlezone.js";
     import { buildWumpusExample } from "./example-wumpus.js";
     import { buildWumpus2Example } from "./example-wumpus2.js";
     import { buildSlotsExample } from "./example-slots.js";
@@ -1167,6 +1169,7 @@
       rallyx: { build: buildRallyxExample, screen: "live", tip: "Namco's maze racer: a world twice the screen, scrolling under a camera, with a RADAR showing all of it. Your car never stops — WASD/stick only points it. Grab 10 flags (the S flag doubles the rest), SPACE lays smoke to stun the faster red cars, and the fuel gauge never stops falling. Every third round is the CHALLENGING STAGE — the bonus round that started bonus rounds." },
       sweeper: { build: buildSweeperExample, screen: "live", tip: "Our original maze-chase, honoring 1980's icon. Sweep every speck of dust; four drones hunt you with four REAL personalities — SNAP chases, TRAP aims ahead of you, FLANK cuts you off, GLITCH wanders. Power cells flip the hunt: 200/400/800/1600 a drone. Turns are buffered — ask for the corner early. The hunt breathes: press, scatter, press again." },
       missilecommand: { build: buildMissilecommandExample, screen: "live", tip: "The Cold War on a click. You don't shoot missiles — you detonate a BLAST where they're GOING to be, and the blossom does the work. Six cities, three silos of 10, warheads that fork from wave 2, bonuses ×1 to ×6, a rebuilt city every 10,000. It cannot be won. When the last city falls it doesn't say GAME OVER — it says THE END." },
+      battlezone: { build: buildBattlezoneExample, screen: "live", tip: "The first 3D world anyone stood inside — every object projected from tank-relative coordinates each frame. W/S drives, A/D turns, SPACE fires, and the geometry is COVER: it stops their shells and yours. The tank (1000) stalks and fires slow, dodgeable shells; every third kill sends the MISSILE (2000), which doesn't shoot — it rams. Watch the radar sweep." },
       wumpus:{ build: buildWumpusExample, screen: "static", tip: "Hit ▶ Test. Walk the lit rooms and hunt by ear — smell, drafts, bats. SHOOT mode fires into a tunnel." },
       wumpus2: { build: buildWumpus2Example, screen: "static", tip: "Hit ▶ Test. The 1973 original: type M or S, then a room number. Draw your map on paper!" },
       slots: { build: buildSlotsExample, screen: "live", casino: true, tip: "Hit ▶ Test for FREE PLAY. Publish to the Casino floor and fund the pool to open for business." }

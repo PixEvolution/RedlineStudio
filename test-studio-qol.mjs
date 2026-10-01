@@ -115,25 +115,39 @@ check("the studio heals ids at every entry door (edit, import, example, draft, p
   (studio.match(/healIds\(\)/g) || []).length >= 5);
 check("every mutation commits to history", (studio.match(/commit\(\)/g) || []).length >= 10);
 
-// ROOMS: accounts publish without limit, and the Games page grows a room
-// at a time so no machine is ever hidden by a fetch cap
+// ROOMS: accounts publish without limit; search and sort rank the WHOLE
+// arcade first, and only then is the result cut into rooms of 24
 {
   const games = readFileSync("js/games.js", "utf8");
   check("no machine limit — accounts publish freely",
     !games.includes("MAX_GAMES") && !games.includes("Machine limit reached"));
-  check("the arcade pages by cursor: listGamesRoom with startAfter",
-    games.includes("export async function listGamesRoom") && games.includes("startAfter(cur)")
+  check("the whole public arcade is fetched in cursor batches",
+    games.includes("export async function listAllPublic") && games.includes("startAfter(cur)")
     && games.includes("export const ROOM_SIZE = 24"));
-  check("a room keeps filling until 24 visible games or the collection ends",
-    games.includes("while (!hasMore && scanned === 40)"));
   const idx = readFileSync("index.html", "utf8");
-  check("the Games page walks ROOM 1, ROOM 2, … with door buttons",
-    idx.includes("listGamesRoom") && idx.includes('"◀ ROOM "') && idx.includes('" ▶"')
-    && idx.includes("enterRoom(1)"));
-  check("one lonely room shows no doors at all",
-    idx.includes("roomNum === 1 && !hasMore"));
+  check("the Games page sorts globally, THEN slices into rooms",
+    idx.includes("listAllPublic") && idx.includes("applyFilter(all, search, sort")
+    && idx.indexOf("applyFilter") < idx.indexOf(".slice((roomNum - 1) * ROOM_SIZE"));
+  check("door buttons walk ROOM 1 / N with both edges honest",
+    idx.includes('"◀ ROOM "') && idx.includes('" / "') && idx.includes("roomNum >= last"));
+  check("a new search or sort starts back at Room 1",
+    idx.includes("roomNum = 1;                  // a new ranking starts at the front door"));
+  check("one lonely room shows no doors at all", idx.includes("if (last <= 1) continue;"));
   check("the guide no longer claims a machine limit",
     !readFileSync("guide.html", "utf8").includes("25 machines"));
+}
+
+// the global ordering itself: thumbs-down sorts BEHIND every unrated game
+{
+  const { applyFilter } = await import("./js/filterbar.js");
+  const list = [
+    { title: "down", likes: 0, dislikes: 1 },
+    { title: "fresh1" }, { title: "fresh2" },
+    { title: "up", likes: 1, dislikes: 0 },
+  ];
+  const ranked = applyFilter(list, "", "rated", ["title"]);
+  check("Top rated: thumbs-up first, unrated middle, thumbs-down dead last",
+    ranked[0].title === "up" && ranked[3].title === "down");
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

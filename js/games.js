@@ -81,34 +81,30 @@ export async function listGames(max = 50) {
   return all.filter(g => !g.casino && !g.unlisted);
 }
 
-// ---- ROOMS: the arcade grows a room at a time, so no machine is ever
-// hidden by a fetch cap. Each room holds up to ROOM_SIZE public games,
-// newest first; `cursor` is the nextCursor returned by the previous room
-// (null = Room 1). Returns { games, nextCursor, hasMore }.
+// ---- ROOMS: the Games page shows the arcade in rooms of ROOM_SIZE, but
+// search and sort work across ALL of it — so the whole public collection
+// is fetched once (in batches of 40, by cursor, capped sanely), sorted
+// globally in the browser, and only THEN cut into rooms. A thumbs-down
+// game sorts to the very end of the last room, never ahead of unrated ones.
 export const ROOM_SIZE = 24;
-export async function listGamesRoom(cursor = null, casino = false) {
+export async function listAllPublic(casino = false, cap = 400) {
   const games = [];
-  let cur = cursor, nextCursor = null, hasMore = false, scanned = 0;
+  let cur = null, scanned = 0, total = 0;
   do {
     const q = cur
       ? query(collection(db, GAMES), orderBy("createdAt", "desc"), startAfter(cur), limit(40))
       : query(collection(db, GAMES), orderBy("createdAt", "desc"), limit(40));
     const snap = await getDocs(q);
     scanned = snap.docs.length;
+    total += scanned;
     for (const d of snap.docs) {
       cur = d;
       const g = { id: d.id, ...d.data() };
-      if (!!g.casino !== !!casino || g.unlisted) continue;   // not this room's kind
-      if (games.length < ROOM_SIZE) {
-        games.push(g);
-        nextCursor = d;        // the next room starts right after the last one shown
-      } else {
-        hasMore = true;        // a 25th exists — the next room is real
-        break;
-      }
+      if (!!g.casino !== !!casino || g.unlisted) continue;   // not this floor's kind
+      games.push(g);
     }
-  } while (!hasMore && scanned === 40);
-  return { games, nextCursor, hasMore };
+  } while (scanned === 40 && total < cap);
+  return games;
 }
 
 // The Casino floor: only machines.
