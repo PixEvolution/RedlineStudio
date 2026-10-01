@@ -438,3 +438,40 @@ export function createTouchControls(engine, container) {
     }
   };
 }
+
+// ---------------------------------------------------------------------------
+// The CONTROLS LINE: one generated line telling a PC or gamepad player which
+// keys this game actually listens to — read straight from the scripts, the
+// same scan the touch buttons use, so it can never lie. Shown under the
+// screen on game pages, in Studio tests, and in downloaded games.
+export function describeControls(engine) {
+  const pretty = (k) => ({
+    ArrowUp: "↑", ArrowDown: "↓", ArrowLeft: "←", ArrowRight: "→",
+    Space: "SPACE", " ": "SPACE", Enter: "ENTER", Shift: "SHIFT",
+    Escape: "ESC", Backspace: "BKSP", Tab: "TAB"
+  })[k] || (k.length === 1 ? k.toUpperCase() : k);
+  // keyboard order a player expects: WASD first, letters, then specials, arrows last
+  const rank = (k) => {
+    const i = ["w", "a", "s", "d"].indexOf(String(k).toLowerCase());
+    if (i >= 0) return i;
+    if (k.length === 1) return 10 + k.toLowerCase().charCodeAt(0);
+    if (k === "Space" || k === " ") return 300;
+    if (k === "Enter") return 310;
+    if (k.startsWith("Arrow")) return 400 + ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].indexOf(k);
+    return 350;
+  };
+  const keys = (typeof engine.usedKeys === "function" ? engine.usedKeys() : [])
+    .slice().sort((x, y) => rank(x) - rank(y)).map(pretty);
+  const sticks = (typeof engine.usedSticks === "function") ? engine.usedSticks() : [];
+  const clicks = (engine.compiled || []).some(c => (c.events || []).some(ev => ev.event === "click"));
+  const typed = (typeof engine.usesTerminal === "function") && engine.usesTerminal();
+
+  const parts = [];
+  if (keys.length) parts.push(keys.join(" "));
+  if (sticks.length) parts.push("🕹 " + (sticks.length === 1 ? "stick " + sticks[0] : "sticks " + sticks.join("·")));
+  if (clicks) parts.push("🖱 click");
+  if (typed) parts.push("⌨ type + ENTER");
+  if (!parts.length) return "";
+  if (keys.length || sticks.length) parts.push("gamepad ready");
+  return "CONTROLS: " + parts.join("  ·  ");
+}

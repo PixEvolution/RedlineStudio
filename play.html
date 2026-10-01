@@ -34,7 +34,7 @@
     import { renderNav, toast, fmtDate, setNavCoins } from "./js/ui.js";
     import { getGame, countPlay } from "./js/games.js";
     import { Engine, drawFrame, CANVAS_W, CANVAS_H } from "./js/engine.js";
-    import { createTouchControls, isTouchDevice } from "./js/touch-controls.js";
+    import { createTouchControls, isTouchDevice, describeControls } from "./js/touch-controls.js";
     import { attachFullscreenButton } from "./js/fullscreen.js";
     import { currentUser, auth } from "./js/auth.js";
     import { createLivePublisher, watchLive } from "./js/live.js";
@@ -286,7 +286,10 @@
           livePub.start(() => engine ? snapFromEngine(engine) : null);
           if (liveUn) { liveUn(); liveUn = null; }
           if (me !== game.owner) countPlay(game.id);
-          hint.textContent = "Real coins. The odds are the platform's — every machine returns 92% long-run. Bet 1–10.";
+          {
+            const dc = describeControls(engine);
+            hint.textContent = "Real coins. The odds are the platform's — every machine returns 92% long-run. Bet 1–10." + (dc ? "  —  " + dc : "");
+          }
         }
 
         // attract behind the seat (a kick re-shows this gate)
@@ -516,9 +519,12 @@
             }
           }
           if (me !== game.owner) countPlay(game.id);   // your own plays don't count
-          hint.textContent = isTouchDevice()
-            ? "Tap the screen and buttons to play."
-            : "Click the screen, then use your keyboard / mouse.";
+          {
+            const dc = describeControls(engine);
+            hint.textContent = (isTouchDevice()
+              ? "Tap the screen and buttons to play."
+              : "Click the screen, then use your keyboard / mouse.") + (dc ? "  —  " + dc : "");
+          }
           startEndWatcher();
         }
 
@@ -558,7 +564,10 @@
             engine.start();
             if (me !== game.owner) countPlay(game.id);
             duelBtn.style.display = "none";
-            hint.textContent = "⚔ DUEL — you're the challenger. The machine's player is the other eyeball.";
+            {
+              const dc = describeControls(engine);
+              hint.textContent = "⚔ DUEL — you're the challenger. The machine's player is the other eyeball." + (dc ? "  —  " + dc : "");
+            }
             startEndWatcher();
           } catch (err) {
             toast(err.message, true);

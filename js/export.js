@@ -168,6 +168,14 @@ document.getElementById("startbtn").addEventListener("click", async () => {
   engine.start();
   createTouchControls(engine, _stage);   // buttons on touch, sticks everywhere
   attachTerminalInput(engine, _stage);
+  // the generated CONTROLS line — PC and gamepad players see the keys
+  const _dc = describeControls(engine);
+  if (_dc) {
+    const p = document.createElement("p");
+    p.className = "credit";
+    p.textContent = _dc;
+    _stage.after(p);
+  }
 });
 </script>
 </body>

@@ -44,6 +44,7 @@
           <option value="echocave">Echo Cave (1976 style)</option>
           <option value="nightdriver">Night Driver (1976)</option>
           <option value="combat">Combat (1977)</option>
+          <option value="undervault">Undervault (1977 style)</option>
           <option value="wumpus">Hunt the Wumpus (Map)</option>
           <option value="wumpus2">Hunt the Wumpus (Teletype)</option>
           <option value="slots">Redline Slots (casino)</option>
@@ -223,7 +224,7 @@
     import { Engine, drawFrame, makeObject, CANVAS_W, CANVAS_H } from "../js/engine.js";
     import { createBlockEditor } from "../js/blocks.js";
     import { saveModel, saveBehavior, listMyModels, instantiateModel } from "../js/models.js";
-    import { createTouchControls, isTouchDevice } from "../js/touch-controls.js";
+    import { createTouchControls, isTouchDevice, describeControls } from "../js/touch-controls.js";
     import { attachFullscreenButton } from "../js/fullscreen.js";
     import { sharpenCanvas, attachScreenSizeButton } from "../js/screen-size.js";
     import { setupPanel } from "../js/studio-panels.js";
@@ -267,6 +268,7 @@
     import { buildEchocaveExample } from "./example-echocave.js";
     import { buildNightdriverExample } from "./example-nightdriver.js";
     import { buildCombatExample } from "./example-combat.js";
+    import { buildUndervaultExample } from "./example-undervault.js";
     import { buildWumpusExample } from "./example-wumpus.js";
     import { buildWumpus2Example } from "./example-wumpus2.js";
     import { buildSlotsExample } from "./example-slots.js";
@@ -906,7 +908,8 @@
       testControls = createTouchControls(engine, $("#stage"));   // buttons on touch, sticks everywhere
       testTerminal = attachTerminalInput(engine, $("#stage"));
       testBtn.textContent = "■ Stop";
-      $("#ws-hint").textContent = engine.usesCasino()
+      const dcLine = describeControls(engine);
+      $("#ws-hint").textContent = (engine.usesCasino()
         ? "Testing in FREE PLAY — pretend coins, the platform's real odds."
         : testSeats
           ? `Testing seat 1 of ${testSeats} — ➕ Player opens another window that's a REAL player (its own seat and keyboard, no publish needed).`
@@ -914,7 +917,7 @@
             ? "Testing solo — this game speaks the NET contract, so its page gets a ⚔ DUEL button for a second player online."
             : engine.usesScoreboard()
               ? "Testing — this game counts score and ends its plays, so its page gets a ★ HIGH SCORES table."
-              : "Testing — your game is live. Click Stop to go back to editing.";
+              : "Testing — your game is live. Click Stop to go back to editing.") + (dcLine ? "  —  " + dcLine : "");
     });
 
     // ------------------------------------------------ the rating-rules gate
@@ -1136,6 +1139,7 @@
       echocave: { build: buildEchocaveExample, screen: "static", tip: "1976 named the text-adventure genre — this is our OWN cave in that style (a text game is its prose, so we wrote ours). Hit ▶ Test and TYPE: two words, a lantern, a bear, five treasures back to the cabin. Read the brain: word() makes the whole parser." },
       nightdriver: { build: buildNightdriverExample, screen: "live", tip: "First-person 1976: W gas, A/D or the WHEEL — curves shove you outward, so countersteer or meet the dark. The car is a DECAL like the real cabinet's plastic overlay, and the whole 3D renderer is one loop in the brain. Distance is the score." },
       combat: { build: buildCombatExample, screen: "static", tip: "The 2600's pack-in cart — and it has NO computer opponent, exactly like 1977: bring a friend. P1 W/A/D+Q, P2 arrows+M (or two sticks). Pick TANK, TANK MAZE (shells ricochet!) or BIPLANE (clouds hide you). 2:16 on the clock, most hits wins." },
+      undervault: { build: buildUndervaultExample, screen: "static", tip: "1977's text-adventure tricks, in our own vault (its words are ours for the same reason as Echo Cave): TAKE THE OLD LAMP works, TAKE ALL works, the lamp has a BATTERY, and a thief walks the dark lifting your treasures — his den holds everything, and the sword settles it. 300 is perfect." },
       wumpus:{ build: buildWumpusExample, screen: "static", tip: "Hit ▶ Test. Walk the lit rooms and hunt by ear — smell, drafts, bats. SHOOT mode fires into a tunnel." },
       wumpus2: { build: buildWumpus2Example, screen: "static", tip: "Hit ▶ Test. The 1973 original: type M or S, then a room number. Draw your map on paper!" },
       slots: { build: buildSlotsExample, screen: "live", casino: true, tip: "Hit ▶ Test for FREE PLAY. Publish to the Casino floor and fund the pool to open for business." }
