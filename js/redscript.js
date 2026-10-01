@@ -237,7 +237,9 @@ function parseStmtLine(line) {
     parseExpr(r[1]);
     return { k: "repeat", times: r[1].trim(), body: [] };
   }
-  if ((r = m(/^say\s+(.+?)\s+for\s+(.+)$/i))) {
+  // the message is GREEDY so a quoted message may itself contain the word
+  // "for" — the LAST " for " is always the duration separator
+  if ((r = m(/^say\s+(.+)\s+for\s+(.+)$/i))) {
     parseExpr(r[1]); parseExpr(r[2]);
     return { k: "say", value: r[1].trim(), seconds: r[2].trim() };
   }
