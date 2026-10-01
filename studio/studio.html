@@ -47,6 +47,7 @@
           <option value="undervault">Undervault (1977 style)</option>
           <option value="invaders">Space Invaders (1978)</option>
           <option value="galaxian">Galaxian (1979)</option>
+          <option value="lunarlander">Lunar Lander (1979)</option>
           <option value="wumpus">Hunt the Wumpus (Map)</option>
           <option value="wumpus2">Hunt the Wumpus (Teletype)</option>
           <option value="slots">Redline Slots (casino)</option>
@@ -273,6 +274,7 @@
     import { buildUndervaultExample } from "./example-undervault.js";
     import { buildInvadersExample } from "./example-invaders.js";
     import { buildGalaxianExample } from "./example-galaxian.js";
+    import { buildLunarlanderExample } from "./example-lunarlander.js";
     import { buildWumpusExample } from "./example-wumpus.js";
     import { buildWumpus2Example } from "./example-wumpus2.js";
     import { buildSlotsExample } from "./example-slots.js";
@@ -1146,6 +1148,7 @@
       undervault: { build: buildUndervaultExample, screen: "static", tip: "1977's text-adventure tricks, in our own vault (its words are ours for the same reason as Echo Cave): TAKE THE OLD LAMP works, TAKE ALL works, the lamp has a BATTERY, and a thief walks the dark lifting your treasures — his den holds everything, and the sword settles it. 300 is perfect." },
       invaders: { build: buildInvadersExample, screen: "live", tip: "Nishikado again — Western Gun's maker spent a year on this one. 55 invaders march as ONE BODY (two numbers and a list — read the brain), speed up as they die, and pay 10/20/30 by row. One shot at a time, eroding bunkers, mystery saucer, 3 lives. If they land, it's simply over." },
       galaxian: { build: buildGalaxianExample, screen: "live", tip: "The Invaders killer, in FULL COLOR: the convoy never descends — it sends DIVERS swooping at you instead, and only divers fire. Everything pays DOUBLE mid-dive (a flagship is 150). No bunkers. ←/→ or the stick, SPACE fires, one shot at a time." },
+      lunarlander: { build: buildLunarlanderExample, screen: "static", tip: "Atari's first VECTOR game — and the coin bought FUEL, not lives. A/D rotate, W burns — or the stick as the 1979 lever (ANALOG: half a push is half a burn). Land slow, level and ON a pad: 2X, 3X, or the 5X mesa if you dare. Gravity is patient." },
       wumpus:{ build: buildWumpusExample, screen: "static", tip: "Hit ▶ Test. Walk the lit rooms and hunt by ear — smell, drafts, bats. SHOOT mode fires into a tunnel." },
       wumpus2: { build: buildWumpus2Example, screen: "static", tip: "Hit ▶ Test. The 1973 original: type M or S, then a room number. Draw your map on paper!" },
       slots: { build: buildSlotsExample, screen: "live", casino: true, tip: "Hit ▶ Test for FREE PLAY. Publish to the Casino floor and fund the pool to open for business." }
