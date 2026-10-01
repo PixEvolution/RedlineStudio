@@ -140,6 +140,36 @@ console.log("Smoke and the red cars:");
     e2.vars.lives === 2 && e2.vars.px === 480 && e2.vars.py === 520);
 }
 
+console.log("Rivals hold their lanes:");
+{
+  // every spawn point must sit clear of every wall block (the top-right
+  // rival once spawned INSIDE one and could never move)
+  const WALLS = [[160,160],[320,120],[480,200],[640,120],[800,180],[120,360],[320,340],[520,380],[720,340],[860,400],[200,560],[400,580],[560,520],[700,600],[840,560],[480,60],[80,600],[880,80]];
+  const e = fresh();
+  play(e);
+  const spots = [[e.vars.rx1, e.vars.ry1], [e.vars.rx2, e.vars.ry2], [e.vars.rx3, e.vars.ry3], [e.vars.px, e.vars.py]];
+  check("no car spawns trapped inside a wall block",
+    spots.every(([x, y]) => WALLS.every(([wx, wy]) => Math.abs(x - wx) >= 30 || Math.abs(y - wy) >= 30)));
+  // the once-stuck top-right rival drives
+  clearFlags(e);
+  e.vars.px = 480; e.vars.py = 400; e.vars.pang = -90;
+  const r2 = [e.vars.rx2, e.vars.ry2];
+  for (let i = 0; i < 40; i++) { e.step(); e.vars.px = 480; e.vars.py = 400; }
+  check("the top-right rival is free — it moves and hunts",
+    Math.abs(e.vars.rx2 - r2[0]) + Math.abs(e.vars.ry2 - r2[1]) > 40);
+  // two rivals on the same spot push apart instead of merging
+  const e2 = fresh();
+  play(e2);
+  clearFlags(e2);
+  e2.vars.px = 480; e2.vars.py = 650;
+  e2.vars.rx1 = 480; e2.vars.ry1 = 300;
+  e2.vars.rx2 = 480; e2.vars.ry2 = 300;
+  e2.vars.rx3 = 60; e2.vars.ry3 = 60;
+  for (let i = 0; i < 25; i++) { e2.step(); e2.vars.px = 480; e2.vars.py = 650; }
+  check("two rivals never melt into one car",
+    Math.abs(e2.vars.rx2 - e2.vars.rx1) > 16 || Math.abs(e2.vars.ry2 - e2.vars.ry1) > 16);
+}
+
 console.log("Fuel is the clock:");
 {
   const e = fresh();

@@ -35,7 +35,7 @@ const FLAGSLOTS = [
   [80, 80], [560, 80], [880, 240], [240, 240], [720, 240],
   [80, 440], [400, 460], [640, 440], [880, 660], [240, 660],
 ];
-const CARSTART = [[60, 60], [900, 60], [60, 660]];
+const CARSTART = [[60, 60], [920, 140], [60, 660]];   // all three verified clear of wall blocks
 const WHITE = "#ffffff", DIM = "#7a8894", GOLD = "#e8c84a", GREEN = "#7dff9e",
   RED = "#ff6666", CYAN = "#7ddfff", STEEL = "#3a5a74", ORANGE = "#ff9d4a";
 
@@ -273,11 +273,41 @@ export function buildRallyxExample() {
     push(`      if py - ry${k} < -3 then`);
     push(`        set svy${k} to -1`);
     push("      end");
-    push(axisMove("      ", `rx${k}`, `ry${k}`, `rx${k} + svx${k} * cs * ${CARF}`, "x", 20, W2 - 20));
-    push(axisMove("      ", `rx${k}`, `ry${k}`, `ry${k} + svy${k} * cs * ${CARF}`, "y", 20, H2 - 20));
+    const kf = (CARF * (1 - (k - 1) * 0.07)).toFixed(3);   // 1st hungriest, 3rd laziest
+    push(axisMove("      ", `rx${k}`, `ry${k}`, `rx${k} + svx${k} * cs * ${kf}`, "x", 20, W2 - 20));
+    push(axisMove("      ", `rx${k}`, `ry${k}`, `ry${k} + svy${k} * cs * ${kf}`, "y", 20, H2 - 20));
     push(dirChain(`svx${k}`, `svy${k}`, `rang${k}`, "      "));
     push(`      if abs(rx${k} - px) < 13 and abs(ry${k} - py) < 13 then`);
     push("        set crash to 1");
+    push("      end");
+    push("    end");
+  }
+  // rivals hold their own lane: overlapping pairs get pushed apart
+  for (const [a, b] of [[1, 2], [1, 3], [2, 3]]) {
+    push(`    if abs(rx${b} - rx${a}) < 20 and abs(ry${b} - ry${a}) < 20 then`);
+    push(`      set oldbx to rx${b}`);
+    push(`      set oldby to ry${b}`);
+    push(`      if rx${b} >= rx${a} then`);
+    push(`        set rx${b} to min(${W2 - 20}, rx${b} + 3.5)`);
+    push("      else");
+    push(`        set rx${b} to max(20, rx${b} - 3.5)`);
+    push("      end");
+    push(`      if ry${b} >= ry${a} then`);
+    push(`        set ry${b} to min(${H2 - 20}, ry${b} + 3.5)`);
+    push("      else");
+    push(`        set ry${b} to max(20, ry${b} - 3.5)`);
+    push("      end");
+    push("      set i to 0");
+    push("      set blocked to 0");
+    push(`      repeat ${NWALL}`);
+    push(`        if abs(rx${b} - wx[i]) < 30 and abs(ry${b} - wy[i]) < 30 then`);
+    push("          set blocked to 1");
+    push("        end");
+    push("        set i to i + 1");
+    push("      end");
+    push("      if blocked == 1 then");
+    push(`        set rx${b} to oldbx`);
+    push(`        set ry${b} to oldby`);
     push("      end");
     push("    end");
   }

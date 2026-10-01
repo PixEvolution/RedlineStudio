@@ -8,7 +8,7 @@ import { db } from "./firebase.js";
 import { auth } from "./auth.js";
 import {
   collection, doc, addDoc, getDoc, getDocs, updateDoc, deleteDoc,
-  query, where, orderBy, limit, serverTimestamp, increment
+  query, where, orderBy, limit, startAfter, serverTimestamp, increment
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const GAMES = "games";
@@ -79,6 +79,36 @@ export async function deleteGame(gameId) {
 export async function listGames(max = 50) {
   const all = await listAllGames(max);
   return all.filter(g => !g.casino && !g.unlisted);
+}
+
+// ---- ROOMS: the arcade grows a room at a time, so no machine is ever
+// hidden by a fetch cap. Each room holds up to ROOM_SIZE public games,
+// newest first; `cursor` is the nextCursor returned by the previous room
+// (null = Room 1). Returns { games, nextCursor, hasMore }.
+export const ROOM_SIZE = 24;
+export async function listGamesRoom(cursor = null, casino = false) {
+  const games = [];
+  let cur = cursor, nextCursor = null, hasMore = false, scanned = 0;
+  do {
+    const q = cur
+      ? query(collection(db, GAMES), orderBy("createdAt", "desc"), startAfter(cur), limit(40))
+      : query(collection(db, GAMES), orderBy("createdAt", "desc"), limit(40));
+    const snap = await getDocs(q);
+    scanned = snap.docs.length;
+    for (const d of snap.docs) {
+      cur = d;
+      const g = { id: d.id, ...d.data() };
+      if (!!g.casino !== !!casino || g.unlisted) continue;   // not this room's kind
+      if (games.length < ROOM_SIZE) {
+        games.push(g);
+        nextCursor = d;        // the next room starts right after the last one shown
+      } else {
+        hasMore = true;        // a 25th exists — the next room is real
+        break;
+      }
+    }
+  } while (!hasMore && scanned === 40);
+  return { games, nextCursor, hasMore };
 }
 
 // The Casino floor: only machines.

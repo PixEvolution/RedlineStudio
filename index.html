@@ -21,14 +21,16 @@
     <h1 class="page-title">Games</h1>
     <p class="page-sub">Made by players, published in the Studio.</p>
     <div id="filter-mount"></div>
+    <div id="room-top" class="room-nav"></div>
     <div id="games" class="games-grid">
-      <p class="empty-note">Loading games…</p>
+      <p class="empty-note">Loading the arcade…</p>
     </div>
+    <div id="room-bottom" class="room-nav"></div>
   </main>
 
   <script type="module">
     import { renderNav, toast } from "./js/ui.js";
-    import { listGames } from "./js/games.js";
+    import { listGamesRoom } from "./js/games.js";
     import { gameCard, resetLiveCardBudget } from "./js/cards.js";
     import { createFilterBar, applyFilter } from "./js/filterbar.js";
 
@@ -36,37 +38,74 @@
 
     const grid = document.getElementById("games");
 
-    try {
-      const games = await listGames();
+    // the arcade is laid out in ROOMS — walk them with the door buttons
+    let roomNum = 1;
+    let games = [], hasMore = false;
+    const doorways = [null];        // doorways[n] = cursor that opens room n (room 1 = null)
+    let search = "", sort = "rated";
 
-      const render = (search, sort) => {
-        grid.innerHTML = "";
-        resetLiveCardBudget();
-        const shown = applyFilter(games, search, sort, ["title", "owner", "description"]);
-        if (shown.length === 0) {
-          grid.innerHTML = games.length === 0
-            ? `<p class="empty-note">No games published yet.<br>Be the first — open the Studio!</p>`
-            : `<p class="empty-note">No games match that search.</p>`;
-          return;
-        }
-        for (const g of shown) grid.appendChild(gameCard(g, { rootPath: "", showOwner: true }));
-      };
-
-      createFilterBar(document.getElementById("filter-mount"), {
-        placeholder: "Search games…",
-        sorts: [
-          ["rated", "Top rated"],
-          ["recent", "Most recent"],
-          ["played", "Top played"],
-          ["cheapest", "Cheapest"]
-        ],
-        onChange: render
-      });
-      render("", "rated");
-    } catch (err) {
+    const render = () => {
       grid.innerHTML = "";
-      toast("Couldn't load games: " + err.message, true);
+      resetLiveCardBudget();
+      const shown = applyFilter(games, search, sort, ["title", "owner", "description"]);
+      if (shown.length === 0) {
+        grid.innerHTML = games.length === 0
+          ? (roomNum === 1
+            ? `<p class="empty-note">No games published yet.<br>Be the first — open the Studio!</p>`
+            : `<p class="empty-note">This room is empty.</p>`)
+          : `<p class="empty-note">No games in this room match that search.</p>`;
+        return;
+      }
+      for (const g of shown) grid.appendChild(gameCard(g, { rootPath: "", showOwner: true }));
+    };
+
+    const renderDoors = () => {
+      for (const mount of [document.getElementById("room-top"), document.getElementById("room-bottom")]) {
+        mount.innerHTML = "";
+        if (roomNum === 1 && !hasMore) continue;      // one room — no doors needed
+        const prev = document.createElement("button");
+        prev.className = "btn";
+        prev.textContent = "◀ ROOM " + (roomNum - 1);
+        prev.disabled = roomNum <= 1;
+        prev.addEventListener("click", () => enterRoom(roomNum - 1));
+        const label = document.createElement("span");
+        label.className = "room-label";
+        label.textContent = "ROOM " + roomNum;
+        const next = document.createElement("button");
+        next.className = "btn";
+        next.textContent = "ROOM " + (roomNum + 1) + " ▶";
+        next.disabled = !hasMore;
+        next.addEventListener("click", () => enterRoom(roomNum + 1));
+        mount.append(prev, label, next);
+      }
+    };
+
+    async function enterRoom(n) {
+      try {
+        const res = await listGamesRoom(doorways[n] ?? null);
+        roomNum = n;
+        games = res.games;
+        hasMore = res.hasMore;
+        doorways[n + 1] = res.nextCursor;
+        render();
+        renderDoors();
+        if (n !== 1) window.scrollTo({ top: 0 });
+      } catch (err) {
+        toast("Couldn't open Room " + n + ": " + err.message, true);
+      }
     }
+
+    createFilterBar(document.getElementById("filter-mount"), {
+      placeholder: "Search this room…",
+      sorts: [
+        ["rated", "Top rated"],
+        ["recent", "Most recent"],
+        ["played", "Top played"],
+        ["cheapest", "Cheapest"]
+      ],
+      onChange: (s, so) => { search = s; sort = so; render(); }
+    });
+    enterRoom(1);
   </script>
   <script type="module">import { footAd } from "./js/ads.js"; footAd();</script>
 </body>

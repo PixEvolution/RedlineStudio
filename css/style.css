@@ -1148,3 +1148,8 @@ a.nav-username:hover { border-color: var(--red); color: #fff; }
   margin: 10px 0;
 }
 .gate-block a { color: #ff8f8c; font-weight: 800; }
+
+/* room doors on the Games page */
+.room-nav { display: flex; gap: 14px; justify-content: center; align-items: center; margin: 14px 0; }
+.room-nav:empty { display: none; }
+.room-nav .room-label { color: var(--muted, #7a8894); font-size: 13px; letter-spacing: 2px; }

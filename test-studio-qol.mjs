@@ -115,5 +115,26 @@ check("the studio heals ids at every entry door (edit, import, example, draft, p
   (studio.match(/healIds\(\)/g) || []).length >= 5);
 check("every mutation commits to history", (studio.match(/commit\(\)/g) || []).length >= 10);
 
+// ROOMS: accounts publish without limit, and the Games page grows a room
+// at a time so no machine is ever hidden by a fetch cap
+{
+  const games = readFileSync("js/games.js", "utf8");
+  check("no machine limit — accounts publish freely",
+    !games.includes("MAX_GAMES") && !games.includes("Machine limit reached"));
+  check("the arcade pages by cursor: listGamesRoom with startAfter",
+    games.includes("export async function listGamesRoom") && games.includes("startAfter(cur)")
+    && games.includes("export const ROOM_SIZE = 24"));
+  check("a room keeps filling until 24 visible games or the collection ends",
+    games.includes("while (!hasMore && scanned === 40)"));
+  const idx = readFileSync("index.html", "utf8");
+  check("the Games page walks ROOM 1, ROOM 2, … with door buttons",
+    idx.includes("listGamesRoom") && idx.includes('"◀ ROOM "') && idx.includes('" ▶"')
+    && idx.includes("enterRoom(1)"));
+  check("one lonely room shows no doors at all",
+    idx.includes("roomNum === 1 && !hasMore"));
+  check("the guide no longer claims a machine limit",
+    !readFileSync("guide.html", "utf8").includes("25 machines"));
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
