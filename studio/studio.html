@@ -52,6 +52,7 @@
           <option value="adventure2600">Adventure (1979)</option>
           <option value="starraiders">Star Raiders (1979)</option>
           <option value="rallyx">Rally-X (1980)</option>
+          <option value="sweeper">Sweeper (1980 style)</option>
           <option value="wumpus">Hunt the Wumpus (Map)</option>
           <option value="wumpus2">Hunt the Wumpus (Teletype)</option>
           <option value="slots">Redline Slots (casino)</option>
@@ -283,6 +284,7 @@
     import { buildAdventure2600Example } from "./example-adventure2600.js";
     import { buildStarraidersExample } from "./example-starraiders.js";
     import { buildRallyxExample } from "./example-rallyx.js";
+    import { buildSweeperExample } from "./example-sweeper.js";
     import { buildWumpusExample } from "./example-wumpus.js";
     import { buildWumpus2Example } from "./example-wumpus2.js";
     import { buildSlotsExample } from "./example-slots.js";
@@ -1161,6 +1163,7 @@
       adventure2600: { build: buildAdventure2600Example, screen: "live", tip: "The first console action-adventure — and the game that invented the EASTER EGG. One pair of hands: touch picks up, SPACE drops, and choosing what to carry IS the game. Gold key, black key, sword, three dragons (red is faster than you), and the chalice to bring home. Somewhere there's a dot you can't see… and a wall that remembers it." },
       starraiders: { build: buildStarraidersExample, screen: "live", tip: "The first first-person space WAR — a cockpit, not a screen. WASD/stick steers the view, SPACE fires at the crosshair, M opens the galactic chart, ENTER hyperwarps (80 energy a sector). Zylons advance on your starbases WHILE you fight — dock at a safe ◊ to refill. Energy is life, and at the end the computer hands you a RANK." },
       rallyx: { build: buildRallyxExample, screen: "live", tip: "Namco's maze racer: a world twice the screen, scrolling under a camera, with a RADAR showing all of it. Your car never stops — WASD/stick only points it. Grab 10 flags (the S flag doubles the rest), SPACE lays smoke to stun the faster red cars, and the fuel gauge never stops falling. Every third round is the CHALLENGING STAGE — the bonus round that started bonus rounds." },
+      sweeper: { build: buildSweeperExample, screen: "live", tip: "Our original maze-chase, honoring 1980's icon. Sweep every speck of dust; four drones hunt you with four REAL personalities — SNAP chases, TRAP aims ahead of you, FLANK cuts you off, GLITCH wanders. Power cells flip the hunt: 200/400/800/1600 a drone. Turns are buffered — ask for the corner early. The hunt breathes: press, scatter, press again." },
       wumpus:{ build: buildWumpusExample, screen: "static", tip: "Hit ▶ Test. Walk the lit rooms and hunt by ear — smell, drafts, bats. SHOOT mode fires into a tunnel." },
       wumpus2: { build: buildWumpus2Example, screen: "static", tip: "Hit ▶ Test. The 1973 original: type M or S, then a room number. Draw your map on paper!" },
       slots: { build: buildSlotsExample, screen: "live", casino: true, tip: "Hit ▶ Test for FREE PLAY. Publish to the Casino floor and fund the pool to open for business." }

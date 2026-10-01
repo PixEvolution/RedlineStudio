@@ -23,7 +23,7 @@
 const W = 480, H = 360;
 const W2 = 960, H2 = 720;
 const NWALL = 18, NFLAG = 10, NCAR = 3, NSMOKE = 3;
-const PSPD = 2.2, CARF = 0.82;
+const PSPD = 2.2, CARF = 0.74;
 const PSTART = [480, 520];
 const WALLS = [
   [160, 160], [320, 120], [480, 200], [640, 120], [800, 180],
@@ -242,7 +242,7 @@ export function buildRallyxExample() {
   // ---- the red cars (parked during the challenge)
   push("  set crash to 0");
   push("  if bonus == 0 then");
-  push("    set cs to min(2.9, 2.0 + stage * 0.12)");
+  push("    set cs to min(2.6, 1.8 + stage * 0.1)");
   push("    if fuel <= 0 then");
   push("      set cs to cs + 0.3");
   push("    end");
