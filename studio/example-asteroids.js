@@ -157,6 +157,7 @@ function brainCode() {
   push("    change saucer.x by 1.8");
   push("    if saucer.x % 90 < 2 then");
   push("      change saucer.y by rand(-24, 24)");
+  push("      set saucer.y to max(30, min(330, saucer.y))");   // never jink off the glass
   push("    end");
   push(`    if saucer.x > ${W + 14} then`);
   push("      set sauceron to 0");
