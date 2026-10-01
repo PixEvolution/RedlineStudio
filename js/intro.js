@@ -114,22 +114,35 @@ export function playIntro({ sound = true } = {}) {
     size();
     window.addEventListener("resize", size);
 
-    // audio (a click got us here in the exports, so this is allowed there;
-    // anywhere autoplay is blocked, the show simply runs silent)
-    let ac = null, src = null;
+    // audio: a click got us here in the exports, so it just plays. Where the
+    // page opened cold (the offline Studio), browsers block autoplay — so the
+    // show starts silent with a "CLICK FOR SOUND" line, and the first click
+    // UNMUTES (joining the engine note mid-rev, in sync); the next one skips.
+    let ac = null, src = null, buf = null, audioOn = false;
+    const startAudio = (offset) => {
+      if (audioOn || !ac || !buf) return;
+      try {
+        src = ac.createBufferSource();
+        src.buffer = buf;
+        src.connect(ac.destination);
+        src.start(0, Math.max(0, Math.min(tl.DONE - 0.05, offset)));
+        audioOn = true;
+      } catch {}
+    };
+    const elapsed = () => (performance.now() - start) / 1000;
+    const ensureAudio = () => {
+      if (audioOn || !ac) return;
+      if (ac.state === "running") { startAudio(elapsed()); return; }
+      ac.resume().then(() => { if (!done && !audioOn && ac.state === "running") startAudio(elapsed()); }).catch(() => {});
+    };
     if (sound) {
       try {
         const AC = window.AudioContext || window.webkitAudioContext;
         ac = new AC();
-        if (ac.state === "suspended") ac.resume().catch(() => {});
         const mono = buildEngineSignal(ac.sampleRate);
-        const buf = ac.createBuffer(2, mono.length, ac.sampleRate);
+        buf = ac.createBuffer(2, mono.length, ac.sampleRate);
         buf.getChannelData(0).set(mono);
         buf.getChannelData(1).set(mono);
-        src = ac.createBufferSource();
-        src.buffer = buf;
-        src.connect(ac.destination);
-        src.start();
       } catch { ac = null; }
     }
 
@@ -211,14 +224,21 @@ export function playIntro({ sound = true } = {}) {
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", size);
       window.removeEventListener("keydown", finish, true);
-      overlay.removeEventListener("pointerdown", finish);
       try { if (src) src.stop(); } catch {}
       try { if (ac) ac.close(); } catch {}
       overlay.remove();
       resolve();
     };
     window.addEventListener("keydown", finish, true);
-    overlay.addEventListener("pointerdown", finish);
+    let audioWanted = false;
+    const onPointer = () => {
+      // where autoplay was blocked, the FIRST click is the unmute; after that
+      // (or wherever sound already runs) a click skips like always
+      if (ac && !audioOn && !audioWanted) { audioWanted = true; ensureAudio(); return; }
+      finish();
+    };
+    overlay.addEventListener("pointerdown", onPointer);
+    ensureAudio();   // plays at once wherever a user gesture got us here
 
     const frame = (now) => {
       if (done) return;
@@ -330,6 +350,15 @@ export function playIntro({ sound = true } = {}) {
           ctx.globalAlpha = 1;
           ctx.textAlign = "left";
         }
+      }
+
+      // silent-start hint (autoplay was blocked): one click = sound, next skips
+      if (ac && !audioOn) {
+        ctx.font = "700 12px 'Courier New', monospace";
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#6b7280";
+        ctx.fillText("🔊 CLICK FOR SOUND · ANY KEY SKIPS", W / 2, H - 14);
+        ctx.textAlign = "left";
       }
 
       // the closing fade

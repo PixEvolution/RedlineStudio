@@ -45,7 +45,12 @@ export async function buildOfflineStudioHtml({ rootPath = "", fetchText } = {}) 
   @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
   .panel { background: #101014; border: 1px solid #2a2a31; border-radius: 12px; padding: 12px; }
   .panel h3 { margin: 0 0 8px; font-size: 13px; color: #8dffa9; }
-  .stage { position: relative; display: flex; flex-direction: column; }
+  /* the workspace never balloons on a big monitor: it's capped (S/M/L/FIT
+     buttons set the cap, remembered) and centered in its column */
+  .stage { position: relative; display: flex; flex-direction: column; max-width: 560px; margin: 0 auto; width: 100%; }
+  .stagewrap { min-width: 0; }
+  .zoomrow { display: flex; gap: 6px; justify-content: center; margin: 0 auto 8px; }
+  .zoomrow button.on { border-color: #1f8f3c; color: #8dffa9; }
   canvas { width: 100%; display: block; border: 2px solid #123c24; border-radius: 12px; background: #03110a; object-fit: contain; }
   .stage, .stage * { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
   .hint { color: #7a8894; font-size: 11px; }
@@ -124,9 +129,15 @@ export async function buildOfflineStudioHtml({ rootPath = "", fetchText } = {}) 
     </div>
     <div id="objlist" style="margin-top:8px"></div>
   </div>
-  <div>
+  <div class="stagewrap">
+    <div class="zoomrow">
+      <button class="mini" data-zoom="420">S</button>
+      <button class="mini" data-zoom="560">M</button>
+      <button class="mini" data-zoom="780">L</button>
+      <button class="mini" data-zoom="0">FIT</button>
+    </div>
     <div class="stage" id="stage"><canvas id="workspace" width="960" height="720"></canvas></div>
-    <p class="hint" id="wshint">Click an object · drag to move · arrows nudge · Del deletes · Ctrl+D duplicates · ⌗ <button class="mini" id="snap"></button></p>
+    <p class="hint" id="wshint" style="text-align:center">Click an object · drag to move · arrows nudge · Del deletes · Ctrl+D duplicates · ⌗ <button class="mini" id="snap"></button></p>
   </div>
   <div class="panel">
     <h3>Properties</h3>
@@ -463,11 +474,30 @@ ${sources.join("\n\n")}
       selectedId = game.objects[0] ? game.objects[0].id : null;
     }
   } catch (e) {}
+  // S / M / L / FIT: how big the workspace sits on YOUR monitor (remembered)
+  var zoomBtns = document.querySelectorAll("[data-zoom]");
+  function setZoom(px) {
+    $("#stage").style.maxWidth = px > 0 ? px + "px" : "none";
+    for (var zi = 0; zi < zoomBtns.length; zi++) {
+      zoomBtns[zi].classList.toggle("on", Number(zoomBtns[zi].getAttribute("data-zoom")) === px);
+    }
+    try { localStorage.setItem("rl_off_zoom", String(px)); } catch (e) {}
+  }
+  for (var zj = 0; zj < zoomBtns.length; zj++) {
+    (function (b) {
+      b.addEventListener("click", function () { setZoom(Number(b.getAttribute("data-zoom"))); });
+    })(zoomBtns[zj]);
+  }
+  var zSaved = 560;
+  try { zSaved = Number(localStorage.getItem("rl_off_zoom") || "560"); } catch (e) {}
+  setZoom(isNaN(zSaved) ? 560 : zSaved);
+
   applyDims();
   hist.seed(snap()); syncUndo();
   renderAll();
-  // the REDLINE DIGITAL intro — the workshop opens on brand. Any key or
-  // tap skips it (and browsers that block cold autoplay just run it silent).
+  // the REDLINE DIGITAL intro — the workshop opens on brand. Where the
+  // browser blocks cold autoplay it starts silent: the first click turns
+  // the sound on, the next (or any key) skips.
   try { playIntro(); } catch (e) {}
 })();
 </script>

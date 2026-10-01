@@ -43,6 +43,7 @@
           <option value="deathrace">Death Race (1976)</option>
           <option value="echocave">Echo Cave (1976 style)</option>
           <option value="nightdriver">Night Driver (1976)</option>
+          <option value="combat">Combat (1977)</option>
           <option value="wumpus">Hunt the Wumpus (Map)</option>
           <option value="wumpus2">Hunt the Wumpus (Teletype)</option>
           <option value="slots">Redline Slots (casino)</option>
@@ -265,6 +266,7 @@
     import { buildDeathraceExample } from "./example-deathrace.js";
     import { buildEchocaveExample } from "./example-echocave.js";
     import { buildNightdriverExample } from "./example-nightdriver.js";
+    import { buildCombatExample } from "./example-combat.js";
     import { buildWumpusExample } from "./example-wumpus.js";
     import { buildWumpus2Example } from "./example-wumpus2.js";
     import { buildSlotsExample } from "./example-slots.js";
@@ -1133,6 +1135,7 @@
       deathrace: { build: buildDeathraceExample, screen: "live", rating: "T13", tip: "The 1976 moral panic — loads rated 13+, which is the joke AND the lesson. A/D + W (or wheel 1) to drive, catch the gremlins, and every one you get leaves a SOLID cross to crash into. 2 PLAYERS = two wheels, most gremlins wins." },
       echocave: { build: buildEchocaveExample, screen: "static", tip: "1976 named the text-adventure genre — this is our OWN cave in that style (a text game is its prose, so we wrote ours). Hit ▶ Test and TYPE: two words, a lantern, a bear, five treasures back to the cabin. Read the brain: word() makes the whole parser." },
       nightdriver: { build: buildNightdriverExample, screen: "live", tip: "First-person 1976: W gas, A/D or the WHEEL — curves shove you outward, so countersteer or meet the dark. The car is a DECAL like the real cabinet's plastic overlay, and the whole 3D renderer is one loop in the brain. Distance is the score." },
+      combat: { build: buildCombatExample, screen: "static", tip: "The 2600's pack-in cart — and it has NO computer opponent, exactly like 1977: bring a friend. P1 W/A/D+Q, P2 arrows+M (or two sticks). Pick TANK, TANK MAZE (shells ricochet!) or BIPLANE (clouds hide you). 2:16 on the clock, most hits wins." },
       wumpus:{ build: buildWumpusExample, screen: "static", tip: "Hit ▶ Test. Walk the lit rooms and hunt by ear — smell, drafts, bats. SHOOT mode fires into a tunnel." },
       wumpus2: { build: buildWumpus2Example, screen: "static", tip: "Hit ▶ Test. The 1973 original: type M or S, then a room number. Draw your map on paper!" },
       slots: { build: buildSlotsExample, screen: "live", casino: true, tip: "Hit ▶ Test for FREE PLAY. Publish to the Casino floor and fund the pool to open for business." }
