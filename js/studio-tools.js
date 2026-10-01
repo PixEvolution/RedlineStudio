@@ -73,3 +73,34 @@ export function poolShare(pool, pct) {
   const p = Math.max(0, Math.floor(Number(pool) || 0));
   return Math.max(0, Math.floor(p * pct / 100));
 }
+
+// ---- player-made behaviors --------------------------------------------------
+// A behavior is a SCRIPT CHUNK (events + blocks) saved on its own, apart from
+// any object — the player's own ✨, reusable forever and sellable on the
+// Market exactly like a Model. These two helpers are the whole mechanism.
+
+// How big is a script? (shown when saving, and on the Market card)
+export function scriptStats(script) {
+  let events = 0, blocks = 0;
+  const walk = (list) => {
+    for (const s of list || []) {
+      blocks++;
+      walk(s.then); walk(s.else); walk(s.body);
+    }
+  };
+  for (const ev of script || []) {
+    events++;
+    if (ev.event === "code") blocks++;   // a code block counts as one block
+    walk(ev.body);
+  }
+  return { events, blocks, summary: `${events} event${events === 1 ? "" : "s"} · ${blocks} block${blocks === 1 ? "" : "s"}` };
+}
+
+// Attach a saved behavior to an object: its events are APPENDED as ordinary,
+// fully editable blocks — same as the built-in ✨ behaviors.
+export function applyBehaviorScript(obj, script) {
+  if (!obj) return 0;
+  const copy = JSON.parse(JSON.stringify(script || []));
+  obj.script = (obj.script || []).concat(copy);
+  return copy.length;
+}

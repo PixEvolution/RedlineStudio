@@ -34,6 +34,31 @@ export async function saveModel({ name, owner, objects, description = "", thumb 
   return ref.id;
 }
 
+// Save a SCRIPT CHUNK as a behavior — the player's own ✨, in the same
+// inventory and on the same Market as models. kind tells the two apart.
+export async function saveBehavior({ name, owner, script, description = "", summary = "" }) {
+  if (!name || !name.trim()) throw new Error("Your behavior needs a name.");
+  if (name.length > 30) throw new Error("Behavior name must be 30 characters or less.");
+  if (!script || script.length === 0) throw new Error("The selected object has no script to save.");
+  const ref = await addDoc(collection(db, MODELS), {
+    version: 1,
+    kind: "behavior",
+    ownerUid: auth.currentUser?.uid || null,
+    name: name.trim(),
+    owner,
+    creator: owner,
+    objects: [],                                   // behaviors carry no objects…
+    script: JSON.parse(JSON.stringify(script)),    // …they carry a script
+    summary: String(summary || "").slice(0, 60),   // "3 events · 24 blocks"
+    description: String(description || "").slice(0, 200),
+    thumb: "",
+    listed: false,
+    price: 0,
+    createdAt: serverTimestamp()
+  });
+  return ref.id;
+}
+
 // The player's inventory.
 export async function listMyModels(owner) {
   const q = query(collection(db, MODELS), where("owner", "==", owner));
@@ -75,11 +100,14 @@ export async function acquireModel(modelId, buyer) {
 
   const copy = {
     version: 1,
+    kind: model.kind || "model",
     ownerUid: auth.currentUser?.uid || null,
     name: model.name,
     owner: buyer,
     creator: model.creator || model.owner,
-    objects: model.objects,
+    objects: model.objects || [],
+    script: model.script || null,     // behaviors travel as script chunks
+    summary: model.summary || "",
     description: model.description || "",
     thumb: model.thumb || "",
     listed: false,

@@ -58,6 +58,30 @@ console.log("Unique ids (selection is BY id — duplicates select together):");
   check("25/50/75% of a pool floor correctly",
     poolShare(101, 25) === 25 && poolShare(101, 50) === 50 && poolShare(101, 75) === 75 && poolShare(4, 25) === 1);
   check("empty or garbage pools give 0", poolShare(0, 50) === 0 && poolShare("x", 75) === 0 && poolShare(-40, 25) === 0);
+
+  console.log("🧩 Player-made behaviors:");
+  const { scriptStats, applyBehaviorScript } = await import("./js/studio-tools.js");
+  const script = [
+    { event: "tick", body: [
+      { k: "if", cond: "x > 1", then: [{ k: "set", lhs: "y", value: "2" }], else: [{ k: "set", lhs: "y", value: "3" }] },
+      { k: "change", lhs: "self.x", by: "1" }
+    ] },
+    { event: "code", source: "when start\nset z to 0\nend" }
+  ];
+  const st = scriptStats(script);
+  check("scriptStats counts events and blocks, nested included",
+    st.events === 2 && st.blocks === 5 && st.summary === "2 events · 5 blocks");
+  check("an empty script is honestly empty", scriptStats([]).events === 0 && scriptStats(null).events === 0);
+  const target = { name: "dot1", script: [{ event: "start", body: [] }] };
+  const n = applyBehaviorScript(target, script);
+  check("applying APPENDS the chunk to the object's script", n === 2 && target.script.length === 3 && target.script[0].event === "start");
+  script[0].body[0].cond = "TAMPERED";
+  check("…as a deep copy — the saved behavior can't be mutated from outside",
+    target.script[1].body[0].cond === "x > 1");
+  const bare = { name: "dot2" };
+  applyBehaviorScript(bare, script);
+  check("an object with no script yet grows one", bare.script.length === 2);
+  check("no object = a quiet no-op", applyBehaviorScript(null, script) === 0);
 }
 
 console.log("The Studio wears it all:");
@@ -78,7 +102,15 @@ for (const [what, needle] of [
   ["casino = fixed 18+ and 1 seat", 'id="casino-fixed"'],
   ["the rating-rules gate before a first publish", "confirmRatingRules"],
   ["the ack is stored on the ACCOUNT", "ratingsAck"],
+  ["🧩 Save as behavior lives in the Script panel", 'id="btn-save-behavior"'],
+  ["saved behaviors join the ✨ menu", '"my:" + m.id'],
+  ["…and apply as editable script chunks", "applyBehaviorScript"],
 ]) check(what, studio.includes(needle));
+check("the Market knows a 🧩 behavior card from a model card",
+  readFileSync("market.html", "utf8").includes('m.kind === "behavior"'));
+check("behaviors travel through buying like models do",
+  readFileSync("js/models.js", "utf8").includes("saveBehavior")
+  && readFileSync("js/models.js", "utf8").includes('kind: model.kind || "model"'));
 check("the studio heals ids at every entry door (edit, import, example, draft, page)",
   (studio.match(/healIds\(\)/g) || []).length >= 5);
 check("every mutation commits to history", (studio.match(/commit\(\)/g) || []).length >= 10);

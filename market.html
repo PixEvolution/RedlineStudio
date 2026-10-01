@@ -100,7 +100,21 @@
           // (no object counts, no scripts: buy it to open the box)
           const shot = document.createElement("div");
           shot.className = "model-shot";
-          if (m.thumb) {
+          if (m.kind === "behavior") {
+            // a 🧩 behavior is a script chunk: no picture, just its size
+            shot.style.display = "flex";
+            shot.style.flexDirection = "column";
+            shot.style.alignItems = "center";
+            shot.style.justifyContent = "center";
+            shot.style.gap = "4px";
+            const big = document.createElement("div");
+            big.textContent = "🧩";
+            big.style.fontSize = "42px";
+            const lbl = document.createElement("div");
+            lbl.className = "hint";
+            lbl.textContent = "BEHAVIOR · " + (m.summary || "script chunk");
+            shot.append(big, lbl);
+          } else if (m.thumb) {
             const img = document.createElement("img");
             img.src = m.thumb;
             img.alt = m.name;
@@ -208,7 +222,7 @@
           t.textContent = m.name;
           const meta = document.createElement("span");
           meta.className = "hint";
-          meta.textContent = `  ${m.objects?.length || 0} objects` +
+          meta.textContent = `  ${m.kind === "behavior" ? "🧩 " + (m.summary || "behavior") : (m.objects?.length || 0) + " objects"}` +
             (m.creator && m.creator !== user ? ` · made by ${m.creator}` : "") +
             (m.listed ? ` · LISTED for ${m.price > 0 ? "◎ " + m.price : "free"}` : "");
           info.append(t, meta);
