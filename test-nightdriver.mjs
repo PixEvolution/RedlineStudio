@@ -54,6 +54,21 @@ console.log("The projection (the whole 3D trick):");
   check("a curve bends the DISTANCE, not your bumper", Math.abs(mid(7) - 240) > Math.abs(mid(0) - 240) + 20);
 }
 
+{
+  // the ease: halfway through a 0-segment that leads into a 2-segment,
+  // the road is already leaning — no more snap at the boundary
+  const e = fresh();
+  drive(e);
+  for (let i = 0; i < 16; i++) e.lists.trk[i] = 0;
+  e.lists.trk[1] = 2;
+  e.vars.dist = 210;   // halfway through segment 0
+  e.step();
+  check("curves EASE in across the whole segment (no snapping)", e.vars.kurv > 0.8 && e.vars.kurv < 1.2);
+  e.vars.dist = 40;
+  e.step();
+  check("…barely leaning at the segment's start", e.vars.kurv < 0.3);
+}
+
 console.log("The wheel and the pedal:");
 {
   const e = fresh();
@@ -89,8 +104,8 @@ console.log("Curves shove, the dark bites:");
   // hold a hard curve with no countersteer: the shove drifts you off the road
   e.keys["w"] = true;
   let crashed = false;
+  for (let i = 0; i < 16; i++) e.lists.trk[i] = 2;   // pin the sweeper
   for (let i = 0; i < 600 && !crashed; i++) {
-    e.vars.kurv = 2;   // pin the sweeper
     e.step();
     if (e.vars.crashes > 0) crashed = true;
   }

@@ -27,7 +27,7 @@ const SEG = 420;            // track-curve segment length (distance units)
 // the track: curvature per segment, looping — gentle, then the esses, then
 // the long sweeper. Positive bends right.
 const TRACK = [0, 0, 1, 2, 1, 0, -1, -2, -1, 0, 2, -2, 0, 1, -1, 0];
-const MAXSPD = 4.2, ACCEL = 0.045, DRAG = 0.015, STEER = 3.4, SHOVE = 0.62;
+const MAXSPD = 4.2, ACCEL = 0.045, DRAG = 0.015, STEER = 3.4, SHOVE = 0.52;
 const PLAYSECS = 75;
 const WHITE = "#ffffff", DIM = "#7a8894", GREEN = "#7dff9e", ORANGE = "#ff9d4a";
 
@@ -74,9 +74,11 @@ function brainCode() {
   push('  set coinline.text to "◎ INSERT COIN — CLICK TO DRIVE ◎"');
   push("end");
 
-  // the current curve, from the looping track table
+  // the current curve, EASED: each segment blends into the next across its
+  // whole length, so a straight leans into a corner instead of snapping
   push(`set kseg to floor(dist / ${SEG}) % ${TRACK.length}`);
-  push("set kurv to trk[kseg]");
+  push(`set kf to (dist % ${SEG}) / ${SEG}`);
+  push(`set kurv to trk[kseg] + (trk[(kseg + 1) % ${TRACK.length}] - trk[kseg]) * kf`);
 
   push("if game == 9 then");
   // attract: the car drives itself — gas on, steering glued to the curve
@@ -174,12 +176,17 @@ end` }]
   // the horizon — a thin distant line, all you get of the world
   objects.push({ id: "nd_hz", name: "horizon", type: "line", x: 100, y: HOR, size: 280, angle: 0, color: "#20242c", glow: 2, visible: 1, text: "", script: [] });
 
-  // THE DECAL: the car that was never in the video — three slabs that never
-  // move, exactly like the plastic overlay on the 1976 glass
-  objects.push({ id: "nd_c1", name: "decal", type: "box", x: 240, y: 334, size: 26, angle: 0, color: "#39404d", glow: 4, visible: 1, text: "", script: [] });
-  objects.push({ id: "nd_c2", name: "decalt", type: "box", x: 240, y: 318, size: 16, angle: 0, color: "#2c313c", glow: 3, visible: 1, text: "", script: [] });
-  objects.push({ id: "nd_c3", name: "decall", type: "box", x: 226, y: 340, size: 9, angle: 0, color: "#555c6b", glow: 5, visible: 1, text: "", script: [] });
-  objects.push({ id: "nd_c4", name: "decalr", type: "box", x: 254, y: 340, size: 9, angle: 0, color: "#555c6b", glow: 5, visible: 1, text: "", script: [] });
+  // THE DECAL: the car that was never in the video — a handful of slabs that
+  // never move, exactly like the plastic overlay on the 1976 glass. Seen
+  // from behind at night: a wide rear, a roof, and two burning taillights.
+  objects.push({ id: "nd_cw1", name: "decalwl", type: "box", x: 219, y: 345, size: 10, angle: 0, color: "#14161b", glow: 2, visible: 1, text: "", script: [] });
+  objects.push({ id: "nd_cw2", name: "decalwr", type: "box", x: 261, y: 345, size: 10, angle: 0, color: "#14161b", glow: 2, visible: 1, text: "", script: [] });
+  objects.push({ id: "nd_c1", name: "decal", type: "box", x: 240, y: 337, size: 22, angle: 0, color: "#3d4452", glow: 4, visible: 1, text: "", script: [] });
+  objects.push({ id: "nd_c1l", name: "decalbl", type: "box", x: 221, y: 337, size: 18, angle: 0, color: "#3d4452", glow: 4, visible: 1, text: "", script: [] });
+  objects.push({ id: "nd_c1r", name: "decalbr", type: "box", x: 259, y: 337, size: 18, angle: 0, color: "#3d4452", glow: 4, visible: 1, text: "", script: [] });
+  objects.push({ id: "nd_c2", name: "decalroof", type: "box", x: 240, y: 321, size: 15, angle: 0, color: "#2a2f3a", glow: 3, visible: 1, text: "", script: [] });
+  objects.push({ id: "nd_c3", name: "decaltl", type: "box", x: 223, y: 331, size: 6, angle: 0, color: "#ff3b30", glow: 14, visible: 1, text: "", script: [] });
+  objects.push({ id: "nd_c4", name: "decaltr", type: "box", x: 257, y: 331, size: 6, angle: 0, color: "#ff3b30", glow: 14, visible: 1, text: "", script: [] });
 
   // HUD
   objects.push({ id: "nd_sc", name: "scoretx", type: "text", x: 60, y: 24, size: 24, color: WHITE, glow: 8, visible: 0, text: "0", script: [] });
