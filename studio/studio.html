@@ -49,6 +49,7 @@
           <option value="galaxian">Galaxian (1979)</option>
           <option value="lunarlander">Lunar Lander (1979)</option>
           <option value="asteroids">Asteroids (1979)</option>
+          <option value="adventure2600">Adventure (1979)</option>
           <option value="wumpus">Hunt the Wumpus (Map)</option>
           <option value="wumpus2">Hunt the Wumpus (Teletype)</option>
           <option value="slots">Redline Slots (casino)</option>
@@ -277,6 +278,7 @@
     import { buildGalaxianExample } from "./example-galaxian.js";
     import { buildLunarlanderExample } from "./example-lunarlander.js";
     import { buildAsteroidsExample } from "./example-asteroids.js";
+    import { buildAdventure2600Example } from "./example-adventure2600.js";
     import { buildWumpusExample } from "./example-wumpus.js";
     import { buildWumpus2Example } from "./example-wumpus2.js";
     import { buildSlotsExample } from "./example-slots.js";
@@ -1152,6 +1154,7 @@
       galaxian: { build: buildGalaxianExample, screen: "live", tip: "The Invaders killer, in FULL COLOR: the convoy never descends — it sends DIVERS swooping at you instead, and only divers fire. Everything pays DOUBLE mid-dive (a flagship is 150). No bunkers. ←/→ or the stick, SPACE fires, one shot at a time." },
       lunarlander: { build: buildLunarlanderExample, screen: "static", tip: "Atari's first VECTOR game — and the coin bought FUEL, not lives. A/D rotate, W burns — or the stick as the 1979 lever (ANALOG: half a push is half a burn). Land slow, level and ON a pad: 2X, 3X, or the 5X mesa if you dare. Gravity is patient." },
       asteroids: { build: buildAsteroidsExample, screen: "live", tip: "Atari's best seller EVER — Spacewar's physics with a coin slot. A/D rotate, W thrust (momentum is the law), SPACE fires (4 in the air, they inherit your drift), S is HYPERSPACE — the panic button that sometimes kills you. Rocks split 1→2→4 and the children are faster: 20/50/100. The small saucer AIMS." },
+      adventure2600: { build: buildAdventure2600Example, screen: "live", tip: "The first console action-adventure — and the game that invented the EASTER EGG. One pair of hands: touch picks up, SPACE drops, and choosing what to carry IS the game. Gold key, black key, sword, three dragons (red is faster than you), and the chalice to bring home. Somewhere there's a dot you can't see… and a wall that remembers it." },
       wumpus:{ build: buildWumpusExample, screen: "static", tip: "Hit ▶ Test. Walk the lit rooms and hunt by ear — smell, drafts, bats. SHOOT mode fires into a tunnel." },
       wumpus2: { build: buildWumpus2Example, screen: "static", tip: "Hit ▶ Test. The 1973 original: type M or S, then a room number. Draw your map on paper!" },
       slots: { build: buildSlotsExample, screen: "live", casino: true, tip: "Hit ▶ Test for FREE PLAY. Publish to the Casino floor and fund the pool to open for business." }
