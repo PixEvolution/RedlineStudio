@@ -504,7 +504,7 @@ end` }]
   objects.push({
     id: "sr_help", name: "help", type: "text",
     x: W / 2, y: 254, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "WASD / STICK STEER · SPACE FIRES · M GALACTIC CHART · ENTER HYPERWARPS · SAVE THE STARBASES",
+    text: "WASD/STICK STEERS · SPACE FIRES · M CHART · ENTER WARPS · SAVE THE BASES",
     script: []
   });
 

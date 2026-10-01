@@ -516,7 +516,7 @@ end`;
   objects.push({
     id: "ad_help", name: "help", type: "text",
     x: W / 2, y: 256, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "WASD / STICK MOVE · TOUCH TO PICK UP (ONE ITEM!) · SPACE DROPS · BRING THE CHALICE HOME",
+    text: "WASD/STICK MOVES · TOUCH PICKS UP (ONE ITEM) · SPACE DROPS · CHALICE HOME",
     script: []
   });
 

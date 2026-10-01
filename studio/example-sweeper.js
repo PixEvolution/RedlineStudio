@@ -613,7 +613,7 @@ end` }]
   objects.push({
     id: "sw_help", name: "help", type: "text",
     x: 180, y: 312, size: 8, color: DIM, glow: 3, visible: 1,
-    text: "SNAP CHASES · TRAP AIMS AHEAD · FLANK CUTS OFF · GLITCH WANDERS · POWER CELLS FLIP THE HUNT",
+    text: "SNAP · TRAP · FLANK · GLITCH HUNT YOU — POWER CELLS FLIP THE HUNT",
     script: []
   });
 

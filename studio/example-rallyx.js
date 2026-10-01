@@ -532,7 +532,7 @@ end` }]
   objects.push({
     id: "rx_help", name: "help", type: "text",
     x: W / 2, y: 254, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "WASD / STICK POINTS THE CAR — IT NEVER STOPS · SPACE LAYS SMOKE · 10 FLAGS · WATCH THE RADAR",
+    text: "WASD/STICK POINTS THE CAR · SPACE LAYS SMOKE · 10 FLAGS · WATCH THE RADAR",
     script: []
   });
 
