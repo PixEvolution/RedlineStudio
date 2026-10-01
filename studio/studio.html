@@ -56,6 +56,7 @@
           <option value="missilecommand">Missile Command (1980)</option>
           <option value="battlezone">Battlezone (1980)</option>
           <option value="berzerk">Berzerk (1980)</option>
+          <option value="rogue">Rogue (1980)</option>
           <option value="wumpus">Hunt the Wumpus (Map)</option>
           <option value="wumpus2">Hunt the Wumpus (Teletype)</option>
           <option value="slots">Redline Slots (casino)</option>
@@ -291,6 +292,7 @@
     import { buildMissilecommandExample } from "./example-missilecommand.js";
     import { buildBattlezoneExample } from "./example-battlezone.js";
     import { buildBerzerkExample } from "./example-berzerk.js";
+    import { buildRogueExample } from "./example-rogue.js";
     import { buildWumpusExample } from "./example-wumpus.js";
     import { buildWumpus2Example } from "./example-wumpus2.js";
     import { buildSlotsExample } from "./example-slots.js";
@@ -1173,6 +1175,7 @@
       missilecommand: { build: buildMissilecommandExample, screen: "live", tip: "The Cold War on a click. You don't shoot missiles — you detonate a BLAST where they're GOING to be, and the blossom does the work. Six cities, three silos of 10, warheads that fork from wave 2, bonuses ×1 to ×6, a rebuilt city every 10,000. It cannot be won. When the last city falls it doesn't say GAME OVER — it says THE END." },
       battlezone: { build: buildBattlezoneExample, screen: "live", tip: "The first 3D world anyone stood inside — every object projected from tank-relative coordinates each frame. W/S drives, A/D turns, SPACE fires, and the geometry is COVER: it stops their shells and yours. The tank (1000) stalks and fires slow, dodgeable shells; every third kill sends the MISSILE (2000), which doesn't shoot — it rams. Watch the radar sweep." },
       berzerk: { build: buildBerzerkExample, screen: "live", tip: "The machine that TALKED. Every wall is electrified — yours to die on, the robots' too: they're deadly but CLUMSY, and every robot that shoots a friend or walks into a wall pays YOU 50. 8-way run, SPACE fires your facing, clear the room for the sweep bonus, flee and get taunted. Linger and THE WARDEN comes through the walls. It cannot be killed." },
+      rogue: { build: buildRogueExample, screen: "static", tip: "The game that NAMED the roguelike, dealt on the teletype: a NEW dungeon every run (six rooms diced and corridor-stitched), WASD steps one TURN, bump a letter to fight, * is gold, ! heals, > goes down. The AMULET waits on floor 5 — and hp 0 is PERMADEATH, forever. Read the brain: the whole dungeon generator is one when-tick." },
       wumpus:{ build: buildWumpusExample, screen: "static", tip: "Hit ▶ Test. Walk the lit rooms and hunt by ear — smell, drafts, bats. SHOOT mode fires into a tunnel." },
       wumpus2: { build: buildWumpus2Example, screen: "static", tip: "Hit ▶ Test. The 1973 original: type M or S, then a room number. Draw your map on paper!" },
       slots: { build: buildSlotsExample, screen: "live", casino: true, tip: "Hit ▶ Test for FREE PLAY. Publish to the Casino floor and fund the pool to open for business." }
