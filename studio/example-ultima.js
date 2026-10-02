@@ -141,7 +141,7 @@ let tries = 0;
 while (SPOTS.length < 16 && tries++ < 4000) {
   const c = 2 + Math.floor(rnd() * (MW - 4)), r = 2 + Math.floor(rnd() * (MH - 4));
   const d = Math.abs(c - CASTLE[0]) + Math.abs(r - CASTLE[1]);
-  if (at(c, r) === 1 && d > 5 && !SPOTS.some(([sc, sr]) => Math.abs(sc - c) + Math.abs(sr - r) < 5)) {
+  if (at(c, r) === 1 && d > 9 && !SPOTS.some(([sc, sr]) => Math.abs(sc - c) + Math.abs(sr - r) < 5)) {
     SPOTS.push([c, r, Math.max(1, Math.min(5, Math.floor(d / 7) + 1))]);
   }
 }
@@ -155,12 +155,18 @@ export function buildUltimaExample() {
   const dealWildMons = (pad) => {
     push(`${pad}set k to 0`);
     push(`${pad}repeat 7`);
+    push(`${pad}  set mon[k] to 0`);
+    push(`${pad}  set mrt[k] to 0`);
     push(`${pad}  set spi to floor(rand(0, ${SPOTS.length}))`);
-    push(`${pad}  set mon[k] to 1`);
-    push(`${pad}  set mx[k] to msx[spi]`);
-    push(`${pad}  set my[k] to msy[spi]`);
-    push(`${pad}  set mtp[k] to msz[spi]`);
-    push(`${pad}  set mhp[k] to msz[spi] * 6`);
+    push(`${pad}  if k < 4 and abs(msx[spi] - pc) + abs(msy[spi] - pr) > 10 then`);
+    push(`${pad}    set mon[k] to 1`);
+    push(`${pad}    set mx[k] to msx[spi]`);
+    push(`${pad}    set my[k] to msy[spi]`);
+    push(`${pad}    set mtp[k] to msz[spi]`);
+    push(`${pad}    set mhp[k] to msz[spi] * 6`);
+    push(`${pad}  else`);
+    push(`${pad}    set mrt[k] to 200 + floor(rand(0, 300))`);
+    push(`${pad}  end`);
     push(`${pad}  set k to k + 1`);
     push(`${pad}end`);
     push(`${pad}set mon[7] to 0`);
@@ -603,7 +609,7 @@ export function buildUltimaExample() {
     }
     push("        else");
     push(`          set hunt to 0`);
-    push("          if abs(adx) + abs(ady) < 8 or mode == 2 then");
+    push("          if abs(adx) + abs(ady) < 6 or mode == 2 then");
     push("            set hunt to 1");
     push("          end");
     push(`          if mtp[${k}] == 6 then`);
