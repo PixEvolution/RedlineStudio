@@ -60,6 +60,7 @@
           <option value="defender">Defender (1980)</option>
           <option value="emberhall">Emberhall (1980 style)</option>
           <option value="scrapyard">Scrapyard Climb (1981 style)</option>
+          <option value="galaga">Galaga (1981)</option>
           <option value="wumpus">Hunt the Wumpus (Map)</option>
           <option value="wumpus2">Hunt the Wumpus (Teletype)</option>
           <option value="slots">Redline Slots (casino)</option>
@@ -299,6 +300,7 @@
     import { buildDefenderExample } from "./example-defender.js";
     import { buildEmberhallExample } from "./example-emberhall.js";
     import { buildScrapyardExample } from "./example-scrapyard.js";
+    import { buildGalagaExample } from "./example-galaga.js";
     import { buildWumpusExample } from "./example-wumpus.js";
     import { buildWumpus2Example } from "./example-wumpus2.js";
     import { buildSlotsExample } from "./example-slots.js";
@@ -1185,6 +1187,7 @@
       defender: { build: buildDefenderExample, screen: "live", tip: "Williams' side-scroller: a planet four screens wide that WRAPS, under a camera with facing look-ahead. A/D thrusts (momentum is real), SPACE fires, B smart-bombs the screen (2 a wave). Landers haul your ten humanoids skyward — shoot the hauler and CATCH the faller (+500). A lander that reaches the top returns as a MUTANT. Watch the scanner." },
       emberhall: { build: buildEmberhallExample, screen: "static", tip: "1980: text adventures became a BUSINESS — and the commercial polish is what this original teaches. PUT THE OIL IN THE LAMP (a real two-object parser), a box that must be OPENED for its key, a kiln that turns sand into glass, a locked vault, and six treasures that score twice: taken, then cased. 400 is perfect; SCORE shows your RANK." },
       scrapyard: { build: buildScrapyardExample, screen: "live", tip: "Our original platformer honoring 1981's breakout hit (its carpenter and his ape are Nintendo's, so this is a scrapyard). Six girders, nine ladders, a haywire CRUSHER hurling tires down the zigzag. SPACE jumps — clear a tire mid-air for 100; the W wrench makes tires 300 points of scrap for a few seconds. The bonus drains until you hit the OFF switch. A fall is a fall." },
+      galaga: { build: buildGalagaExample, screen: "live", tip: "The sequel that beat its original: waves FLY IN before they fight, bosses take two hits, and the TRACTOR BEAM steals your ship — shoot its carrier to get it back as a DUAL FIGHTER with double guns (a hit then costs the partner, not a life). Bees 50/100, butterflies 80/160, bosses 150/400. Every third wave: the challenging stage — all 24 for a PERFECT 10000." },
       wumpus:{ build: buildWumpusExample, screen: "static", tip: "Hit ▶ Test. Walk the lit rooms and hunt by ear — smell, drafts, bats. SHOOT mode fires into a tunnel." },
       wumpus2: { build: buildWumpus2Example, screen: "static", tip: "Hit ▶ Test. The 1973 original: type M or S, then a room number. Draw your map on paper!" },
       slots: { build: buildSlotsExample, screen: "live", casino: true, tip: "Hit ▶ Test for FREE PLAY. Publish to the Casino floor and fund the pool to open for business." }
