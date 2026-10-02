@@ -70,6 +70,7 @@
           <option value="robotron">Robotron: 2084 (1982)</option>
           <option value="cubit">Cubit (1982 style)</option>
           <option value="poleposition">Pole Position (1982)</option>
+          <option value="zaxxon">Zaxxon (1982)</option>
           <option value="wumpus">Hunt the Wumpus (Map)</option>
           <option value="wumpus2">Hunt the Wumpus (Teletype)</option>
           <option value="slots">Redline Slots (casino)</option>
@@ -319,6 +320,7 @@
     import { buildRobotronExample } from "./example-robotron.js";
     import { buildCubitExample } from "./example-cubit.js";
     import { buildPolePositionExample } from "./example-poleposition.js";
+    import { buildZaxxonExample } from "./example-zaxxon.js";
     import { buildWumpusExample } from "./example-wumpus.js";
     import { buildWumpus2Example } from "./example-wumpus2.js";
     import { buildSlotsExample } from "./example-slots.js";
@@ -1215,6 +1217,7 @@
       robotron: { build: buildRobotronExample, screen: "live", tip: "A TRUE twin-stick: WASD (or stick 1) runs, the arrows (or stick 2) fire — independently, in 8 directions, and the two never have to agree. Grunts pour in at 100 a head and blunder into electrodes for you. HULKS cannot be killed — your shots only push them, and they are walking straight at the family. Spheroids (1000) hatch enforcers (150) that shoot back. Every human saved pays more: 1000, 2000... 5000 a touch, until you die. Clear the killable robots and a meaner wave pours in." },
       cubit: { build: buildCubitExample, screen: "live", tip: "Our original isometric hopper, honoring 1982's pyramid phenomenon (its orange hero is still Gottlieb's — ours is named with the same kind of pun). Every hop is DIAGONAL: the stick feels turned 45°. Paint all 28 cubes the target color — level 2 takes two hops, level 3 turns finished cubes BACK. Balls rain down; the purple one becomes THE COIL, which climbs after you with real pathfinding — leap onto a flying disc and it follows you off the edge (+500). Green ball freezes everyone (+100); catch the color-reverting gremlin for +300. Clear: +1000, +50 an unused disc." },
       poleposition: { build: buildPolePositionExample, screen: "live", tip: "EARN your race: one flying qualifying lap, under 45.0s or the machine sends you home — under 32.5s is POLE POSITION (+2000). Then 4 laps on a Fuji-style circuit: the long straight, THE HAIRPIN (brake to ~130 or the grass takes you), sweepers and the S. SPACE shifts LO/HI — LO launches, HI pulls 306 km/h. Corners push you out the faster you go; offroad over 150 wrecks you, and so does the back of slower traffic (+50 a clean pass). 60 seconds, +35 a lap, the checkered flag pays 2000 plus the clock." },
+      zaxxon: { build: buildZaxxonExample, screen: "live", tip: "The first axonometric 3D arcade game — and the first shooter with ALTITUDE. Watch your shadow and the altimeter: they never lie. Clear low walls, thread the lit WINDOW in high walls, slip between force-field beams, and dodge turret fire that leads your height. The famous paradox: shoot your own FUEL DUMPS to refuel (+100, +15 fuel) — the tank drains as you fly and empty is a crash. Past the fortress: open space, a drone wing, then THE GUARDIAN — scroll stops, missiles home, six hits to the core (+500 each, +3000 the kill)." },
       wumpus:{ build: buildWumpusExample, screen: "static", tip: "Hit ▶ Test. Walk the lit rooms and hunt by ear — smell, drafts, bats. SHOOT mode fires into a tunnel." },
       wumpus2: { build: buildWumpus2Example, screen: "static", tip: "Hit ▶ Test. The 1973 original: type M or S, then a room number. Draw your map on paper!" },
       slots: { build: buildSlotsExample, screen: "live", casino: true, tip: "Hit ▶ Test for FREE PLAY. Publish to the Casino floor and fund the pool to open for business." }
