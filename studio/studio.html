@@ -64,6 +64,7 @@
           <option value="frogger">Frogger (1981)</option>
           <option value="sweeper2">Sweeper II (1981 style)</option>
           <option value="wolfenstein">Castle Wolfenstein (1981)</option>
+          <option value="ultima">Ultima I (1981)</option>
           <option value="wumpus">Hunt the Wumpus (Map)</option>
           <option value="wumpus2">Hunt the Wumpus (Teletype)</option>
           <option value="slots">Redline Slots (casino)</option>
@@ -307,6 +308,7 @@
     import { buildFroggerExample } from "./example-frogger.js";
     import { buildSweeper2Example } from "./example-sweeper2.js";
     import { buildWolfensteinExample } from "./example-wolfenstein.js";
+    import { buildUltimaExample } from "./example-ultima.js";
     import { buildWumpusExample } from "./example-wumpus.js";
     import { buildWumpus2Example } from "./example-wumpus2.js";
     import { buildSlotsExample } from "./example-slots.js";
@@ -1197,6 +1199,7 @@
       frogger: { build: buildFroggerExample, screen: "live", tip: "The design flip that made 1981's sharpest crossing: on the ROAD everything that moves kills you; on the RIVER everything that moves is the only thing keeping you alive. Grid hops (+10 a new row), diving turtles that blink before they sink, five bays with REAL walls (a full bay is a wall too), a fly worth 200, and a clock on every crossing. All five home = 1000." },
       sweeper2: { build: buildSweeper2Example, screen: "live", tip: "A MOD of our own Sweeper — the way 1981's best-seller began as an unauthorized mod of 1980's icon. FOUR mazes rotate every level, the bonus part WANDERS the corridors (catch it moving for 300+), and the drones took the famous patch: one turn in five is RANDOM, so no route is ever safe twice. Faster sweeper, faster drones, shorter power. Same four personalities, same breathing, same buffered turns." },
       wolfenstein: { build: buildWolfensteinExample, screen: "live", tip: "The ancestor of the stealth genre — and of the whole Wolfenstein line. Guards see only where they FACE: read the cone, slip behind. E holds up an unsuspecting guard (+100, frisk him for rounds) and searches chests — you stand frozen while you dig. The uniform fools regular guards; armored sentries see through it and take two rounds. A gunshot alerts the whole room. Find the WAR PLANS in a tower or cellar, then out the great door north — escape without firing for +500." },
+      ultima: { build: buildUltimaExample, screen: "live", tip: "The first chapter of the CRPG: a scrolling tile overworld where danger scales with distance from the castle. Turn-based — the world moves only when YOU move. Bump to fight, level up on XP, buy food/weapons/armor in three towns (keys 1-4 in menus), heal at the king's castle. Food burns as you walk — starve and you bleed. Three dark dungeons (torchlight reaches three tiles) each hide a SIGIL; three sigils open the DARK TOWER and the sorcerer inside. Gold + XP is your score." },
       wumpus:{ build: buildWumpusExample, screen: "static", tip: "Hit ▶ Test. Walk the lit rooms and hunt by ear — smell, drafts, bats. SHOOT mode fires into a tunnel." },
       wumpus2: { build: buildWumpus2Example, screen: "static", tip: "Hit ▶ Test. The 1973 original: type M or S, then a room number. Draw your map on paper!" },
       slots: { build: buildSlotsExample, screen: "live", casino: true, tip: "Hit ▶ Test for FREE PLAY. Publish to the Casino floor and fund the pool to open for business." }
