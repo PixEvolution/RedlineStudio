@@ -62,6 +62,7 @@
           <option value="scrapyard">Scrapyard Climb (1981 style)</option>
           <option value="galaga">Galaga (1981)</option>
           <option value="frogger">Frogger (1981)</option>
+          <option value="sweeper2">Sweeper II (1981 style)</option>
           <option value="wumpus">Hunt the Wumpus (Map)</option>
           <option value="wumpus2">Hunt the Wumpus (Teletype)</option>
           <option value="slots">Redline Slots (casino)</option>
@@ -303,6 +304,7 @@
     import { buildScrapyardExample } from "./example-scrapyard.js";
     import { buildGalagaExample } from "./example-galaga.js";
     import { buildFroggerExample } from "./example-frogger.js";
+    import { buildSweeper2Example } from "./example-sweeper2.js";
     import { buildWumpusExample } from "./example-wumpus.js";
     import { buildWumpus2Example } from "./example-wumpus2.js";
     import { buildSlotsExample } from "./example-slots.js";
@@ -1191,6 +1193,7 @@
       scrapyard: { build: buildScrapyardExample, screen: "live", tip: "Our original platformer honoring 1981's breakout hit (its carpenter and his ape are Nintendo's, so this is a scrapyard). Six girders, nine ladders, a haywire CRUSHER hurling tires down the zigzag. SPACE jumps — clear a tire mid-air for 100; the W wrench makes tires 300 points of scrap for a few seconds. The bonus drains until you hit the OFF switch. A fall is a fall." },
       galaga: { build: buildGalagaExample, screen: "live", tip: "The sequel that beat its original: waves FLY IN before they fight, bosses take two hits, and the TRACTOR BEAM steals your ship — shoot its carrier to get it back as a DUAL FIGHTER with double guns (a hit then costs the partner, not a life). Bees 50/100, butterflies 80/160, bosses 150/400. Every third wave: the challenging stage — all 24 for a PERFECT 10000." },
       frogger: { build: buildFroggerExample, screen: "live", tip: "The design flip that made 1981's sharpest crossing: on the ROAD everything that moves kills you; on the RIVER everything that moves is the only thing keeping you alive. Grid hops (+10 a new row), diving turtles that blink before they sink, five bays with REAL walls (a full bay is a wall too), a fly worth 200, and a clock on every crossing. All five home = 1000." },
+      sweeper2: { build: buildSweeper2Example, screen: "live", tip: "A MOD of our own Sweeper — the way 1981's best-seller began as an unauthorized mod of 1980's icon. FOUR mazes rotate every level, the bonus part WANDERS the corridors (catch it moving for 300+), and the drones took the famous patch: one turn in five is RANDOM, so no route is ever safe twice. Faster sweeper, faster drones, shorter power. Same four personalities, same breathing, same buffered turns." },
       wumpus:{ build: buildWumpusExample, screen: "static", tip: "Hit ▶ Test. Walk the lit rooms and hunt by ear — smell, drafts, bats. SHOOT mode fires into a tunnel." },
       wumpus2: { build: buildWumpus2Example, screen: "static", tip: "Hit ▶ Test. The 1973 original: type M or S, then a room number. Draw your map on paper!" },
       slots: { build: buildSlotsExample, screen: "live", casino: true, tip: "Hit ▶ Test for FREE PLAY. Publish to the Casino floor and fund the pool to open for business." }

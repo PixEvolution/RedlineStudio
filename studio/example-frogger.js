@@ -27,16 +27,16 @@ const BAYX = [36, 108, 180, 252, 324];
 const TIMER0 = 1800;                       // 30 seconds a crossing
 // lanes: [y, dir, speed, kind, width, [slot offsets...], diverMask]
 const LANES = [
-  [408, 1, 1.1, "car", 24, [0, 120, 240]],
-  [384, -1, 1.5, "car", 24, [40, 160, 280]],
-  [360, 1, 2.1, "car", 24, [0, 180]],
-  [336, -1, 1.3, "truck", 46, [60, 240]],
-  [312, 1, 2.6, "car", 24, [20, 200]],
-  [264, -1, 1.0, "turtle", 44, [0, 120, 240], [0, 1, 0]],
-  [240, 1, 1.3, "log", 66, [0, 180]],
-  [216, 1, 1.9, "log", 110, [40, 260]],
-  [192, -1, 1.5, "turtle", 44, [30, 150, 270], [1, 0, 0]],
-  [168, 1, 1.0, "log", 66, [70, 250]],
+  [408, 1, 1.1, "car", 20, [0, 120, 240]],
+  [384, -1, 1.5, "car", 20, [40, 160, 280]],
+  [360, 1, 2.1, "car", 20, [0, 180]],
+  [336, -1, 1.3, "truck", 36, [60, 240]],
+  [312, 1, 2.6, "car", 20, [20, 200]],
+  [264, -1, 1.0, "turtle", 40, [0, 120, 240], [0, 1, 0]],
+  [240, 1, 1.3, "log", 64, [0, 180]],
+  [216, 1, 1.9, "log", 104, [40, 260]],
+  [192, -1, 1.5, "turtle", 40, [30, 150, 270], [1, 0, 0]],
+  [168, 1, 1.0, "log", 64, [70, 250]],
 ];
 const WHITE = "#ffffff", DIM = "#7a8894", GOLD = "#e8c84a", GREEN = "#7dff9e",
   RED = "#ff6666", CYAN = "#7ddfff", BROWN = "#c89b5a", TGREEN = "#4ab87a";
@@ -222,7 +222,7 @@ export function buildFroggerExample() {
   push(`  if py >= 312 and py <= 408 then`);
   for (let i = 0; i < NV; i++) {
     if (VEH[i].kind !== "car" && VEH[i].kind !== "truck") continue;
-    push(`    if py == ${VEH[i].y} and abs(px - vx[${i}]) < ${VEH[i].w / 2 + 8} then`);
+    push(`    if py == ${VEH[i].y} and abs(px - vx[${i}]) < ${VEH[i].w / 2 + 4} then`);
     push("      set pdie to 1");
     push('      set status.text to "TRAFFIC."');
     push("    end");
@@ -338,10 +338,10 @@ end` }]
   // the traffic and the river fleet
   VEH.forEach((v, i) => {
     let glyph, col, size;
-    if (v.kind === "car") { glyph = "■"; col = i % 2 ? RED : CYAN; size = 15; }
-    if (v.kind === "truck") { glyph = "■■"; col = GOLD; size = 15; }
-    if (v.kind === "log") { glyph = v.w > 100 ? "■■■■■" : "■■■"; col = BROWN; size = 14; }
-    if (v.kind === "turtle") { glyph = "●●"; col = TGREEN; size = 14; }
+    if (v.kind === "car") { glyph = "■"; col = i % 2 ? RED : CYAN; size = 20; }
+    if (v.kind === "truck") { glyph = "■■"; col = GOLD; size = 22; }
+    if (v.kind === "log") { glyph = v.w > 100 ? "■■■■■■■■" : "■■■■■"; col = BROWN; size = v.w > 100 ? 18 : 17; }
+    if (v.kind === "turtle") { glyph = "●●●"; col = TGREEN; size = 16; }
     const diveSrc = v.dive ? `
 set cyc to (tik + ${v.ph}) % 420
 if cyc >= 320 then

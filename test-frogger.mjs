@@ -69,6 +69,17 @@ console.log("The road kills:");
   e.lists.vx[0] = 180;
   e.step();
   check("traffic is traffic", e.vars.lives === 2 && e.vars.py === 456);
+  // you can only die to what you can SEE (hitbox ≤ paint)
+  const e15 = fresh();
+  play(e15);
+  clearTraffic(e15);
+  put(e15, 180, 408);
+  e15.lists.vx[0] = 180 + 20;                // visibly clear of the car
+  e15.step();
+  check("a near miss is a MISS — no invisible bumpers", e15.vars.lives === 3);
+  e15.lists.vx[0] = 180 + 10;                // visibly overlapping
+  e15.step();
+  check("…and a visible overlap kills", e15.vars.lives === 2);
   // the median is sanctuary
   const e2 = fresh();
   play(e2);
