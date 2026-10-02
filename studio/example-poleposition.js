@@ -42,12 +42,24 @@ const QUALCUT = 2700;                    // 45.0s at 60 ticks/s
 const POLEAT = 1950;                     // 32.5s
 const WHITE = "#ffffff", DIM = "#7a8894", GOLD = "#e8c84a", GREEN = "#7dff9e",
   CYAN = "#7ddfff", RED = "#ff6666", ROAD_A = "#3a414e", ROAD_B = "#4a5260";
-// strip depths (evenly spaced on screen — the road reads as a solid wedge)
+// strip depths (evenly spaced on screen — the road reads as a solid wedge).
+// Each strip also knows how far down the TRACK it sits, so the bend it shows
+// is the bend of the road AT THAT DISTANCE — the corner is visible coming.
+const SUB = 8, NSUB = 37, RSC = 0.001577;   // look-ahead ≈ 290 units, ~200px max bend
 const STRIPS = [];
 for (let i = 0; i < NSTRIP; i++) {
   const y = 356 - i * 13.3;
   const t = (y - HOR) / 186;             // 1 at your bumper, →0 at the horizon
-  STRIPS.push({ y, hw: 210 * t, cf: (1 - t) * (1 - t) * 40 });
+  const D = 22 * (1 / t - 1);            // world distance this strip shows
+  STRIPS.push({ y, hw: 210 * t, sub: Math.min(NSUB, Math.round(D / SUB)) });
+}
+// the whole lap's curvature, one entry per 8 world units (filled at start)
+const TABN = Math.ceil(LAPLEN / SUB);
+const CURVETAB = [];
+{
+  let a = 0;
+  const segAt = (p) => { let acc = 0; for (const [l, c] of TRACK) { if (p < acc + l) return c; acc += l; } return 0; };
+  for (let k = 0; k < TABN; k++) CURVETAB.push(segAt(Math.min(LAPLEN - 1, k * SUB + SUB / 2)));
 }
 
 export function buildPolePositionExample() {
@@ -107,6 +119,12 @@ export function buildPolePositionExample() {
     push(`set segc[${i}] to ${curve}`);
     acc += len;
   });
+  push("set i to 0");
+  push(`repeat ${TABN}`);
+  push("  set curvetab[i] to 0");
+  push("  set i to i + 1");
+  push("end");
+  CURVETAB.forEach((c, k) => { if (c !== 0) push(`set curvetab[${k}] to ${c}`); });
   push('set status.text to ""');
   push("end");
 
@@ -309,9 +327,20 @@ export function buildPolePositionExample() {
     push("  end");
   }
 
-  // ---- project the road
-  for (let i = 0; i < NSTRIP; i++) {
-    push(`  set rsx[${i}] to 240 - playerx * ${(STRIPS[i].hw * 0.9).toFixed(1)} + curnear * ${STRIPS[i].cf.toFixed(2)}`);
+  // ---- project the road: march down the track, integrating the curvature
+  // at each strip's own distance — the corner bends the horizon FIRST
+  push(`  set ci0 to floor(lpos / ${SUB})`);
+  push("  set dxv to 0");
+  push("  set accx to 0");
+  STRIPS.forEach((st, i) => {
+    if (st.sub === 0) push(`  set rsx[${i}] to 240 - playerx * ${(st.hw * 0.9).toFixed(1)}`);
+  });
+  for (let k = 0; k < NSUB; k++) {
+    push(`  set dxv to dxv + curvetab[(ci0 + ${k}) % ${TABN}] * ${SUB}`);
+    push(`  set accx to accx + dxv * ${SUB}`);
+    STRIPS.forEach((st, i) => {
+      if (st.sub === k + 1) push(`  set rsx[${i}] to 240 - playerx * ${(st.hw * 0.9).toFixed(1)} + max(-210, min(210, accx * ${RSC}))`);
+    });
   }
   // traffic projection
   for (let c = 0; c < NCAR; c++) {
@@ -320,7 +349,8 @@ export function buildPolePositionExample() {
     push(`    set cz to 1 + crel[${c}] / 20`);
     push(`    set cvz[${c}] to 1`);
     push(`    set cdy[${c}] to ${HOR} + 186 / cz`);
-    push(`    set cdx[${c}] to 240 - playerx * (210 / cz) * 0.9 + curnear * (1 - 1 / cz) * (1 - 1 / cz) * 40 + clx[${c}] * (210 / cz)`);
+    push(`    set sj to max(0, min(${NSTRIP - 1}, round((356 - cdy[${c}]) / 13.3)))`);
+    push(`    set cdx[${c}] to rsx[sj] + clx[${c}] * (210 / cz)`);
     push(`    set cds[${c}] to max(7, 30 / cz * 1.6)`);
     push("  end");
   }

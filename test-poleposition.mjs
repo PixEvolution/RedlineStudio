@@ -149,8 +149,19 @@ console.log("Pole Position (1982):");
   check("out of time: the race is over where you stand", e2.vars.game === 2 && e2.vars.endplay === 1);
 }
 
-// ---- the road projects
+// ---- the road projects — and WARNS
 {
+  // the Night Driver lesson: a corner must bend the horizon before it
+  // bends under the wheels. 100 units out, the hairpin is already drawn.
+  const ew = fresh(); play(ew);
+  ew.vars.pos = 500; ew.vars.playerx = 0; ew.vars.v = 0;
+  ew.step();
+  check("the hairpin bends the horizon 100 units before it arrives",
+    ew.lists.rsx[13] - 240 > 60 && Math.abs(ew.lists.rsx[1] - 240) < 5);
+  ew.vars.pos = 300; ew.step();
+  check("…and a genuinely straight road draws straight", Math.abs(ew.lists.rsx[13] - 240) < 5);
+  ew.vars.pos = 560; ew.step();
+  check("…sweeping lower down the road as it gets closer", ew.lists.rsx[11] - 240 > 4 && ew.lists.rsx[13] - 240 > 120);
   const e = fresh(); play(e);
   e.vars.v = 150; e.vars.pos = 660;         // deep in the hairpin
   for (let i = 0; i < 40; i++) { e.vars.playerx = 0; e.keys["w"] = true; e.step(); }
