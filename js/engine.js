@@ -19,7 +19,52 @@ export const CANVAS_W = 480;
 export const CANVAS_H = 360;
 export const PHOSPHOR = "#39ff5e"; // classic CRT green
 
-export const OBJECT_TYPES = ["dot", "ring", "box", "text", "tri"];
+export const OBJECT_TYPES = ["dot", "ring", "box", "line", "text", "tri", "sprite"];
+
+// ---- SPRITES: player-drawn pixel art (the museum rebuilds stay primitives) ----
+// A sprite object carries { s, frames:[...] } — s×s pixels per frame, one hex
+// character per pixel: "0" is transparent, "1".."f" index the palette below.
+// `self.frame` picks the frame from scripts; `self.fps` > 0 auto-plays them.
+export const SPRITE_SIZES = [8, 16, 24];
+export const SPRITE_MAX_FRAMES = 8;
+export const SPRITE_PAL = [
+  "transparent", // 0 — never drawn
+  "#1a1c2c",     // 1 ink
+  "#ffffff",     // 2 white
+  "#94b0c2",     // 3 light grey
+  "#566c86",     // 4 grey
+  "#ff6666",     // 5 red
+  "#ff9d4a",     // 6 orange
+  "#ffd75e",     // 7 yellow
+  "#7dff9e",     // 8 green
+  "#38b764",     // 9 deep green
+  "#7ddfff",     // a cyan
+  "#4a7dd8",     // b blue
+  "#b48cff",     // c purple
+  "#ff6ad5",     // d pink
+  "#a87a4a",     // e brown
+  "#e8c84a",     // f gold
+];
+export const blankFrame = (s) => "0".repeat(s * s);
+// the starter: a googly slime of our own, so a new sprite is visible at once
+export const STARTER_SPRITE = [
+  "0000000000000000",
+  "0000000000000000",
+  "0000099999900000",
+  "0000988888890000",
+  "0009888888889000",
+  "0098888888888900",
+  "0098822882288900",
+  "0098821882188900",
+  "0988888888888890",
+  "0988888888888890",
+  "0988881111888890",
+  "0988888888888890",
+  "0098888888888900",
+  "0009999999999000",
+  "0000000000000000",
+  "0000000000000000",
+].join("");
 
 let idCounter = 1;
 export function makeObject(type, name, x = CANVAS_W / 2, y = CANVAS_H / 2) {
@@ -28,12 +73,13 @@ export function makeObject(type, name, x = CANVAS_W / 2, y = CANVAS_H / 2) {
     name,
     type,
     x, y,
-    size: type === "text" ? 16 : type === "tri" ? 16 : 14,
-    angle: 0,          // degrees; tri points along it, box rotates with it
+    size: type === "text" ? 16 : type === "tri" ? 16 : type === "sprite" ? 32 : 14,
+    angle: 0,          // degrees; tri points along it, box and sprite rotate with it
     color: PHOSPHOR,
-    glow: 12,
+    glow: type === "sprite" ? 0 : 12,   // pixels stay crisp — sprites don't glow
     visible: 1,
     text: type === "text" ? "TEXT" : "",
+    ...(type === "sprite" ? { frame: 0, fps: 0, sprite: { s: 16, frames: [STARTER_SPRITE] } } : {}),
     script: []
   };
 }
@@ -237,7 +283,22 @@ export class Engine {
 
   // ---- running scripts ----
 
-  step() { this.runEvents("tick"); }
+  step() {
+    // sprites with fps > 0 play their frames by themselves; set self.fps to 0
+    // and drive self.frame from scripts for hand-timed animation
+    for (const o of this.objects) {
+      if (o.type === "sprite" && o.sprite && Number(o.fps) > 0) {
+        const n = (o.sprite.frames && o.sprite.frames.length) || 1;
+        o._fa = (o._fa || 0) + Math.min(30, Number(o.fps));
+        if (o._fa >= 60) {
+          const adv = Math.floor(o._fa / 60);
+          o._fa -= adv * 60;
+          o.frame = ((Math.floor(Number(o.frame) || 0) + adv) % n + n) % n;
+        }
+      }
+    }
+    this.runEvents("tick");
+  }
 
   runEvents(kind, key) {
     for (const c of this.compiled) {
@@ -655,7 +716,7 @@ export class Engine {
             if (!a || !b) return 0;
             const ext = (o) => {
               const s = Number(o.size) || 0;
-              return (o.type === "box" || o.type === "text") ? s / 2 : s;
+              return (o.type === "box" || o.type === "text" || o.type === "sprite") ? s / 2 : s;
             };
             const r = ext(a) + ext(b);
             return (Math.abs(a.x - b.x) < r && Math.abs(a.y - b.y) < r) ? 1 : 0;
@@ -776,6 +837,32 @@ export function drawFrame(ctx, objects, { effects = [], messages = [], selectedI
         ctx.font = `${s}px "Courier New", monospace`;
         ctx.textAlign = "center";
         ctx.fillText(String(o.text ?? ""), o.x, o.y); break;
+      case "sprite": {
+        // player pixel art: one fillRect per lit pixel, crisp (no glow),
+        // rotated with the object like a box. Headless-safe by construction.
+        const sp = o.sprite;
+        if (!sp || !sp.frames || !sp.frames.length) break;
+        const n = sp.frames.length;
+        const fi = ((Math.floor(Number(o.frame) || 0) % n) + n) % n;
+        const fr = String(sp.frames[fi] || "");
+        const gs = Number(sp.s) || 16;
+        const px = s / gs;
+        const pal = sp.pal || SPRITE_PAL;
+        const ang = (Number(o.angle) || 0) * Math.PI / 180;
+        ctx.shadowBlur = 0;
+        if (ang) { ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(ang); }
+        const x0 = (ang ? 0 : o.x) - s / 2, y0 = (ang ? 0 : o.y) - s / 2;
+        let last = -1;
+        const lim = Math.min(gs * gs, fr.length);
+        for (let i = 0; i < lim; i++) {
+          const v = parseInt(fr[i], 16);
+          if (!v) continue;
+          if (v !== last) { ctx.fillStyle = pal[v] || "#ffffff"; last = v; }
+          ctx.fillRect(x0 + (i % gs) * px, y0 + Math.floor(i / gs) * px, px + 0.35, px + 0.35);
+        }
+        if (ang) ctx.restore();
+        break;
+      }
     }
     if (selectedIds.includes(o.id)) {
       ctx.shadowBlur = 0;

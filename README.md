@@ -21,6 +21,7 @@ A game platform by Redline Digital — players make accounts, build games in the
 | `js/social.js` | Likes/dislikes + comments (games, players, models) |
 | `js/forum.js` | Forums: threads and replies |
 | `js/studio-tools.js` | Studio comforts as pure logic: undo/redo history + grid snapping |
+| `js/sprite-editor.js` | 🎨 Pixel sprite editor: draw characters + frame animations (sprite objects: `self.frame`, `self.fps`) |
 | `js/behaviors.js` | ✨ Behaviors: one-click game logic (no code) — inserts ordinary, editable blocks |
 | `js/tour.js` | 🎓 Studio tutorial: a guided walk through every panel for first-time makers |
 | `js/touch-controls.js` | On-screen buttons (phones) + on-screen joysticks (every device, mouse-flyable) — each control movable/resizable, layouts saved per control set |
@@ -79,7 +80,7 @@ Blocks and text are the **same language** (RedScript):
 - A 📜 Code block holds full RedScript and compiles into the same structure
 - One interpreter (`engine.js`) runs everything
 
-Events: `when start`, `when tick`, `when click`, `when answer`, `when key "..."` (tick is a fixed 60Hz on every screen) · Actions: `set`, `change`, `if/else`, `repeat`, `say`, `explode`, `beep freq for secs`, `print`, `clear` · Math: `+ - * / %`, `xor(a,b)`, `sin(deg)` `cos(deg)`, comparisons, `and or not`, unary minus, `touching(a,b)`, `stickx(n)`/`sticky(n)` joysticks, `answer()` `upper()` `len()` · Lists: `board[i]` read/write anywhere · Objects: dot, ring, box, line (vector segment along its angle), text, tri (ship) with angle/rotation and x/y/size/color/glow/visible/text.
+Events: `when start`, `when tick`, `when click`, `when answer`, `when key "..."` (tick is a fixed 60Hz on every screen) · Actions: `set`, `change`, `if/else`, `repeat`, `say`, `explode`, `beep freq for secs`, `print`, `clear` · Math: `+ - * / %`, `xor(a,b)`, `sin(deg)` `cos(deg)`, comparisons, `and or not`, unary minus, `touching(a,b)`, `stickx(n)`/`sticky(n)` joysticks, `answer()` `upper()` `len()` · Lists: `board[i]` read/write anywhere · Objects: dot, ring, box, line (vector segment along its angle), text, tri (ship), sprite (player-drawn pixel frames; `self.frame`/`self.fps` animate) with angle/rotation and x/y/size/color/glow/visible/text.
 
 ## Models & Market (v1)
 

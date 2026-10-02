@@ -15,7 +15,8 @@
 
 const GAME_FORMAT = "RLGAME1";
 const MAX_OBJECTS = 400, MAX_EVENTS = 120, MAX_STMTS = 400;
-const TYPES = ["dot", "ring", "box", "line", "text", "tri"];
+const TYPES = ["dot", "ring", "box", "line", "text", "tri", "sprite"];
+const GF_SPRITE_SIZES = [8, 16, 24], GF_SPRITE_FRAMES_MAX = 8;
 const EVENTS = ["start", "tick", "click", "answer", "key", "code"];
 const STMT_KS = ["set", "change", "if", "repeat", "say", "explode", "beep", "print", "clear", "code"];
 
@@ -73,6 +74,33 @@ function cleanStmts(list, budget) {
   return out;
 }
 
+// sprite pixels travel as hex strings — rebuilt character by character, so a
+// sprite is DATA by construction: wrong characters become transparent, wrong
+// lengths are padded or cut, frame and palette counts are capped.
+function cleanSprite(sp) {
+  if (!sp || typeof sp !== "object") sp = {};
+  const s = GF_SPRITE_SIZES.includes(Number(sp.s)) ? Number(sp.s) : 16;
+  const want = s * s;
+  let frames = Array.isArray(sp.frames) ? sp.frames.slice(0, GF_SPRITE_FRAMES_MAX) : [];
+  frames = frames.map((f) => {
+    const src = String(f ?? "").toLowerCase();
+    let out = "";
+    for (let i = 0; i < want; i++) {
+      const c = src[i];
+      out += (c >= "0" && c <= "9") || (c >= "a" && c <= "f") ? c : "0";
+    }
+    return out;
+  });
+  if (frames.length === 0) frames = ["0".repeat(want)];
+  const clean = { s, frames };
+  if (Array.isArray(sp.pal)) {
+    const pal = sp.pal.slice(0, 16).map((c, i) => (i === 0 ? "transparent"
+      : /^#[0-9a-fA-F]{3,8}$/.test(String(c)) ? String(c) : "#ffffff"));
+    if (pal.length === 16) clean.pal = pal;
+  }
+  return clean;
+}
+
 function cleanObjects(objects) {
   if (!Array.isArray(objects)) throw new Error("No objects inside — not a RedlineStudio game.");
   if (objects.length > MAX_OBJECTS) throw new Error("Too many objects to be a Studio game.");
@@ -96,7 +124,7 @@ function cleanObjects(objects) {
         script.push(e);
       }
     }
-    return {
+    const out = {
       id: str(o.id, 40) || "imp" + (auto++),
       name: str(o.name, 30) || "object" + auto,
       type: o.type,
@@ -109,6 +137,12 @@ function cleanObjects(objects) {
       text: str(o.text, 500),
       script
     };
+    if (o.type === "sprite") {
+      out.frame = num(o.frame);
+      out.fps = Math.max(0, Math.min(30, num(o.fps)));
+      out.sprite = cleanSprite(o.sprite);
+    }
+    return out;
   });
 }
 

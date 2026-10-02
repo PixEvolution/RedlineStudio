@@ -64,7 +64,8 @@
       <h2>Objects &amp; properties <span class="lvl l1">EASY</span></h2>
       <p>Add objects from the Explorer: <b>Dot</b>, <b>Ring</b>, <b>Box</b>, <b>Line</b> (a vector segment: starts at
       x/y and runs along its angle for <span class="code">size</span> length — Maze War's whole first-person view is
-      lines), <b>Text</b>, <b>Ship</b> (a triangle that points along its angle — boxes rotate with angle too).
+      lines), <b>Text</b>, <b>Ship</b> (a triangle that points along its angle — boxes rotate with angle too), and
+      <b>Sprite</b> — your own pixel art, drawn in the 🎨 Sprite panel (see below).
       Every object has:</p>
       <pre class="codeblock">x  y        position (the screen is 480 wide, 360 tall; 0,0 is top-left)
 size        how big it is
@@ -78,6 +79,22 @@ text        what a Text object says</pre>
       <span class="code">set self.hp to 3</span> just works, and other objects can read
       <span class="code">enemy.hp</span>. A property (or variable) that was never set reads as <b>0</b> —
       so <span class="code">set self.velx to self.velx + 1</span> is safe on the very first frame.</p>
+    </div>
+
+    <div class="panel">
+      <h2>🎨 Sprites <span class="lvl l1">EASY</span></h2>
+      <p>A <b>Sprite</b> is pixel art you draw yourself: pick <b>+ Sprite</b> in the Explorer and the
+      <b>🎨 Sprite panel</b> opens under the script editor. Left mouse paints, right mouse erases, 🪣 fills an
+      area, and the grid comes in 8×8, 16×16 or 24×24. <b>Frames are animation</b>: add up to 8, then either
+      set an <b>FPS</b> and the sprite plays itself, or leave FPS at 0 and drive it from scripts —</p>
+      <pre class="codeblock">set self.frame to 2     show frame 3 (frames count from 0)
+set self.fps to 6       play by itself, six frames a second
+set self.fps to 0       stop; scripts own self.frame again</pre>
+      <p><span class="code">size</span> is how big the sprite draws on screen (the pixels scale up, crisp —
+      sprites don't glow). <span class="code">angle</span> rotates it like a box, and
+      <span class="code">touching()</span> treats it as a box too. Check a sprite object and
+      <b>💾 Save as Model</b> to reuse your character anywhere — or sell it on the Market.
+      The 57 museum machines stay primitives on purpose; sprites are for <i>your</i> games.</p>
     </div>
 
     <div class="panel">

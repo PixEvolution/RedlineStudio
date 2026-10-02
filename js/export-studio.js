@@ -9,6 +9,7 @@ import { stripModules } from "./export.js";
 
 const STUDIO_BUNDLE = [
   "js/redscript.js", "js/engine.js", "js/convert.js", "js/blocks.js", "js/behaviors.js",
+  "js/sprite-editor.js",
   "js/studio-tools.js", "js/gamefile.js", "js/touch-controls.js",
   "js/terminal.js", "js/casino-odds.js", "js/intro.js"
 ];

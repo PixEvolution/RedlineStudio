@@ -176,6 +176,7 @@
           <button class="btn btn-small btn-ghost" data-add="line" title="A vector segment: starts at x/y, runs along its angle for `size` length">+ Line</button>
           <button class="btn btn-small btn-ghost" data-add="text">+ Text</button>
           <button class="btn btn-small btn-ghost" data-add="tri">+ Ship</button>
+          <button class="btn btn-small btn-ghost" data-add="sprite" title="Pixel art you draw yourself in the 🎨 Sprite panel below — frames make animation">+ Sprite</button>
         </div>
         <input type="search" id="obj-search" class="filter-search obj-search" placeholder="Search objects…">
         <div style="display:flex; gap:6px; margin-bottom:6px">
@@ -228,6 +229,15 @@
       <div id="script-editor" class="hint">Select an object to edit its script.</div>
     </div>
 
+    <!-- 🎨 SPRITE: the pixel editor — shows itself when a sprite object is selected -->
+    <div class="panel" id="sprite-panel" style="margin-top:16px; display:none">
+      <h3>🎨 Sprite</h3>
+      <p class="hint">Left mouse paints · right mouse erases · 🪣 fills · frames make the animation —
+        <code>self.frame</code> picks one from scripts, or set an FPS and it plays itself.
+        Check the object and <b>💾 Save as Model</b> to sell your character on the Market.</p>
+      <div id="sprite-body"></div>
+    </div>
+
     <!-- 🐞 DEBUG: script problems, out loud. Compile errors when a Test starts,
          runtime errors as they happen (object + event + message), no guessing. -->
     <div class="panel" id="debug-panel" style="margin-top:16px">
@@ -249,6 +259,7 @@
     import { requireLogin } from "../js/auth.js";
     import { publishGame, updateGame, deleteGame, listGamesBy } from "../js/games.js";
     import { Engine, drawFrame, makeObject, CANVAS_W, CANVAS_H } from "../js/engine.js";
+    import { mountSpriteEditor } from "../js/sprite-editor.js";
     import { createBlockEditor } from "../js/blocks.js";
     import { saveModel, saveBehavior, listMyModels, instantiateModel } from "../js/models.js";
     import { createTouchControls, isTouchDevice, describeControls } from "../js/touch-controls.js";
@@ -692,9 +703,22 @@
       redraw();
     }
 
+    // the 🎨 Sprite panel follows the selection
+    const spriteEditor = mountSpriteEditor(document.getElementById("sprite-body"), {
+      onEdit: () => { redraw(); commitSoon(); },
+      onStructure: () => { redraw(); commit(); },
+    });
+    function syncSpritePanel(o) {
+      const panel = document.getElementById("sprite-panel");
+      const show = !!(o && o.type === "sprite");
+      panel.style.display = show ? "" : "none";
+      spriteEditor.setObject(show ? o : null);
+    }
+
     function renderProps() {
       const body = $("#props-body");
       const o = selObj();
+      syncSpritePanel(o);
       if (!o) { body.innerHTML = "Select an object."; body.className = "hint"; return; }
       body.className = "";
       body.innerHTML = "";
@@ -751,6 +775,7 @@
       visLabel.append(vis, document.createTextNode("Visible"));
       body.appendChild(visLabel);
       if (o.type === "text") field("Text", txt("text"));
+      if (o.type === "sprite") { field("Frame", num("frame")); field("FPS", num("fps")); }
 
       // layers: objects draw in Explorer order — bottom of the list is on TOP
       const layerLabel = document.createElement("label");
