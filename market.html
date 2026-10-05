@@ -35,7 +35,9 @@
     </div>
 
     <div id="market-filter"></div>
+    <div id="page-top" class="room-nav"></div>
     <div id="market-list" class="games-grid"><p class="empty-note">Loading…</p></div>
+    <div id="page-bottom" class="room-nav"></div>
     <div id="inv-list" style="display:none"></div>
   </main>
 
@@ -46,8 +48,10 @@
     import { listMarket, listMyModels, acquireModel, setListing, deleteModel } from "./js/models.js";
     import { renderVotes, renderComments } from "./js/social.js";
     import { createFilterBar, applyFilter } from "./js/filterbar.js";
+    import { createPager } from "./js/rooms.js";
 
     renderNav("");
+    const PAGE_SIZE = 24;
     const user = currentUser();
 
     // ---------------- coins ----------------
@@ -72,27 +76,30 @@
       $("#tab-market").classList.toggle("active", t === "market");
       $("#tab-inv").classList.toggle("active", t === "inv");
       $("#market-list").style.display = t === "market" ? "" : "none";
+      $("#market-filter").style.display = t === "market" ? "" : "none";
+      $("#page-top").style.display = t === "market" ? "" : "none";
+      $("#page-bottom").style.display = t === "market" ? "" : "none";
       $("#inv-list").style.display = t === "inv" ? "" : "none";
       if (t === "inv") loadInventory();
     }
 
     // ---------------- market ----------------
-    async function loadMarket() {
-      const grid = $("#market-list");
-      try {
-        const models = await listMarket();
-        const mount = $("#market-filter");
-        mount.innerHTML = "";
-        const render = (search, sort) => {
+    // PAGES: the whole Market is fetched once, searched and sorted across
+    // ALL of it, and only then cut into pages of PAGE_SIZE.
+    let models = [];                // everything listed, fetched once
+    let shown = [];                 // after search + sort
+    let search = "", sort = "rated";
+    const grid = $("#market-list");
+
+    const render = () => {
         grid.innerHTML = "";
-        const shown = applyFilter(models, search, sort, ["name", "owner", "description"]);
         if (shown.length === 0) {
           grid.innerHTML = models.length === 0
             ? `<p class="empty-note">Nothing for sale yet.<br>Save a model in the Studio, then list it from My Models.</p>`
             : `<p class="empty-note">No models match that search.</p>`;
           return;
         }
-        for (const m of shown) {
+        for (const m of pager.slice(shown)) {
           const card = document.createElement("div");
           card.className = "game-card";
 
@@ -185,17 +192,38 @@
           card.append(meta, priceRow, social, cpanel);
           grid.appendChild(card);
         }
-        };
-        createFilterBar(mount, {
-          placeholder: "Search models…",
-          sorts: [
-            ["rated", "Top rated"],
-            ["recent", "Most recent"],
-            ["cheapest", "Cheapest"]
-          ],
-          onChange: render
-        });
-        render("", "rated");
+    };
+
+    const pager = createPager({
+      mounts: [$("#page-top"), $("#page-bottom")],
+      size: PAGE_SIZE,
+      word: "PAGE",
+      onChange: render
+    });
+
+    // keepPage: a reload after listing/unlisting stays on the same page
+    const refilter = (keepPage = false) => {
+      shown = applyFilter(models, search, sort, ["name", "owner", "description"]);
+      if (keepPage) pager.update(shown.length); else pager.reset(shown.length);
+      render();
+    };
+
+    createFilterBar($("#market-filter"), {
+      placeholder: "Search all models…",
+      sorts: [
+        ["rated", "Top rated"],
+        ["recent", "Most recent"],
+        ["cheapest", "Cheapest"]
+      ],
+      onChange: (s, so) => { search = s; sort = so; refilter(); }
+    });
+
+    let loadedOnce = false;
+    async function loadMarket() {
+      try {
+        models = await listMarket();
+        refilter(loadedOnce);
+        loadedOnce = true;
       } catch (err) {
         grid.innerHTML = "";
         toast("Couldn't load the market: " + err.message, true);

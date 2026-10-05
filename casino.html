@@ -29,9 +29,11 @@
       the chances are locked in the engine, and no owner can touch them. Coins only: they can't be bought
       and they can't be cashed out. Play for fun, not for keeps.</p>
     <div id="filter-mount"></div>
+    <div id="room-top" class="room-nav"></div>
     <div id="machines" class="games-grid">
       <p class="empty-note">Loading machines…</p>
     </div>
+    <div id="room-bottom" class="room-nav"></div>
     </div>
     <!-- what a signed-in non-adult sees instead: a wall, with no directions -->
     <div id="casino-wall" style="display:none">
@@ -45,9 +47,10 @@
   <script type="module">
     import { renderNav, toast, adultCleared } from "./js/ui.js";
     import { currentUser } from "./js/auth.js";
-    import { listCasino } from "./js/games.js";
+    import { listCasino, ROOM_SIZE } from "./js/games.js";
     import { gameCard, resetLiveCardBudget } from "./js/cards.js";
     import { createFilterBar, applyFilter } from "./js/filterbar.js";
+    import { createPager } from "./js/rooms.js";
 
     renderNav("");
 
@@ -63,33 +66,51 @@
 
     const grid = document.getElementById("machines");
 
+    // ROOMS, exactly like the arcade: search and sort rank the WHOLE floor
+    // first, then the result is cut into rooms of ROOM_SIZE. No machine is
+    // ever cut off — it just stands in a further room.
+    let machines = [];              // every public machine, fetched once
+    let shown = [];                 // after search + sort across all of them
+    let search = "", sort = "rated";
+
+    const render = () => {
+      grid.innerHTML = "";
+      resetLiveCardBudget();
+      if (shown.length === 0) {
+        grid.innerHTML = machines.length === 0
+          ? `<p class="empty-note">The floor is empty.<br>Build a machine in the Studio — load Redline Slots to see how.</p>`
+          : `<p class="empty-note">No machines match that search.</p>`;
+        return;
+      }
+      for (const g of pager.slice(shown)) grid.appendChild(gameCard(g, { rootPath: "", showOwner: true }));
+    };
+
+    const pager = createPager({
+      mounts: [document.getElementById("room-top"), document.getElementById("room-bottom")],
+      size: ROOM_SIZE,
+      word: "ROOM",
+      onChange: render
+    });
+
+    const refilter = () => {
+      shown = applyFilter(machines, search, sort, ["title", "owner", "description"]);
+      pager.reset(shown.length);    // a new ranking starts at the front door
+      render();
+    };
+
     try {
-      const machines = await listCasino();
-
-      const render = (search, sort) => {
-        grid.innerHTML = "";
-        resetLiveCardBudget();
-        const shown = applyFilter(machines, search, sort, ["title", "owner", "description"]);
-        if (shown.length === 0) {
-          grid.innerHTML = machines.length === 0
-            ? `<p class="empty-note">The floor is empty.<br>Build a machine in the Studio — load Redline Slots to see how.</p>`
-            : `<p class="empty-note">No machines match that search.</p>`;
-          return;
-        }
-        for (const g of shown) grid.appendChild(gameCard(g, { rootPath: "", showOwner: true }));
-      };
-
       createFilterBar(document.getElementById("filter-mount"), {
-        placeholder: "Search machines…",
+        placeholder: "Search all machines…",
         sorts: [
           ["rated", "Top rated"],
           ["recent", "Most recent"],
           ["played", "Top played"],
           ["pool", "Biggest pool"]
         ],
-        onChange: render
+        onChange: (s, so) => { search = s; sort = so; refilter(); }
       });
-      render("", "rated");
+      machines = await listCasino();
+      refilter();
     } catch (err) {
       grid.innerHTML = "";
       toast("Couldn't load the casino: " + err.message, true);

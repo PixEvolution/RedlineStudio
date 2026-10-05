@@ -21,63 +21,88 @@
     <h1 class="page-title">Players</h1>
     <p class="page-sub">Everyone on the platform. Click a name to visit their page.</p>
     <div id="filter-mount"></div>
+    <div id="page-top" class="room-nav"></div>
     <div id="players" class="games-grid">
       <p class="empty-note">Loading players…</p>
     </div>
+    <div id="page-bottom" class="room-nav"></div>
   </main>
 
   <script type="module">
     import { renderNav, toast, fmtDate } from "./js/ui.js";
     import { listUsers } from "./js/profiles.js";
-    import { listGames } from "./js/games.js";
+    import { listAllPublic } from "./js/games.js";
     import { createFilterBar, applyFilter } from "./js/filterbar.js";
+    import { createPager } from "./js/rooms.js";
 
     renderNav("");
     const grid = document.getElementById("players");
+    const PAGE_SIZE = 48;           // player cards are small — two rooms' worth per page
+
+    // PAGES: everyone is fetched once, searched and sorted across the WHOLE
+    // list, and only then cut into pages. Nobody is ever cut off.
+    let users = [];
+    let shown = [];
+    let search = "", sort = "rated";
+
+    const render = () => {
+      grid.innerHTML = "";
+      if (shown.length === 0) {
+        grid.innerHTML = users.length === 0
+          ? `<p class="empty-note">No players yet.</p>`
+          : `<p class="empty-note">No players match that search.</p>`;
+        return;
+      }
+      for (const u of pager.slice(shown)) {
+        const card = document.createElement("a");
+        card.className = "game-card";
+        card.href = "profile.html?u=" + encodeURIComponent(u.username);
+        const name = document.createElement("div");
+        name.className = "game-title";
+        name.textContent = u.username;
+        name.title = u.username;
+        const meta = document.createElement("div");
+        meta.className = "game-meta";
+        meta.textContent = `joined ${fmtDate(u.createdAt) || "recently"} · ${u.plays} plays · ▲ ${u.likes} ▼ ${u.dislikes}`;
+        card.append(name, meta);
+        grid.appendChild(card);
+      }
+    };
+
+    const pager = createPager({
+      mounts: [document.getElementById("page-top"), document.getElementById("page-bottom")],
+      size: PAGE_SIZE,
+      word: "PAGE",
+      onChange: render
+    });
+
+    const refilter = () => {
+      shown = applyFilter(users, search, sort, ["username"]);
+      pager.reset(shown.length);
+      render();
+    };
 
     try {
-      const [users, games] = await Promise.all([listUsers(), listGames()]);
-
-      // a player's plays = every play of every game they published
-      const playsBy = {};
-      for (const g of games) playsBy[g.owner] = (playsBy[g.owner] || 0) + (Number(g.plays) || 0);
-      for (const u of users) u.plays = playsBy[u.username] || 0;
-
-      const render = (search, sort) => {
-        grid.innerHTML = "";
-        const shown = applyFilter(users, search, sort, ["username"]);
-        if (shown.length === 0) {
-          grid.innerHTML = users.length === 0
-            ? `<p class="empty-note">No players yet.</p>`
-            : `<p class="empty-note">No players match that search.</p>`;
-          return;
-        }
-        for (const u of shown) {
-          const card = document.createElement("a");
-          card.className = "game-card";
-          card.href = "profile.html?u=" + encodeURIComponent(u.username);
-          const name = document.createElement("div");
-          name.className = "game-title";
-          name.textContent = u.username;
-          name.title = u.username;
-          const meta = document.createElement("div");
-          meta.className = "game-meta";
-          meta.textContent = `joined ${fmtDate(u.createdAt) || "recently"} · ${u.plays} plays · ▲ ${u.likes} ▼ ${u.dislikes}`;
-          card.append(name, meta);
-          grid.appendChild(card);
-        }
-      };
-
       createFilterBar(document.getElementById("filter-mount"), {
-        placeholder: "Search players…",
+        placeholder: "Search all players…",
         sorts: [
           ["rated", "Top rated"],
           ["recent", "Most recent"],
           ["played", "Most plays"]
         ],
-        onChange: render
+        onChange: (s, so) => { search = s; sort = so; refilter(); }
       });
-      render("", "rated");
+
+      // a player's plays = every play of every PUBLIC game AND casino machine
+      // they published (this used to count only the newest 50 games site-wide)
+      const [list, games, machines] = await Promise.all([
+        listUsers(), listAllPublic(false), listAllPublic(true)
+      ]);
+      const playsBy = {};
+      for (const g of [...games, ...machines]) playsBy[g.owner] = (playsBy[g.owner] || 0) + (Number(g.plays) || 0);
+      for (const u of list) u.plays = playsBy[u.username] || 0;
+      users = list;
+      refilter();
     } catch (err) {
       grid.innerHTML = "";
       toast("Couldn't load players: " + err.message, true);

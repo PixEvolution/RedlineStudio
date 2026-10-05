@@ -88,6 +88,16 @@ export async function listGames(max = 50) {
 // game sorts to the very end of the last room, never ahead of unrated ones.
 export const ROOM_SIZE = 24;
 export async function listAllPublic(casino = false, cap = 400) {
+  // THE CASINO asks for its machines directly (casino == true), so however
+  // big the arcade grows, no machine is ever pushed out of the casino by
+  // newer GAMES. One equality filter and no orderBy = no index needed;
+  // the newest-first order is applied right here instead.
+  if (casino) {
+    const snap = await getDocs(query(collection(db, GAMES), where("casino", "==", true)));
+    const machines = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(g => !g.unlisted);
+    machines.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+    return machines;
+  }
   const games = [];
   let cur = null, scanned = 0, total = 0;
   do {
@@ -107,10 +117,11 @@ export async function listAllPublic(casino = false, cap = 400) {
   return games;
 }
 
-// The Casino floor: only machines.
-export async function listCasino(max = 50) {
-  const all = await listAllGames(max);
-  return all.filter(g => !!g.casino && !g.unlisted);
+// The Casino floor: EVERY public machine. (It used to read only the newest
+// 50 games site-wide and keep the machines among them — so once the arcade
+// passed 50 games, older machines silently fell off the floor.)
+export async function listCasino() {
+  return listAllPublic(true);
 }
 
 async function listAllGames(max = 50) {
