@@ -17,39 +17,18 @@
      crossorigin="anonymous"></script>
 </head>
 <body>
-  <!-- TEMPORARY DEBUG: shows any error on screen (phones have no console).
-       Delete this whole block once the mobile bug is fixed. -->
-  <div id="dbg" style="display:none;position:fixed;left:8px;right:8px;bottom:8px;z-index:9999;
-    max-height:45vh;overflow:auto;background:#200;border:2px solid #e5322d;border-radius:10px;
-    padding:10px;font:12px/1.4 monospace;color:#ffb3b0;white-space:pre-wrap;word-break:break-word"></div>
+  <!-- TEMPORARY DEBUG: a load report on screen (phones have no console). -->
+  <div id="dbg" style="position:fixed;left:8px;right:8px;bottom:8px;z-index:9999;
+    max-height:50vh;overflow:auto;background:#200;border:2px solid #e5322d;border-radius:10px;
+    padding:10px;font:12px/1.4 monospace;color:#ffb3b0;white-space:pre-wrap;word-break:break-word">DEBUG — loading…\n</div>
   <script>
-    (function () {
-      var box = document.getElementById("dbg");
-      function show(msg) {
-        box.style.display = "block";
-        box.textContent += "\u26a0 " + msg + "\n\n";
-      }
-      window.addEventListener("error", function (e) {
-        if (e.target && e.target !== window && (e.target.src || e.target.href)) {
-          show("FAILED TO LOAD: " + (e.target.src || e.target.href));
-        } else {
-          show((e.message || "error") + (e.filename ? "\n  at " + e.filename + ":" + e.lineno : ""));
-        }
-      }, true);
-      window.addEventListener("unhandledrejection", function (e) {
-        var r = e.reason;
-        show("PROMISE: " + (r && (r.stack || r.message) || r));
-      });
-      // if the grid is still on "Loading" after 12s, say so
-      setTimeout(function () {
-        var g = document.getElementById("games");
-        if (g && /Loading the arcade/.test(g.textContent)) {
-          show("STILL LOADING after 12s. Screen " + innerWidth + "x" + innerHeight +
-               " · coarse pointer: " + matchMedia("(pointer: coarse)").matches +
-               "\n  " + navigator.userAgent);
-        }
-      }, 12000);
-    })();
+    window.dbg = function (m) { var b = document.getElementById("dbg"); b.textContent += m + "\n"; b.scrollTop = b.scrollHeight; };
+    window.addEventListener("error", function (e) {
+      dbg("⚠ " + ((e.target && e.target !== window && (e.target.src || e.target.href)) ? "FAILED TO LOAD " + (e.target.src || e.target.href)
+          : (e.message + (e.filename ? " @ " + e.filename.split("/").pop() + ":" + e.lineno : ""))));
+    }, true);
+    window.addEventListener("unhandledrejection", function (e) { var r = e.reason; dbg("⚠ PROMISE: " + (r && (r.message || r) )); });
+    dbg("screen " + innerWidth + "x" + innerHeight + " · coarse=" + matchMedia("(pointer: coarse)").matches);
   </script>
 
   <main class="page">
@@ -65,7 +44,7 @@
 
   <script type="module">
     import { renderNav, toast } from "./js/ui.js";
-    import { listAllPublic, ROOM_SIZE } from "./js/games.js";
+    import { ROOM_SIZE } from "./js/games.js";
     import { gameCard, resetLiveCardBudget } from "./js/cards.js";
     import { createFilterBar, applyFilter } from "./js/filterbar.js";
 
@@ -145,8 +124,36 @@
     });
 
     try {
-      all = await listAllPublic();
+      // ---- DEBUG: the same loop as listAllPublic(), timed batch by batch ----
+      const { db } = await import("./js/firebase.js");
+      const F = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+      const t0 = performance.now();
+      dbg("firestore imported " + Math.round(performance.now() - t0) + "ms");
+      const games = []; let cur = null, scanned = 0, total = 0, n = 0, kb = 0;
+      do {
+        const tb = performance.now();
+        const q = cur
+          ? F.query(F.collection(db, "games"), F.orderBy("createdAt", "desc"), F.startAfter(cur), F.limit(40))
+          : F.query(F.collection(db, "games"), F.orderBy("createdAt", "desc"), F.limit(40));
+        dbg("batch " + (++n) + " requested…");
+        const snap = await F.getDocs(q);
+        let bytes = 0;
+        scanned = snap.docs.length; total += scanned;
+        for (const d of snap.docs) {
+          cur = d;
+          const data = d.data();
+          bytes += JSON.stringify(data).length;
+          const g = { id: d.id, ...data };
+          if (g.casino || g.unlisted) continue;
+          games.push(g);
+        }
+        kb += bytes / 1024;
+        dbg("batch " + n + ": " + scanned + " docs, " + Math.round(bytes / 1024) + " KB, " + Math.round(performance.now() - tb) + "ms");
+      } while (scanned === 40 && total < 400);
+      dbg("DONE: " + games.length + " games shown, " + Math.round(kb) + " KB total, " + Math.round(performance.now() - t0) + "ms");
+      all = games;
       refilter();
+      dbg("rendered room 1 OK");
     } catch (err) {
       grid.innerHTML = "";
       toast("Couldn't load games: " + err.message, true);
