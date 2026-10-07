@@ -152,13 +152,12 @@
       <div>
         <label for="g-hardware">Engine hardware</label>
         <select id="g-hardware" class="blk-add" style="margin:0; width:100%">
-          <option value="modern">REDLINE · no limits (default)</option>
           <option value="logic72">LOGIC '72 · wired chips, no CPU</option>
           <option value="vector79">VECTOR '79 · a beam, no sprites</option>
           <option value="tv2600">ATARI 2600 · 5 movables a line</option>
-          <option value="arcade8">ARCADE 8-BIT · 8 sprites a line</option>
+          <option value="arcade8">ARCADE 8-BIT · the newest board (default)</option>
         </select>
-        <p class="hint" style="margin:6px 0 0">What the era's chip could draw and sound. Limits shape the picture only — your game's logic never changes.</p>
+        <p class="hint" style="margin:6px 0 0">Real machines only — every chip has its real limits, and new boards join as the museum's timeline advances. Limits shape the picture and sound; your game's logic never changes.</p>
       </div>
       <div id="rating-cell">
         <label for="g-rating">Content rating</label>
@@ -441,7 +440,10 @@
       }
       // the era selects follow the game, like the screen size does
       if ($("#g-display")) $("#g-display").value = scenes.game.display || "modern";
-      if ($("#g-hardware")) $("#g-hardware").value = scenes.game.hardware || "modern";
+      if ($("#g-hardware")) {
+        const hv = scenes.game.hardware;
+        $("#g-hardware").value = ["logic72", "vector79", "tv2600", "arcade8"].includes(hv) ? hv : "arcade8";
+      }
       redraw();
     }
     const titleInput = $("#g-title");
@@ -1013,11 +1015,11 @@
     const eraChanged = (key, sel) => {
       if (engine) { toast("Stop the test first.", true); applyDims(); return; }
       const v = $(sel).value;
-      if (v === "modern") delete scenes.game[key]; else scenes.game[key] = v;
+      const def = key === "display" ? "modern" : "arcade8";   // the current defaults
+      if (v === def) delete scenes.game[key]; else scenes.game[key] = v;
       commit();
-      const d = scenes.game.display || "modern", hw = scenes.game.hardware || "modern";
-      toast(d === "modern" && hw === "modern"
-        ? "Back to the CRT/REDLINE defaults — every pixel as you built it."
+      toast(!scenes.game.display && !scenes.game.hardware
+        ? "Back to the defaults — CRT monitor, ARCADE 8-BIT board."
         : "Era set — the workspace previews the display now; ▶ Test adds the chip's limits. Picture and sound only; your logic never changes, and the defaults revert everything.");
     };
     $("#g-display").addEventListener("change", () => eraChanged("display", "#g-display"));
@@ -1221,7 +1223,7 @@
           scenes.game = { objects: g.objects };
           if (g.w && g.h) { scenes.game.w = g.w; scenes.game.h = g.h; }
           if (g.display && g.display !== "modern") scenes.game.display = g.display;
-          if (g.hardware && g.hardware !== "modern") scenes.game.hardware = g.hardware;
+          if (g.hardware && g.hardware !== "arcade8") scenes.game.hardware = g.hardware;
           scenes.screen = { objects: g.screen ? g.screen.objects : [] };
           healIds();
           if (!pageMode && g.screen) $("#g-screenmode").value = g.screen.mode;

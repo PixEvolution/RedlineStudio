@@ -3,7 +3,7 @@
 // plan (flicker, beam dim), the engine's movement tracking and voice budgets,
 // the render path applying it all, the .rlgame fields, the museum stamps,
 // and the Studio/offline/play wiring.
-import { DISPLAYS, HARDWARE, displayOf, hardwareOf, snapColor, clampSpriteFrame, planHardware, describeEra } from "./js/hardware.js";
+import { DISPLAYS, HARDWARE, HW_DEFAULT, displayOf, hardwareOf, snapColor, clampSpriteFrame, planHardware, describeEra, FONT5, FONT5_UNKNOWN } from "./js/hardware.js";
 import { Engine, drawFrame } from "./js/engine.js";
 import { packGame, unpackGame } from "./js/gamefile.js";
 import { readFileSync } from "fs";
@@ -14,22 +14,24 @@ const src = (f) => readFileSync(f, "utf8");
 
 console.log("The eras:");
 {
-  check("five displays, five hardware profiles, each with a name and a story",
-    Object.keys(DISPLAYS).length === 5 && Object.keys(HARDWARE).length === 5
+  check("five displays; FOUR chips — real machines only, no fantasy board",
+    Object.keys(DISPLAYS).length === 5 && Object.keys(HARDWARE).length === 4
     && Object.values(DISPLAYS).every(d => d.name && d.blurb)
     && Object.values(HARDWARE).every(h => h.name && h.blurb));
-  check("unknown keys fall back to modern — old games never break",
-    displayOf("vga") === "modern" && hardwareOf("") === "modern" && displayOf("tv2600") === "tv2600");
+  check("EVERY chip has real limits — no tier is unlimited until the museum earns one",
+    Object.values(HARDWARE).every(h => h.voices > 0 && (h.movables || h.sprPerBand || h.beam || h.sprColors)));
+  check("the default chip is the museum's newest real board",
+    HW_DEFAULT === "arcade8" && hardwareOf("") === "arcade8" && hardwareOf("modern") === "arcade8"
+    && displayOf("vga") === "modern" && displayOf("tv2600") === "tv2600");
   check("the TIA palette is the real shape: 16 hues × 8 luminances = 128",
     DISPLAYS.tv2600.palette.length === 128 && new Set(DISPLAYS.tv2600.palette).size > 100);
   check("the default changes nothing: no palette, no pixels, no outline",
     DISPLAYS.modern.palette === null && DISPLAYS.modern.px === null && !DISPLAYS.modern.outline);
-  check("the default is honestly NAMED: CRT phosphor + REDLINE silicon (true MODERN is a later era)",
-    DISPLAYS.modern.name === "CRT" && HARDWARE.modern.name === "REDLINE"
-    && displayOf("modern") === "modern");   // the KEY stays, so old games load
+  check("the default display is honestly NAMED: CRT phosphor (true MODERN is a later era)",
+    DISPLAYS.modern.name === "CRT" && displayOf("modern") === "modern");
   check("describeEra tells the maker the one promise that matters",
-    describeEra("tv2600", "arcade8").includes("logic never changes")
-    && describeEra("modern", "modern") === "");
+    describeEra("tv2600", "logic72").includes("logic never changes")
+    && describeEra("modern", "arcade8") === "" && describeEra("modern", undefined) === "");
 }
 
 console.log("Color snapping (pure):");
@@ -58,7 +60,10 @@ console.log("Sprite color clamps (pure):");
 console.log("The per-frame hardware plan:");
 {
   const sprites = (n, y = 100) => Array.from({ length: n }, (_, i) => ({ type: "sprite", visible: 1, x: i * 30, y }));
-  check("MODERN plans nothing", (() => { const p = planHardware(sprites(20), 0, "modern"); return !p.skip && p.dim === 1 && p.notes.length === 0; })());
+  check("no chip in play (\"none\": edit canvas, thumbnails) plans nothing",
+    (() => { const p = planHardware(sprites(20), 0, "none"); return !p.skip && p.dim === 1 && p.notes.length === 0; })());
+  check("…but an ENGINE's default chip is real and really plans",
+    planHardware(sprites(20), 0, hardwareOf(undefined)).skip.size === 12);
   const p = planHardware(sprites(10), 0, "arcade8");
   check("10 sprites on one 8-bit scan band: exactly 2 flicker out, and it's reported",
     p.skip.size === 2 && p.notes.length === 1 && p.notes[0].includes("flicker"));
@@ -97,9 +102,11 @@ console.log("The engine under era hardware:");
     e.byName.mover._hwMoved > 0 && !e.byName.wall._hwMoved);
   check("the tick counter drives the flicker", e.ticks === 3);
   const em = new Engine(null, objs, {});
-  em.runEvents("start"); em.step();
-  check("MODERN engines skip the tracking entirely", em.byName.mover._hwMoved === undefined);
-  check("junk era opts fall back to modern", new Engine(null, [], { display: "crt9000", hardware: 7 }).display === "modern");
+  em.runEvents("start"); em.step(); em.step();
+  check("even default engines track movement — the default chip is a real one",
+    em.hardware === "arcade8" && em.byName.mover._hwMoved > 0);
+  check("junk era opts fall back to the defaults",
+    (() => { const j = new Engine(null, [], { display: "crt9000", hardware: 7 }); return j.display === "modern" && j.hardware === "arcade8"; })());
 
   // voice budgets: LOGIC '72 has ONE voice — the second beep steals it
   const beeper = [{ id: "c", name: "ref", type: "text", x: 0, y: 0, size: 1, color: "#fff", glow: 0, visible: 0, text: "", script: [{ event: "code", source: "when start\nbeep 440 for 1\nbeep 880 for 1\nend" }] }];
@@ -113,7 +120,8 @@ console.log("The engine under era hardware:");
   check("the same note is never nagged twice", notes.length === 1 && eb.hwNotes.size === 1);
   const eb2 = new Engine(null, beeper, {});
   eb2.runEvents("start");
-  check("MODERN never touches the voices", eb2._voices.length === 0 && eb2.hwNotes.size === 0);
+  check("the default board has 3 voices — two beeps both keep their channels",
+    eb2._voices.length === 2 && eb2.hwNotes.size === 0);
 }
 
 console.log("The render path applies it (stub canvas, headless):");
@@ -134,9 +142,51 @@ console.log("The render path applies it (stub canvas, headless):");
     calls.fills.length > 0 && calls.fills.every(c => DISPLAYS.bw72.palette.includes(c) || c === "#000000"));
   const rects0 = calls.rects;
   calls.rects = 0; calls.fills.length = 0;
-  drawFrame(stub, objs, { w: 480, h: 360, display: "modern", hardware: "modern", tik: 0 });
-  check("under flicker, fewer sprites actually paint than on MODERN", rects0 < calls.rects);
+  drawFrame(stub, objs, { w: 480, h: 360, display: "modern", hardware: "none", tik: 0 });
+  check("under flicker, fewer sprites actually paint than with no chip", rects0 < calls.rects);
   check("…and the note reaches the listener", notes.length >= 1);
+}
+
+console.log("The character ROM (5×7 — solid text, like the real boards):");
+{
+  check("every glyph is exactly 35 on/off pixels",
+    Object.values(FONT5).every(g => g.length === 35 && !/[^01]/.test(g))
+    && FONT5_UNKNOWN.length === 35);
+  // the ROM must cover every character the museum's games actually print
+  const { readdirSync } = await import("fs");
+  const used = new Set();
+  for (const f of readdirSync("studio").filter(f => f.startsWith("example-"))) {
+    for (const m of src("studio/" + f).matchAll(/"([^"\\]*)"/g)) {
+      for (const ch of m[1].toUpperCase()) if (ch.charCodeAt(0) > 31) used.add(ch);
+    }
+  }
+  const missing = [...used].filter(ch => !(ch in FONT5) && /[ -~]|[\u00a0-\uffff]/.test(ch));
+  check(`the ROM covers all ${used.size} characters the museum prints (missing: ${missing.join("") || "none"})`,
+    missing.length === 0);
+  check("lowercase maps to CAPITALS — character ROMs had none", !("a" in FONT5) && ("A" in FONT5));
+
+  // behavior: on a pixel display, text is fillRect blocks, never fillText
+  const mkStub = () => {
+    const calls = { rects: 0, texts: 0 };
+    const stub = new Proxy({}, {
+      get: (t, k) => {
+        if (k === "canvas") return undefined;
+        if (k === "fillStyle" || k === "shadowColor") return t[k];
+        return (...a) => { if (k === "fillRect") calls.rects++; if (k === "fillText") calls.texts++; };
+      },
+      set: (t, k, v) => { t[k] = v; return true; },
+    });
+    return { stub, calls };
+  };
+  const txt = [{ id: "t", type: "text", visible: 1, x: 240, y: 100, size: 14, color: "#fff", glow: 0, text: "HI" }];
+  const a = mkStub();
+  drawFrame(a.stub, txt, { w: 480, h: 360, display: "tv2600" });
+  const lit = (FONT5["H"].match(/1/g) || []).length + (FONT5["I"].match(/1/g) || []).length;
+  check("on HOME TV '77, \"HI\" is exactly its ROM pixels — zero font smoothing",
+    a.calls.texts === 0 && a.calls.rects >= lit && a.calls.rects <= lit + 130);  // + background scan rows
+  const b = mkStub();
+  drawFrame(b.stub, txt, { w: 480, h: 360, display: "modern" });
+  check("on the CRT, text still uses the smooth font", b.calls.texts === 1);
 }
 
 console.log("The .rlgame carries its era:");
@@ -145,10 +195,13 @@ console.log("The .rlgame carries its era:");
   const rt = unpackGame(packGame({ ...G, display: "tv2600", hardware: "arcade8" }));
   check("display and hardware survive save/open", rt.display === "tv2600" && rt.hardware === "arcade8");
   const plain = unpackGame(packGame(G));
-  check("a modern game carries no era fields (old files stay identical)",
-    plain.display === "modern" && plain.hardware === "modern" && !packGame(G).includes("display"));
-  check("junk era values are cleaned at the border",
-    unpackGame(packGame({ ...G, display: "vga", hardware: "<script>" })).display === "modern");
+  check("a default game carries no era fields (old files stay identical)",
+    plain.display === "modern" && plain.hardware === "arcade8" && !packGame(G).includes("display")
+    && !packGame({ ...G, hardware: "arcade8" }).includes("hardware"));
+  check("junk era values are cleaned at the border — to the real defaults",
+    (() => { const j = unpackGame(packGame({ ...G, display: "vga", hardware: "<script>" })); return j.display === "modern" && j.hardware === "arcade8"; })());
+  check("a leftover 'modern' chip from older saves becomes the default board",
+    unpackGame(packGame({ ...G, hardware: "modern" })).hardware === "arcade8");
 }
 
 console.log("The museum wears its real eras:");
@@ -188,8 +241,9 @@ console.log("The Studio and the players' pages wear it:");
     /drawFrame\(canvas\.getContext\("2d"\), scene\.objects, \{[^}]*display: scenes\.game\.display/s.test(st));
   check("…and the offline workspace previews it too",
     src("js/export-studio.js").includes("h: game.h, display: game.display })"));
-  check("the selects name the defaults honestly: CRT and REDLINE",
-    st.includes("CRT · the Studio's phosphor (default)") && st.includes("REDLINE · no limits (default)"));
+  check("the selects: CRT default monitor, four REAL chips, 8-BIT the default board",
+    st.includes("CRT · the Studio's phosphor (default)")
+    && st.includes("ARCADE 8-BIT · the newest board (default)") && !st.includes("REDLINE"));
   check("▶ Test runs the era and the debug panel narrates it",
     st.includes("display: scenes.game.display, hardware: scenes.game.hardware")
     && st.includes("engine.onHwNote"));

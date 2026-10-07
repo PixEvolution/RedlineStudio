@@ -33,8 +33,9 @@ export function hashStr(s) {
 
 // ---- saving ---------------------------------------------------------------
 const ERA_DISPLAYS = ["modern", "vector79", "arcade8", "tv2600", "bw72"];
-const ERA_HARDWARE = ["modern", "logic72", "vector79", "tv2600", "arcade8"];
-const eraField = (v, list) => (list.includes(String(v)) && v !== "modern" ? String(v) : undefined);
+const ERA_HARDWARE = ["logic72", "vector79", "tv2600", "arcade8"];   // real machines only
+const HW_DEF = "arcade8";   // the museum's newest board is every game's default chip
+const eraField = (v, list, def) => (list.includes(String(v)) && v !== def ? String(v) : undefined);
 
 export function packGame({ title, w, h, seats, display, hardware, objects, screen }) {
   const st = Math.min(8, Math.max(1, Number(seats) || 1));
@@ -45,8 +46,8 @@ export function packGame({ title, w, h, seats, display, hardware, objects, scree
     w: Number(w) || undefined,
     h: Number(h) || undefined,
     seats: st > 1 ? st : undefined,   // multiplayer games remember their seats
-    display: eraField(display, ERA_DISPLAYS),   // the era monitor…
-    hardware: eraField(hardware, ERA_HARDWARE), // …and the era chip travel too
+    display: eraField(display, ERA_DISPLAYS, "modern"),   // the era monitor…
+    hardware: eraField(hardware, ERA_HARDWARE, HW_DEF),   // …and the era chip travel too
     objects: objects || [],
     screen: screen && screen.objects ? { mode: screen.mode || "none", objects: screen.objects } : undefined
   };
@@ -168,8 +169,8 @@ export function unpackGame(text) {
     w: Number(d.w) || undefined,
     h: Number(d.h) || undefined,
     seats: Math.min(8, Math.max(1, Number(d.seats) || 1)),
-    display: eraField(d.display, ERA_DISPLAYS) || "modern",
-    hardware: eraField(d.hardware, ERA_HARDWARE) || "modern",
+    display: eraField(d.display, ERA_DISPLAYS, "modern") || "modern",
+    hardware: eraField(d.hardware, ERA_HARDWARE, HW_DEF) || HW_DEF,
     objects: cleanObjects(d.objects),
     screen: d.screen && Array.isArray(d.screen.objects)
       ? { mode: ["none", "static", "live"].includes(d.screen.mode) ? d.screen.mode : "static", objects: cleanObjects(d.screen.objects) }

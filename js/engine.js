@@ -10,7 +10,7 @@
 // Old games keep working: each engine version keeps its renderer forever.
 
 import { parseExpr, parseLhs, compileStmts, compileProgram } from "./redscript.js";
-import { DISPLAYS, HARDWARE, displayOf, hardwareOf, snapColor, clampSpriteFrame, planHardware } from "./hardware.js";
+import { DISPLAYS, HARDWARE, displayOf, hardwareOf, snapColor, clampSpriteFrame, planHardware, FONT5, FONT5_UNKNOWN } from "./hardware.js";
 
 // ---------------------------------------------------------------------------
 // Object defaults
@@ -821,8 +821,38 @@ export class Engine {
 
 let _offc = null;   // the era-resolution offscreen frame, reused
 
+// text through the CHARACTER ROM: 5×7 glyphs as solid blocks, the way every
+// pixel display actually drew letters — no font smoothing, CAPS only.
+// (The +0.35 bleed closes seams between blocks, same trick as sprites.)
+function pixelText(ctx, str, cx, cy, size, align = "center", maxW = 0) {
+  const S = String(str ?? "").toUpperCase();
+  if (!S) return;
+  let p = size / 7;                   // one ROM pixel, in world units
+  // ROM cells are wider than the smooth font: a line that would run off the
+  // screen shrinks to fit instead — what cabinet makers did by hand
+  if (maxW > 0) {
+    const limit = align === "left" ? maxW - cx - 2 : 2 * Math.min(cx, maxW - cx) - 4;
+    const total = S.length * 6 * p - p;
+    if (limit > 0 && total > limit) p = (p * limit) / total;
+  }
+  const cw = 6 * p;                   // a character cell: 5 columns + 1 gap
+  let x = align === "left" ? cx : cx - (S.length * cw - p) / 2;
+  const top = cy - 7 * p;             // sit on the same baseline fillText used
+  for (const ch of S) {
+    const g = FONT5[ch] ?? FONT5_UNKNOWN;
+    for (let i = 0; i < 35; i++) {
+      if (g[i] === "1") ctx.fillRect(x + (i % 5) * p, top + ((i / 5) | 0) * p, p + 0.35, p + 0.35);
+    }
+    x += cw;
+  }
+}
+
 export function drawFrame(ctx, objects, opts = {}) {
-  const { w = CANVAS_W, h = CANVAS_H, display = "modern", hardware = "modern", tik = 0, onNote = null } = opts;
+  // hardware defaults to "none" here on purpose: plain pictures (the edit
+  // canvas, static card frames, thumbnails) have no chip in play — ENGINES
+  // pass their hardware explicitly, and an engine's default chip is the
+  // museum's newest real board (see hardware.js).
+  const { w = CANVAS_W, h = CANVAS_H, display = "modern", hardware = "none", tik = 0, onNote = null } = opts;
   const disp = DISPLAYS[displayOf(display)];
   const plan = planHardware(objects, tik, hardware);
   if (onNote) for (const n of plan.notes) onNote(n);
@@ -928,6 +958,7 @@ function paintScene(ctx, objects, { effects = [], messages = [], selectedIds = [
         break;
       }
       case "text":
+        if (eraPx) { pixelText(ctx, o.text, o.x, o.y, s, "center", w); break; }   // the character ROM
         ctx.font = `${s}px "Courier New", monospace`;
         ctx.textAlign = "center";
         ctx.fillText(String(o.text ?? ""), o.x, o.y); break;
@@ -1007,6 +1038,7 @@ function paintScene(ctx, objects, { effects = [], messages = [], selectedIds = [
   messages.forEach((msg, idx) => {
     ctx.shadowColor = tint("#39ff5e");
     ctx.fillStyle = tint("#b9ffcb");
+    if (eraPx) { pixelText(ctx, msg.text, w / 2, 40 + idx * 26, 20, "center", w); return; }
     ctx.font = '20px "Courier New", monospace';
     ctx.textAlign = "center";
     ctx.fillText(msg.text, w / 2, 40 + idx * 26);
@@ -1025,7 +1057,8 @@ function paintScene(ctx, objects, { effects = [], messages = [], selectedIds = [
     ctx.shadowBlur = eraPx ? 0 : 4;
     ctx.fillStyle = tint("#8dffa9");
     lines.forEach((line, i) => {
-      ctx.fillText(String(line).slice(0, COLS), X, Y0 + i * LINE_H);
+      if (eraPx) pixelText(ctx, String(line).slice(0, COLS), X, Y0 + i * LINE_H, 12, "left", w);
+      else ctx.fillText(String(line).slice(0, COLS), X, Y0 + i * LINE_H);
     });
     // a blinking cursor under the last line, like the real thing
     if (Math.floor(now / 500) % 2 === 0) {

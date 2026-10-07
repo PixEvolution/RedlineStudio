@@ -132,12 +132,11 @@ export async function buildOfflineStudioHtml({ rootPath = "", fetchText } = {}) 
     <option value="tv2600">HOME TV '77</option>
     <option value="bw72">B&amp;W TV '72</option>
   </select>
-  <select id="erahw" title="Engine hardware — what the era's chip could draw and sound (limits shape the picture only; logic never changes)">
-    <option value="modern">REDLINE chip</option>
+  <select id="erahw" title="Engine hardware — real machines only, each with its real limits (picture and sound only; logic never changes)">
     <option value="logic72">LOGIC '72</option>
     <option value="vector79">VECTOR '79</option>
     <option value="tv2600">ATARI 2600</option>
-    <option value="arcade8">ARCADE 8-BIT</option>
+    <option value="arcade8">ARCADE 8-BIT (default)</option>
   </select>
   <button id="new">New</button>
   <button id="open">📂 Open</button>
@@ -194,13 +193,13 @@ ${sources.join("\n\n")}
 (function () {
   var $ = function (s) { return document.querySelector(s); };
   var canvas = $("#workspace"), stage = $("#stage");
-  var game = { title: "", w: 480, h: 360, seats: 1, display: "modern", hardware: "modern", objects: [] };
+  var game = { title: "", w: 480, h: 360, seats: 1, display: "modern", hardware: "arcade8", objects: [] };
   var selectedId = null, engine = null, controls = null, term = null, casino = null, clip = null;
   var dragging = null, snapOn = false;
   try { snapOn = localStorage.getItem("rl_off_snap") === "1"; } catch (e) {}
 
   var hist = createHistory(60);
-  var snap = function () { return JSON.stringify({ o: game.objects, w: game.w, h: game.h, st: game.seats || 1, dp: game.display || "modern", hw: game.hardware || "modern", sel: selectedId }); };
+  var snap = function () { return JSON.stringify({ o: game.objects, w: game.w, h: game.h, st: game.seats || 1, dp: game.display || "modern", hw: game.hardware || "arcade8", sel: selectedId }); };
   var commitTimer = null;
   function saveDraft() {
     try { localStorage.setItem("rl_off_draft", packGame(game)); } catch (e) {}
@@ -211,7 +210,7 @@ ${sources.join("\n\n")}
   function applySnap(s) {
     var st = JSON.parse(s);
     game.objects = st.o; game.w = st.w; game.h = st.h; game.seats = st.st || 1;
-    game.display = st.dp || "modern"; game.hardware = st.hw || "modern";
+    game.display = st.dp || "modern"; game.hardware = st.hw || "arcade8";
     selectedId = st.sel;
     applyDims(); renderAll(); saveDraft(); syncUndo();
   }
@@ -232,7 +231,8 @@ ${sources.join("\n\n")}
     $("#worldsize").value = game.w + "x" + game.h;
     $("#seats").value = String(Math.min(8, Math.max(1, Number(game.seats) || 1)));
     $("#eradisplay").value = game.display || "modern";
-    $("#erahw").value = game.hardware || "modern";
+    if (["logic72", "vector79", "tv2600", "arcade8"].indexOf(game.hardware) < 0) game.hardware = "arcade8";
+    $("#erahw").value = game.hardware;
   }
   function redraw() {
     if (engine) return;
@@ -608,7 +608,7 @@ ${sources.join("\n\n")}
           text = inner;
         }
         var g = unpackGame(text);
-        game = { title: g.title, w: g.w || 480, h: g.h || 360, seats: g.seats || 1, display: g.display || "modern", hardware: g.hardware || "modern", objects: g.objects };
+        game = { title: g.title, w: g.w || 480, h: g.h || 360, seats: g.seats || 1, display: g.display || "modern", hardware: g.hardware || "arcade8", objects: g.objects };
         $("#title").value = game.title;
         selectedId = game.objects[0] ? game.objects[0].id : null;
         applyDims(); renderAll();
@@ -619,7 +619,7 @@ ${sources.join("\n\n")}
   });
   $("#new").addEventListener("click", function () {
     if (!confirm("Start a new empty game? (↶ undo can bring this one back.)")) return;
-    game = { title: "", w: 480, h: 360, seats: 1, display: "modern", hardware: "modern", objects: [] };
+    game = { title: "", w: 480, h: 360, seats: 1, display: "modern", hardware: "arcade8", objects: [] };
     $("#title").value = ""; selectedId = null;
     applyDims(); renderAll(); commit();
   });
@@ -630,7 +630,7 @@ ${sources.join("\n\n")}
     var d = localStorage.getItem("rl_off_draft");
     if (d) {
       var g0 = unpackGame(d);
-      game = { title: g0.title, w: g0.w || 480, h: g0.h || 360, seats: g0.seats || 1, display: g0.display || "modern", hardware: g0.hardware || "modern", objects: g0.objects };
+      game = { title: g0.title, w: g0.w || 480, h: g0.h || 360, seats: g0.seats || 1, display: g0.display || "modern", hardware: g0.hardware || "arcade8", objects: g0.objects };
       $("#title").value = game.title === "Untitled Game" ? "" : game.title;
       selectedId = game.objects[0] ? game.objects[0].id : null;
     }
