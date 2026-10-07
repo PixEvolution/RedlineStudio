@@ -401,5 +401,7 @@ end` }]
   });
   objects.push({ id: "fg_t1", name: "stick1tag", type: "text", x: 0, y: 0, size: 1, color: DIM, glow: 0, visible: 0, text: "HOP", script: [] });
 
-  return { title: "Frogger (1981)", w: W, h: H, objects };
+  return { title: "Frogger (1981)",
+    display: "arcade8", hardware: "arcade8",   // the real machine's era
+    w: W, h: H, objects };
 }

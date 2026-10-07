@@ -624,5 +624,7 @@ end` }]
   });
   objects.push({ id: "sw_t1", name: "stick1tag", type: "text", x: 0, y: 0, size: 1, color: DIM, glow: 0, visible: 0, text: "SWEEP", script: [] });
 
-  return { title: "Sweeper (1980 style)", w: 360, h: 480, objects };
+  return { title: "Sweeper (1980 style)",
+    display: "arcade8", hardware: "arcade8",   // the real machine's era
+    w: 360, h: 480, objects };
 }

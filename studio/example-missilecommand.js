@@ -487,5 +487,7 @@ end` }]
     script: [{ event: "code", source: brain }]
   });
 
-  return { title: "Missile Command (1980)", objects };
+  return { title: "Missile Command (1980)",
+    display: "arcade8", hardware: "arcade8",   // the real machine's era
+    objects };
 }

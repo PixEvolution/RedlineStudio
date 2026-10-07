@@ -10,6 +10,7 @@
 // Old games keep working: each engine version keeps its renderer forever.
 
 import { parseExpr, parseLhs, compileStmts, compileProgram } from "./redscript.js";
+import { DISPLAYS, HARDWARE, displayOf, hardwareOf, snapColor, clampSpriteFrame, planHardware } from "./hardware.js";
 
 // ---------------------------------------------------------------------------
 // Object defaults
@@ -182,6 +183,15 @@ export class Engine {
     this.sticksPad = {};     // n -> {x, y}, set by pollGamepads
     this._usedSticksCache = null;
     this.beeps = [];    // sounds played this session (tests read this)
+    // ERA SETTINGS: display (the monitor) and hardware (the chip) — both
+    // enforced at the render/sound edge only, so logic never changes and
+    // "modern" reverts every pixel. See hardware.js for the eras.
+    this.display = displayOf(opts.display);
+    this.hardware = hardwareOf(opts.hardware);
+    this.ticks = 0;           // frame counter (era flicker alternates on it)
+    this.hwNotes = new Set(); // what the old chip couldn't do, each said once
+    this.onHwNote = null;     // the Studio's debug panel listens here
+    this._voices = [];        // live beep channels (era voice budgets)
     this.termLines = []; // the teletype: print writes here, drawFrame shows it
     this.lastAnswer = ""; // the last thing the player typed (answer() reads it)
     this.mouse = { x: this.w / 2, y: this.h / 2 };
@@ -298,6 +308,23 @@ export class Engine {
       }
     }
     this.runEvents("tick");
+    this.ticks++;
+    // era hardware counts MOVABLES per scan band (static scenery was the
+    // free "playfield" on real chips) — remember who moved recently
+    if (HARDWARE[this.hardware].bandPx) {
+      for (const o of this.objects) {
+        const moved = o._lx !== undefined && (Math.abs(o.x - o._lx) > 0.01 || Math.abs(o.y - o._ly) > 0.01);
+        if (moved) o._hwMoved = 12; else if (o._hwMoved) o._hwMoved--;
+        o._lx = o.x; o._ly = o.y;
+      }
+    }
+  }
+
+  // one-per-message era reporting (the Studio's 🐞 Debug panel listens)
+  hwNote(msg) {
+    if (this.hwNotes.has(msg)) return;
+    this.hwNotes.add(msg);
+    if (this.onHwNote) { try { this.onHwNote(msg); } catch {} }
   }
 
   runEvents(kind, key) {
@@ -629,7 +656,22 @@ export class Engine {
           const secs = Math.max(0.02, Math.min(2, Number(this.evalExpr(s.seconds, self)) || 0.1));
           this.beeps.push({ freq, secs });
           if (this.beeps.length > 64) this.beeps.shift();
-          this.playBeep(freq, secs);
+          // era sound chips had a fixed number of voices — a new sound
+          // STEALS the oldest channel, exactly like the real hardware
+          const hwv = HARDWARE[this.hardware].voices;
+          let voice = null;
+          if (hwv) {
+            const nowMs = performance.now();
+            this._voices = this._voices.filter((v) => v.until > nowMs);
+            if (this._voices.length >= hwv) {
+              const oldest = this._voices.shift();
+              try { if (oldest.osc) oldest.osc.stop(); } catch {}
+              this.hwNote(`${HARDWARE[this.hardware].name}: ${hwv} sound voice${hwv === 1 ? "" : "s"} — a new beep steals the oldest channel`);
+            }
+            voice = { until: nowMs + secs * 1000, osc: null };
+            this._voices.push(voice);
+          }
+          this.playBeep(freq, secs, voice);
           break;
         }
       }
@@ -639,7 +681,7 @@ export class Engine {
   // The 1971 sound chip: a square wave with a fast fade — thruster rumbles,
   // paddle blips and explosion buzzes are all just frequency + duration.
   // Attract engines (live cards, the coin-slot screen) stay silent.
-  playBeep(freq, secs) {
+  playBeep(freq, secs, voice = null) {
     if (!this.canvas || !this.inputEnabled) return;
     try {
       const AC = window.AudioContext || window.webkitAudioContext;
@@ -658,6 +700,7 @@ export class Engine {
       gain.connect(ctx.destination);
       osc.start(t);
       osc.stop(t + secs + 0.02);
+      if (voice) voice.osc = osc;   // era voice budgets can steal this channel
     } catch { /* no audio — the game plays on silently */ }
   }
 
@@ -763,7 +806,12 @@ export class Engine {
 
   render() {
     if (!this.ctx) return;
-    drawFrame(this.ctx, this.objects, { effects: this.effects, messages: this.messages, terminal: this.termLines, w: this.w, h: this.h });
+    drawFrame(this.ctx, this.objects, {
+      effects: this.effects, messages: this.messages, terminal: this.termLines,
+      w: this.w, h: this.h,
+      display: this.display, hardware: this.hardware, tik: this.ticks,
+      onNote: (m) => this.hwNote(m)
+    });
   }
 }
 
@@ -771,29 +819,72 @@ export class Engine {
 // Drawing (shared by engine + studio edit mode)
 // ---------------------------------------------------------------------------
 
-export function drawFrame(ctx, objects, { effects = [], messages = [], selectedIds = [], terminal = null, w = CANVAS_W, h = CANVAS_H } = {}) {
-  const now = performance.now();
+let _offc = null;   // the era-resolution offscreen frame, reused
 
-  // CRT background
+export function drawFrame(ctx, objects, opts = {}) {
+  const { w = CANVAS_W, h = CANVAS_H, display = "modern", hardware = "modern", tik = 0, onNote = null } = opts;
+  const disp = DISPLAYS[displayOf(display)];
+  const plan = planHardware(objects, tik, hardware);
+  if (onNote) for (const n of plan.notes) onNote(n);
+
+  // pixelated eras render the whole frame at the era's resolution, then
+  // scale up with smoothing OFF — fat pixels, exactly like the old monitor.
+  // (Headless and SVG contexts paint direct; the palette still applies.)
+  if (disp.px && typeof document !== "undefined" && typeof ctx.drawImage === "function" && ctx.canvas) {
+    const pw = disp.px.w, ph = disp.px.h;
+    if (!_offc) _offc = document.createElement("canvas");
+    if (_offc.width !== pw || _offc.height !== ph) { _offc.width = pw; _offc.height = ph; }
+    const oc = _offc.getContext("2d");
+    oc.setTransform(pw / w, 0, 0, ph / h, 0, 0);
+    paintScene(oc, objects, opts, disp, plan, w, h);
+    ctx.save();
+    ctx.shadowBlur = 0;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(_offc, 0, 0, pw, ph, 0, 0, w, h);
+    if (disp.scan) {
+      ctx.globalAlpha = disp.scan;
+      ctx.fillStyle = "#000000";
+      for (let y = 1; y < h; y += 3) ctx.fillRect(0, y, w, 1);
+    }
+    ctx.restore();
+    return;
+  }
+  paintScene(ctx, objects, opts, disp, plan, w, h);
+}
+
+function paintScene(ctx, objects, { effects = [], messages = [], selectedIds = [], terminal = null, onNote = null } = {}, disp, plan, w, h) {
+  const now = performance.now();
+  const eraPx = !!disp.px;                       // raster eras: pixels never glowed
+  const tint = (c) => (disp.palette ? snapColor(c, disp.palette) : c);
+
+  // CRT background (era monitors bring their own black)
   ctx.save();
-  ctx.fillStyle = "#03110a";
+  ctx.fillStyle = disp.bg || "#03110a";
   ctx.fillRect(0, 0, w, h);
-  ctx.globalAlpha = 0.05;
-  ctx.fillStyle = "#39ff5e";
-  for (let y = 0; y < h; y += 4) ctx.fillRect(0, y, w, 1);
+  if (!disp.bg) {
+    ctx.globalAlpha = 0.05;
+    ctx.fillStyle = "#39ff5e";
+    for (let y = 0; y < h; y += 4) ctx.fillRect(0, y, w, 1);
+  }
   ctx.globalAlpha = 1;
 
   // objects
-  for (const o of objects) {
+  for (let oi = 0; oi < objects.length; oi++) {
+    const o = objects[oi];
     if (!o.visible || Number(o.visible) === 0) continue;
-    ctx.shadowColor = o.color;
-    ctx.shadowBlur = Number(o.glow) || 0;
-    ctx.fillStyle = o.color;
-    ctx.strokeStyle = o.color;
+    if (plan.skip && plan.skip.has(oi)) continue;   // era flicker: not this frame
+    const col = tint(o.color);
+    ctx.globalAlpha = plan.dim;                      // a thin vector beam dims
+    ctx.shadowColor = col;
+    ctx.shadowBlur = eraPx ? 0 : (Number(o.glow) || 0) * (disp.outline ? 1.3 : 1);
+    ctx.fillStyle = col;
+    ctx.strokeStyle = col;
     const s = Number(o.size) || 10;
     switch (o.type) {
       case "dot":
-        ctx.beginPath(); ctx.arc(o.x, o.y, s / 2, 0, Math.PI * 2); ctx.fill(); break;
+        ctx.beginPath(); ctx.arc(o.x, o.y, s / 2, 0, Math.PI * 2);
+        if (disp.outline) { ctx.lineWidth = 2; ctx.stroke(); } else ctx.fill();
+        break;
       case "ring":
         ctx.lineWidth = 2;
         ctx.beginPath(); ctx.arc(o.x, o.y, s, 0, Math.PI * 2); ctx.stroke(); break;
@@ -803,8 +894,11 @@ export function drawFrame(ctx, objects, { effects = [], messages = [], selectedI
           ctx.save();
           ctx.translate(o.x, o.y);
           ctx.rotate(ang);
-          ctx.fillRect(-s / 2, -s / 2, s, s);
+          if (disp.outline) { ctx.lineWidth = 2; ctx.strokeRect(-s / 2, -s / 2, s, s); }
+          else ctx.fillRect(-s / 2, -s / 2, s, s);
           ctx.restore();
+        } else if (disp.outline) {
+          ctx.lineWidth = 2; ctx.strokeRect(o.x - s / 2, o.y - s / 2, s, s);
         } else {
           ctx.fillRect(o.x - s / 2, o.y - s / 2, s, s);
         }
@@ -844,7 +938,17 @@ export function drawFrame(ctx, objects, { effects = [], messages = [], selectedI
         if (!sp || !sp.frames || !sp.frames.length) break;
         const n = sp.frames.length;
         const fi = ((Math.floor(Number(o.frame) || 0) % n) + n) % n;
-        const fr = String(sp.frames[fi] || "");
+        // era chips capped a sprite's colors: 1 on a 2600, 3 on 8-bit arcade
+        // hardware, a bare silhouette where sprites were impossible
+        let fr = String(sp.frames[fi] || "");
+        if (plan.sprColors) {
+          fr = clampSpriteFrame(fr, plan.sprColors);
+          if (onNote) {
+            onNote(plan.sprColors < 0
+              ? "this hardware predates pixel sprites — the art draws as a one-color silhouette in the object's color"
+              : `this hardware shows ${plan.sprColors} color${plan.sprColors === 1 ? "" : "s"} per sprite — extra colors snap to the nearest kept one`);
+          }
+        }
         const gs = Number(sp.s) || 16;
         const px = s / gs;
         const pal = sp.pal || SPRITE_PAL;
@@ -857,7 +961,7 @@ export function drawFrame(ctx, objects, { effects = [], messages = [], selectedI
         for (let i = 0; i < lim; i++) {
           const v = parseInt(fr[i], 16);
           if (!v) continue;
-          if (v !== last) { ctx.fillStyle = pal[v] || "#ffffff"; last = v; }
+          if (v !== last) { ctx.fillStyle = plan.sprColors < 0 ? col : tint(pal[v] || "#ffffff"); last = v; }
           ctx.fillRect(x0 + (i % gs) * px, y0 + Math.floor(i / gs) * px, px + 0.35, px + 0.35);
         }
         if (ang) ctx.restore();
@@ -875,31 +979,34 @@ export function drawFrame(ctx, objects, { effects = [], messages = [], selectedI
     }
   }
 
+  ctx.globalAlpha = 1;   // the beam-dim applies to the scene, not the HUD
+
   // explosion effects (the 1947 "defocused beam" blast)
   for (let i = effects.length - 1; i >= 0; i--) {
     const fx = effects[i];
     const t = (now - fx.start) / 900;
     if (t > 1) { effects.splice(i, 1); continue; }
-    ctx.shadowColor = fx.color; ctx.shadowBlur = 25;
-    ctx.strokeStyle = fx.color; ctx.lineWidth = 2;
+    const fc = tint(fx.color);
+    ctx.shadowColor = fc; ctx.shadowBlur = eraPx ? 0 : 25;
+    ctx.strokeStyle = fc; ctx.lineWidth = 2;
     ctx.globalAlpha = 1 - t;
     ctx.beginPath(); ctx.arc(fx.x, fx.y, 6 + t * 55, 0, Math.PI * 2); ctx.stroke();
     ctx.beginPath(); ctx.arc(fx.x, fx.y, 3 + t * 28, 0, Math.PI * 2); ctx.stroke();
     // flickering blob
     ctx.globalAlpha = (1 - t) * (0.5 + Math.random() * 0.5);
-    ctx.fillStyle = fx.color;
+    ctx.fillStyle = fc;
     ctx.beginPath(); ctx.arc(fx.x, fx.y, 8 + Math.random() * 10 * (1 - t), 0, Math.PI * 2); ctx.fill();
     ctx.globalAlpha = 1;
   }
 
   // messages
-  ctx.shadowBlur = 18;
+  ctx.shadowBlur = eraPx ? 0 : 18;
   for (let i = messages.length - 1; i >= 0; i--) {
     if (now > messages[i].until) { messages.splice(i, 1); continue; }
   }
   messages.forEach((msg, idx) => {
-    ctx.shadowColor = "#39ff5e";
-    ctx.fillStyle = "#b9ffcb";
+    ctx.shadowColor = tint("#39ff5e");
+    ctx.fillStyle = tint("#b9ffcb");
     ctx.font = '20px "Courier New", monospace';
     ctx.textAlign = "center";
     ctx.fillText(msg.text, w / 2, 40 + idx * 26);
@@ -914,9 +1021,9 @@ export function drawFrame(ctx, objects, { effects = [], messages = [], selectedI
     const lines = terminal.slice(-MAX_LINES);
     ctx.font = '12px "Courier New", monospace';
     ctx.textAlign = "left";
-    ctx.shadowColor = "#39ff5e";
-    ctx.shadowBlur = 4;
-    ctx.fillStyle = "#8dffa9";
+    ctx.shadowColor = tint("#39ff5e");
+    ctx.shadowBlur = eraPx ? 0 : 4;
+    ctx.fillStyle = tint("#8dffa9");
     lines.forEach((line, i) => {
       ctx.fillText(String(line).slice(0, COLS), X, Y0 + i * LINE_H);
     });

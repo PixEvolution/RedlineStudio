@@ -110,6 +110,7 @@ export function buildCrtExample() {
 
   return {
     title: "CRT Amusement Device (1947)",
+    display: "vector79", hardware: "logic72",   // the real machine's era
     objects: [missile, mkTarget(1, 300, 120), mkTarget(2, 380, 200), mkTarget(3, 430, 90), hud, aimline]
   };
 }

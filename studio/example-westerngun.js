@@ -443,5 +443,7 @@ export function buildWesterngunExample() {
   objects.push({ id: "wg_st3", name: "stick3tag", type: "text", x: 0, y: 0, size: 10, color: "#3f7a52", glow: 0, visible: 0, text: "P2 WALK", script: [] });
   objects.push({ id: "wg_st4", name: "stick4tag", type: "text", x: 0, y: 0, size: 10, color: "#3f7a52", glow: 0, visible: 0, text: "P2 AIM ↕", script: [] });
 
-  return { title: "Western Gun (1975)", w: W, h: H, objects };
+  return { title: "Western Gun (1975)",
+    display: "bw72", hardware: "logic72",   // the real machine's era
+    w: W, h: H, objects };
 }

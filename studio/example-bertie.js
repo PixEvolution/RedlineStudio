@@ -167,6 +167,7 @@ export function buildBertieExample() {
 
   return {
     title: "Bertie the Brain (1950)",
+    display: "bw72", hardware: "logic72",   // the real machine's era
     objects: [...cells, brain, title]
   };
 }

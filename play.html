@@ -173,7 +173,7 @@
         function startAttract() {
           if (attract || engine) return;
           if (game.screen && game.screen.mode === "live" && game.screen.objects?.length) {
-            attract = new Engine(canvas, game.screen.objects, { input: false, w: W, h: H });
+            attract = new Engine(canvas, game.screen.objects, { input: false, w: W, h: H, display: game.data?.display, hardware: game.data?.hardware });
             attract.start();
           } else if (game.screen && game.screen.mode !== "none" && game.screen.objects?.length) {
             drawFrame(canvas.getContext("2d"), game.screen.objects, { w: W, h: H });
@@ -266,7 +266,7 @@
 
         function sitDown() {
           if (attract) { attract.stop(); attract = null; }
-          engine = new Engine(canvas, game.data?.objects || [], { w: W, h: H });
+          engine = new Engine(canvas, game.data?.objects || [], { w: W, h: H, display: game.data?.display, hardware: game.data?.hardware });
           if (engine.errors.length) console.warn("Script issues:", engine.errors);
           const wallet = {
             coins: () => cachedCoins,
@@ -391,7 +391,7 @@
         function startAttract() {
           if (attract || engine) return;
           if (hasScreen && screen.mode === "live") {
-            attract = new Engine(canvas, screen.objects, { input: false, w: W, h: H });
+            attract = new Engine(canvas, screen.objects, { input: false, w: W, h: H, display: game.data?.display, hardware: game.data?.hardware });
             attract.start();
           } else if (hasScreen) {
             drawFrame(canvas.getContext("2d"), screen.objects, { w: W, h: H });
@@ -495,7 +495,7 @@
         function startGame() {
           if (attract) { attract.stop(); attract = null; }
           if (liveUn) { liveUn(); liveUn = null; }
-          engine = new Engine(canvas, game.data?.objects || [], { w: W, h: H });
+          engine = new Engine(canvas, game.data?.objects || [], { w: W, h: H, display: game.data?.display, hardware: game.data?.hardware });
           engine.vars.arcade = 1;   // the coin door is handled out here
           if (engine.errors.length) console.warn("Script issues:", engine.errors);
           controls = createTouchControls(engine, stage);   // buttons on touch, sticks everywhere
@@ -538,7 +538,7 @@
               duelBtn.disabled = false;
               return;
             }
-            const eng2 = new Engine(canvas, game.data?.objects || [], { w: W, h: H });
+            const eng2 = new Engine(canvas, game.data?.objects || [], { w: W, h: H, display: game.data?.display, hardware: game.data?.hardware });
             eng2.vars.arcade = 1;
             const ctl = await attachDuel(eng2, game.id, me, auth.currentUser?.uid, "guest");
             if (price > 0) {

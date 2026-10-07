@@ -245,5 +245,7 @@ export function buildTennisExample() {
     script: []
   });
 
-  return { title: "Tennis for Two (1958)", objects };
+  return { title: "Tennis for Two (1958)",
+    display: "vector79", hardware: "logic72",   // the real machine's era
+    objects };
 }

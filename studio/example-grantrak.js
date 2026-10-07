@@ -377,5 +377,7 @@ export function buildGrantrakExample() {
     }
   }
 
-  return { title: "Gran Trak 10 (1974)", objects };
+  return { title: "Gran Trak 10 (1974)",
+    display: "bw72", hardware: "logic72",   // the real machine's era
+    objects };
 }

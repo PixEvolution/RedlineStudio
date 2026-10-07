@@ -493,5 +493,7 @@ export function buildCheckersExample() {
     text: "MARK I DRAUGHTS — STRACHEY, 1951 · CAPTURES ARE MANDATORY", script: []
   });
 
-  return { title: "Draughts (1951)", objects };
+  return { title: "Draughts (1951)",
+    display: "bw72", hardware: "logic72",   // the real machine's era
+    objects };
 }

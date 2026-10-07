@@ -245,5 +245,7 @@ export function buildLunarlanderExample() {
   });
   objects.push({ id: "ll_t1", name: "stick1tag", type: "text", x: 0, y: 0, size: 1, color: DIM, glow: 0, visible: 0, text: "LEVER", script: [] });
 
-  return { title: "Lunar Lander (1979)", objects };
+  return { title: "Lunar Lander (1979)",
+    display: "vector79", hardware: "vector79",   // the real machine's era
+    objects };
 }

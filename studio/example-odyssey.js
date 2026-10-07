@@ -197,5 +197,7 @@ export function buildOdysseyExample() {
     script: []
   });
 
-  return { title: "Odyssey Table Tennis (1972)", objects };
+  return { title: "Odyssey Table Tennis (1972)",
+    display: "bw72", hardware: "logic72",   // the real machine's era
+    objects };
 }

@@ -718,5 +718,7 @@ end` }]
   objects.push({ id: "rb_t1", name: "stick1tag", type: "text", x: 0, y: 0, size: 1, color: DIM, glow: 0, visible: 0, text: "RUN", script: [] });
   objects.push({ id: "rb_t2", name: "stick2tag", type: "text", x: 0, y: 0, size: 1, color: DIM, glow: 0, visible: 0, text: "FIRE", script: [] });
 
-  return { title: "Robotron: 2084 (1982)", objects };
+  return { title: "Robotron: 2084 (1982)",
+    display: "arcade8", hardware: "arcade8",   // the real machine's era
+    objects };
 }

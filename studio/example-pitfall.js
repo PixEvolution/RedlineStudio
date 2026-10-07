@@ -708,5 +708,7 @@ end` }]
   });
   objects.push({ id: "pf_t1", name: "stick1tag", type: "text", x: 0, y: 0, size: 1, color: DIM, glow: 0, visible: 0, text: "RUN", script: [] });
 
-  return { title: "Pitfall! (1982)", objects };
+  return { title: "Pitfall! (1982)",
+    display: "tv2600", hardware: "tv2600",   // the real machine's era
+    objects };
 }

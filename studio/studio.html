@@ -138,6 +138,28 @@
         <input type="number" id="g-seats" min="1" max="8" value="1">
         <p class="hint" style="margin:6px 0 0">Seats at this machine — 2+ makes it an online multiplayer cabinet.</p>
       </div>
+      <div>
+        <label for="g-display">Display hardware</label>
+        <select id="g-display" class="blk-add" style="margin:0; width:100%">
+          <option value="modern">MODERN · today's neon CRT</option>
+          <option value="vector79">VECTOR '79 · XY phosphor monitor</option>
+          <option value="arcade8">ARCADE 8-BIT · 256×240 raster</option>
+          <option value="tv2600">HOME TV '77 · 160 fat pixels</option>
+          <option value="bw72">B&amp;W TV '72 · black and white</option>
+        </select>
+        <p class="hint" style="margin:6px 0 0">The monitor your game shows through. Mix with any hardware; revert anytime.</p>
+      </div>
+      <div>
+        <label for="g-hardware">Engine hardware</label>
+        <select id="g-hardware" class="blk-add" style="margin:0; width:100%">
+          <option value="modern">MODERN · no limits</option>
+          <option value="logic72">LOGIC '72 · wired chips, no CPU</option>
+          <option value="vector79">VECTOR '79 · a beam, no sprites</option>
+          <option value="tv2600">ATARI 2600 · 5 movables a line</option>
+          <option value="arcade8">ARCADE 8-BIT · 8 sprites a line</option>
+        </select>
+        <p class="hint" style="margin:6px 0 0">What the era's chip could draw and sound. Limits shape the picture only — your game's logic never changes.</p>
+      </div>
       <div id="rating-cell">
         <label for="g-rating">Content rating</label>
         <select id="g-rating" class="blk-add" style="margin:0; width:100%">
@@ -272,6 +294,7 @@
     import { requireLogin } from "../js/auth.js";
     import { publishGame, updateGame, deleteGame, listGamesBy } from "../js/games.js";
     import { Engine, drawFrame, makeObject, CANVAS_W, CANVAS_H } from "../js/engine.js";
+    import { describeEra } from "../js/hardware.js";
     import { mountSpriteEditor } from "../js/sprite-editor.js";
     import { renderThumb } from "../js/cards.js";
     import { createBlockEditor } from "../js/blocks.js";
@@ -416,6 +439,9 @@
         }
         sel.value = val;
       }
+      // the era selects follow the game, like the screen size does
+      if ($("#g-display")) $("#g-display").value = scenes.game.display || "modern";
+      if ($("#g-hardware")) $("#g-hardware").value = scenes.game.hardware || "modern";
       redraw();
     }
     const titleInput = $("#g-title");
@@ -974,6 +1000,22 @@
       commit();
       toast(`Screen is now ${w}×${h} — the whole world, Test to feel it.`);
     });
+
+    // ---- ERA SETTINGS: display (the monitor) × hardware (the chip).
+    // Mix and match freely — both are enforced at the render/sound edge only,
+    // so the game's logic never changes and MODERN reverts every pixel.
+    const eraChanged = (key, sel) => {
+      if (engine) { toast("Stop the test first.", true); applyDims(); return; }
+      const v = $(sel).value;
+      if (v === "modern") delete scenes.game[key]; else scenes.game[key] = v;
+      commit();
+      const d = scenes.game.display || "modern", hw = scenes.game.hardware || "modern";
+      toast(d === "modern" && hw === "modern"
+        ? "Back to MODERN — the full engine, every pixel as you built it."
+        : "Era set — ▶ Test to see it. Limits shape the picture and sound only; your logic and scores never change, and MODERN reverts everything.");
+    };
+    $("#g-display").addEventListener("change", () => eraChanged("display", "#g-display"));
+    $("#g-hardware").addEventListener("change", () => eraChanged("hardware", "#g-hardware"));
     testBtn.addEventListener("click", () => {
       if (engine) {
         stopLocalWire();
@@ -986,9 +1028,16 @@
         redraw();
         return;
       }
-      engine = new Engine(canvas, scene.objects, gameDims());
+      engine = new Engine(canvas, scene.objects, {
+        ...gameDims(),
+        display: scenes.game.display, hardware: scenes.game.hardware
+      });
       debugClear();
       debugLog("info", `▶ Test started — ${scene.objects.length} object(s)`);
+      engine.onHwNote = (msg) => debugLog("info", "🕹 " + msg);
+      if (scenes.game.display || scenes.game.hardware) {
+        debugLog("info", "🕹 " + describeEra(scenes.game.display, scenes.game.hardware));
+      }
       for (const err of engine.errors) debugLog("error", err);
       engine.onError = (msg) => debugLog("error", msg);
       if (engine.errors.length) {
@@ -1110,7 +1159,7 @@
           const dims = gameDims();
           const thumbSrc = payload.screen.mode !== "none" && payload.screen.objects.length
             ? payload.screen.objects : scenes.game.objects;
-          payload.thumb = renderThumb(thumbSrc, dims.w, dims.h);
+          payload.thumb = renderThumb(thumbSrc, dims.w, dims.h, 240, scenes.game.display || "modern");
           if (check.errors.length) toast("Published, but check scripts:\n" + check.errors.slice(0, 3).join("\n"), true);
           if (editingId) {
             await updateGame(editingId, payload);
@@ -1133,6 +1182,7 @@
         await downloadStandalone({
           title: titleInput.value.trim() || "My Game",
           w: scenes.game.w, h: scenes.game.h,
+          display: scenes.game.display, hardware: scenes.game.hardware,
           objects: JSON.parse(JSON.stringify(scenes.game.objects))
         }, "../");
         toast("Downloaded! One file, runs offline — upload it to itch.io as an HTML game.");
@@ -1164,6 +1214,8 @@
           if (scene.objects.length > 0 && !confirm(`Replace the current workspace with "${g.title}"?`)) return;
           scenes.game = { objects: g.objects };
           if (g.w && g.h) { scenes.game.w = g.w; scenes.game.h = g.h; }
+          if (g.display && g.display !== "modern") scenes.game.display = g.display;
+          if (g.hardware && g.hardware !== "modern") scenes.game.hardware = g.hardware;
           scenes.screen = { objects: g.screen ? g.screen.objects : [] };
           healIds();
           if (!pageMode && g.screen) $("#g-screenmode").value = g.screen.mode;
@@ -1284,6 +1336,10 @@
         // examples bring their own WORLD SIZE, matched to the real machine
         if (ex.w && ex.h) { scenes.game.w = ex.w; scenes.game.h = ex.h; }
         else { delete scenes.game.w; delete scenes.game.h; }
+        // …and their AUTHENTIC ERA: the display and hardware of the machine
+        // that ran them (flip either select to MODERN anytime)
+        if (ex.display) scenes.game.display = ex.display; else delete scenes.game.display;
+        if (ex.hardware) scenes.game.hardware = ex.hardware; else delete scenes.game.hardware;
       }
       applyDims();
       if (editTarget === "game") { editingId = null; titleInput.value = ex.title; }

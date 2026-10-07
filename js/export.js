@@ -16,9 +16,9 @@ export function stripModules(source) {
     .join("\n");
 }
 
-const BUNDLE_FILES = ["js/redscript.js", "js/engine.js", "js/touch-controls.js", "js/terminal.js", "js/casino-odds.js", "js/intro.js"];
+const BUNDLE_FILES = ["js/redscript.js", "js/hardware.js", "js/engine.js", "js/touch-controls.js", "js/terminal.js", "js/casino-odds.js", "js/intro.js"];
 
-export async function buildStandaloneHtml({ title, objects, w, h }, { rootPath = "", fetchText } = {}) {
+export async function buildStandaloneHtml({ title, objects, w, h, display, hardware }, { rootPath = "", fetchText } = {}) {
   const get = fetchText || (async (path) => {
     const res = await fetch(rootPath + path);
     if (!res.ok) throw new Error("Couldn't read " + path);
@@ -29,7 +29,7 @@ export async function buildStandaloneHtml({ title, objects, w, h }, { rootPath =
   for (const f of BUNDLE_FILES) sources.push(stripModules(await get(f)));
 
   // <, > and the closing script tag must never appear raw inside the JSON
-  const gameJson = JSON.stringify({ title, objects, w, h })
+  const gameJson = JSON.stringify({ title, objects, w, h, display, hardware })
     .replace(/</g, "\\u003c").replace(/>/g, "\\u003e");
   const safeTitle = String(title || "My Game").replace(/&/g, "&amp;").replace(/</g, "&lt;");
 
@@ -122,7 +122,7 @@ export async function buildStandaloneHtml({ title, objects, w, h }, { rootPath =
   <div class="overlay" id="overlay"><button class="coin-btn" id="startbtn">▶ PLAY</button></div>
 </div>
 <p class="credit">Made with <a href="https://redlinestudio.dev" target="_blank" rel="noopener">RedlineStudio</a></p>
-${embedInHtml(packGame({ title, w, h, objects }))}
+${embedInHtml(packGame({ title, w, h, display, hardware, objects }))}
 <script>
 ${sources.join("\n\n")}
 
@@ -163,7 +163,7 @@ document.getElementById("startbtn").addEventListener("click", async () => {
   // the REDLINE DIGITAL intro — the click above unlocks the engine audio;
   // any key or tap skips it. Then the game takes the glass.
   try { await playIntro(); } catch {}
-  const engine = new Engine(_canvas, GAME.objects || [], { w: _W, h: _H });
+  const engine = new Engine(_canvas, GAME.objects || [], { w: _W, h: _H, display: GAME.display, hardware: GAME.hardware });
   if (engine.usesCasino()) attachCasinoLoop(engine, localWallet(100, 1000));  // offline = free play
   engine.start();
   createTouchControls(engine, _stage);   // buttons on touch, sticks everywhere

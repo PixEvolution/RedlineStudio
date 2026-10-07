@@ -322,5 +322,7 @@ export function buildMouseExample() {
   btn("mz_br", "runbtn", 312, "[ ▶ RUN ]", "#ff9d4a", null);
   btn("mz_bx", "clearbtn", 412, "[ CLEAR ]", "#ff5a55", null);
 
-  return { title: "Mouse in the Maze (1959)", objects };
+  return { title: "Mouse in the Maze (1959)",
+    display: "vector79", hardware: "logic72",   // the real machine's era
+    objects };
 }

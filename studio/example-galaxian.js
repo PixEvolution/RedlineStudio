@@ -466,5 +466,7 @@ end` }]
   });
   objects.push({ id: "gx_t1", name: "stick1tag", type: "text", x: 0, y: 0, size: 1, color: DIM, glow: 0, visible: 0, text: "MOVE", script: [] });
 
-  return { title: "Galaxian (1979)", w: W, h: H, objects };
+  return { title: "Galaxian (1979)",
+    display: "arcade8", hardware: "arcade8",   // the real machine's era
+    w: W, h: H, objects };
 }

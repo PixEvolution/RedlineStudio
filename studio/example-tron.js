@@ -916,5 +916,7 @@ end` }]
   });
   objects.push({ id: "tr_t1", name: "stick1tag", type: "text", x: 0, y: 0, size: 1, color: DIM, glow: 0, visible: 0, text: "MOVE", script: [] });
 
-  return { title: "Tron (1982)", objects };
+  return { title: "Tron (1982)",
+    display: "arcade8", hardware: "arcade8",   // the real machine's era
+    objects };
 }

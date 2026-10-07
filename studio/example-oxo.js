@@ -365,5 +365,7 @@ export function buildOxoExample() {
     script: []
   });
 
-  return { title: "OXO (1952)", objects };
+  return { title: "OXO (1952)",
+    display: "bw72", hardware: "logic72",   // the real machine's era
+    objects };
 }

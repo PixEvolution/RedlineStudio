@@ -469,5 +469,7 @@ export function buildTankExample() {
   objects.push({ id: "tk_st1", name: "stick1tag", type: "text", x: 0, y: 0, size: 10, color: "#3f7a52", glow: 0, visible: 0, text: "P1", script: [] });
   objects.push({ id: "tk_st2", name: "stick2tag", type: "text", x: 0, y: 0, size: 10, color: "#3f7a52", glow: 0, visible: 0, text: "P2", script: [] });
 
-  return { title: "Tank (1974)", objects };
+  return { title: "Tank (1974)",
+    display: "bw72", hardware: "logic72",   // the real machine's era
+    objects };
 }

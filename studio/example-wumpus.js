@@ -273,5 +273,7 @@ export function buildWumpusExample() {
     script: []
   });
 
-  return { title: "Hunt the Wumpus (1973)", objects };
+  return { title: "Hunt the Wumpus (1973)",
+    display: "bw72", hardware: "logic72",   // the real machine's era
+    objects };
 }

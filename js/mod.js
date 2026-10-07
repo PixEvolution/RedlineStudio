@@ -59,7 +59,7 @@ export async function backfillCards(onProgress = () => {}) {
     const g = d.data();
     const src = (g.screen && g.screen.mode !== "none" && g.screen.objects?.length)
       ? g.screen.objects : (g.data?.objects || []);
-    const thumb = renderThumb(src, Number(g.data?.w) || 480, Number(g.data?.h) || 360);
+    const thumb = renderThumb(src, Number(g.data?.w) || 480, Number(g.data?.h) || 360, 240, g.data?.display || "modern");
     batch.set(doc(db, "cards", d.id), {
       ...cardFields({
         title: g.title, owner: g.owner, ownerUid: g.ownerUid || null,

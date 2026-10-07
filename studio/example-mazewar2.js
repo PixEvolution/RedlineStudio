@@ -614,5 +614,7 @@ export function buildMazewar2Example() {
     script: []
   });
 
-  return { title: "Maze War Arena (1974)", objects };
+  return { title: "Maze War Arena (1974)",
+    display: "vector79", hardware: "vector79",   // the real machine's era
+    objects };
 }

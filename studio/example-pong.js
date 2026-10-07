@@ -288,5 +288,7 @@ export function buildPongExample() {
     script: []
   });
 
-  return { title: "Pong (1972)", objects };
+  return { title: "Pong (1972)",
+    display: "bw72", hardware: "logic72",   // the real machine's era
+    objects };
 }

@@ -543,5 +543,7 @@ end` }]
   });
   objects.push({ id: "rx_t1", name: "stick1tag", type: "text", x: 0, y: 0, size: 1, color: DIM, glow: 0, visible: 0, text: "WHEEL", script: [] });
 
-  return { title: "Rally-X (1980)", objects };
+  return { title: "Rally-X (1980)",
+    display: "arcade8", hardware: "arcade8",   // the real machine's era
+    objects };
 }

@@ -214,5 +214,7 @@ end` }]
   });
   objects.push({ id: "nd_s1", name: "stick1tag", type: "text", x: 0, y: 0, size: 1, color: DIM, glow: 0, visible: 0, text: "WHEEL", script: [] });
 
-  return { title: "Night Driver (1976)", objects };
+  return { title: "Night Driver (1976)",
+    display: "bw72", hardware: "logic72",   // the real machine's era
+    objects };
 }

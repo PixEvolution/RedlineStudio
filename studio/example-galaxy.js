@@ -417,5 +417,7 @@ export function buildGalaxyExample() {
     script: []
   });
 
-  return { title: "Computer Space (1971)", objects };
+  return { title: "Computer Space (1971)",
+    display: "bw72", hardware: "logic72",   // the real machine's era
+    objects };
 }

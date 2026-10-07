@@ -259,5 +259,7 @@ export function buildSharkjawsExample() {
   // name the on-screen joystick
   objects.push({ id: "sj_st1", name: "stick1tag", type: "text", x: 0, y: 0, size: 10, color: "#3f7a52", glow: 0, visible: 0, text: "SWIM", script: [] });
 
-  return { title: "Shark Jaws (1975)", w: W, h: H, objects };
+  return { title: "Shark Jaws (1975)",
+    display: "bw72", hardware: "logic72",   // the real machine's era
+    w: W, h: H, objects };
 }

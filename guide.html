@@ -98,6 +98,26 @@ set self.fps to 0       stop; scripts own self.frame again</pre>
     </div>
 
     <div class="panel">
+      <h2>🕹 Era simulation — display &amp; engine hardware <span class="lvl l1">EASY</span></h2>
+      <p>Two selects in the publish panel let any game run on OLD machines — and you can mix and match them,
+      upgrade, or revert anytime, because both are enforced at the <b>picture-and-sound edge only</b>: your
+      scripts, collisions and scores run identically in every era, and <b>MODERN</b> brings every pixel back.</p>
+      <p><b>Display hardware</b> is the monitor: <b>VECTOR '79</b> draws glowing strokes and can't fill a shape
+      (an XY beam), <b>ARCADE 8-BIT</b> pixelates to 256×240 and snaps every color to the classic 8-bit palette,
+      <b>HOME TV '77</b> is the Atari's 128 washed NTSC colors in fat pixels, and <b>B&amp;W TV '72</b> is 1972.
+      Small text gets chunky on the pixel displays — that's the era talking; size your text up or go MODERN.</p>
+      <p><b>Engine hardware</b> is the chip, with the REAL limits: the <b>2600</b> ran 5 moving things per scan
+      line (extras <i>flicker</i>, like the real tricks) and one-color sprites; <b>ARCADE 8-BIT</b> draws 8
+      sprites a line — the 9th flickers, exactly like the famous consoles — with 3 colors each and 3 sound
+      voices; <b>VECTOR '79</b> has a ~48-stroke beam that dims when you draw too much, and no sprites at all;
+      <b>LOGIC '72</b> is wired chips — silhouettes and a single voice. Still scenery is free "playfield"
+      everywhere, like the real hardware. The 🐞 Debug panel narrates every limit your game hits.</p>
+      <p>The museum machines ship wearing their <b>authentic era</b> — Pong on a B&amp;W TV, Asteroids on a
+      vector monitor, Adventure through a 2600 — so playing them is the history lesson. Load one and flip the
+      selects to feel exactly what forty years of hardware bought.</p>
+    </div>
+
+    <div class="panel">
       <h2>Events <span class="lvl l1">EASY</span></h2>
       <pre class="codeblock">when start          runs once, when the game begins
 when tick           runs exactly 60 times a second on EVERY screen — physics lives here

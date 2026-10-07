@@ -422,5 +422,7 @@ export function buildTxoExample() {
     text: "TIC-TAC-TOE — MIT TX-0 · 1959 · THE EXPERIMENT", script: []
   });
 
-  return { title: "Tic-Tac-Toe on TX-0 (1959)", objects };
+  return { title: "Tic-Tac-Toe on TX-0 (1959)",
+    display: "vector79", hardware: "logic72",   // the real machine's era
+    objects };
 }

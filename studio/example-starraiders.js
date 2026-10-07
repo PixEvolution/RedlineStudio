@@ -515,5 +515,7 @@ end` }]
   });
   objects.push({ id: "sr_t1", name: "stick1tag", type: "text", x: 0, y: 0, size: 1, color: DIM, glow: 0, visible: 0, text: "HELM", script: [] });
 
-  return { title: "Star Raiders (1979)", objects };
+  return { title: "Star Raiders (1979)",
+    display: "arcade8", hardware: "arcade8",   // the real machine's era
+    objects };
 }

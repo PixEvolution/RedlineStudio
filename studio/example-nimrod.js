@@ -171,6 +171,7 @@ export function buildNimrodExample() {
 
   return {
     title: "NIMROD (1951)",
+    display: "bw72", hardware: "logic72",   // the real machine's era
     objects: [...lights, brain, title, rules]
   };
 }

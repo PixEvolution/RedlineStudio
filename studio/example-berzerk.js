@@ -585,5 +585,7 @@ end` }]
   });
   objects.push({ id: "bk_t1", name: "stick1tag", type: "text", x: 0, y: 0, size: 1, color: DIM, glow: 0, visible: 0, text: "RUNNER", script: [] });
 
-  return { title: "Berzerk (1980)", objects };
+  return { title: "Berzerk (1980)",
+    display: "arcade8", hardware: "arcade8",   // the real machine's era
+    objects };
 }

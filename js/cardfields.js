@@ -26,6 +26,9 @@ export function cardFields({ title, owner, ownerUid = null, description = "", pr
     rating: casino ? "A18" : cleanRating(rating),
     w: Number(data?.w) || null,
     h: Number(data?.h) || null,
+    // the game's ERA rides on the card so its screen shows era-correct
+    display: typeof data?.display === "string" ? data.display : null,
+    hardware: typeof data?.hardware === "string" ? data.hardware : null,
     thumb: (typeof thumb === "string" && thumb.startsWith("data:image/") && thumb.length <= THUMB_CAP) ? thumb : "",
     screen: live ? { mode: "live", objects: screen.objects } : { mode: "none", objects: [] },
   };

@@ -352,5 +352,7 @@ export function buildSpacewarExample() {
   objects.push({ id: "sw_st1", name: "stick1tag", type: "text", x: 0, y: 0, size: 10, color: "#3f7a52", glow: 0, visible: 0, text: "NEEDLE", script: [] });
   objects.push({ id: "sw_st2", name: "stick2tag", type: "text", x: 0, y: 0, size: 10, color: "#3f7a52", glow: 0, visible: 0, text: "WEDGE", script: [] });
 
-  return { title: "Spacewar! (1962)", objects };
+  return { title: "Spacewar! (1962)",
+    display: "vector79", hardware: "vector79",   // the real machine's era
+    objects };
 }

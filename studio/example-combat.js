@@ -342,5 +342,7 @@ export function buildCombatExample() {
   objects.push({ id: "cb_t1", name: "stick1tag", type: "text", x: 0, y: 0, size: 1, color: DIM, glow: 0, visible: 0, text: "P1", script: [] });
   objects.push({ id: "cb_t2", name: "stick2tag", type: "text", x: 0, y: 0, size: 1, color: DIM, glow: 0, visible: 0, text: "P2", script: [] });
 
-  return { title: "Combat (1977)", objects };
+  return { title: "Combat (1977)",
+    display: "tv2600", hardware: "tv2600",   // the real machine's era
+    objects };
 }

@@ -872,5 +872,7 @@ end` }]
   });
   objects.push({ id: "u1_t1", name: "stick1tag", type: "text", x: 0, y: 0, size: 1, color: DIM, glow: 0, visible: 0, text: "WALK", script: [] });
 
-  return { title: "Ultima I (1981)", objects };
+  return { title: "Ultima I (1981)",
+    display: "arcade8", hardware: "arcade8",   // the real machine's era
+    objects };
 }

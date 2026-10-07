@@ -20,12 +20,12 @@ import { fmtDate } from "./ui.js";
 // rides on the light cards collection (same trick as model thumbs). Static
 // screens become one picture instead of a sack of objects; only LIVE screens
 // still carry objects. Returns "" when anything goes wrong (headless, etc).
-export function renderThumb(objects, w = CANVAS_W, h = CANVAS_H, maxW = 240) {
+export function renderThumb(objects, w = CANVAS_W, h = CANVAS_H, maxW = 240, display = "modern") {
   try {
     if (!Array.isArray(objects) || objects.length === 0) return "";
     const full = document.createElement("canvas");
     full.width = w; full.height = h;
-    drawFrame(full.getContext("2d"), JSON.parse(JSON.stringify(objects)), { w, h });
+    drawFrame(full.getContext("2d"), JSON.parse(JSON.stringify(objects)), { w, h, display });
     const scale = Math.min(1, maxW / w);
     const small = document.createElement("canvas");
     small.width = Math.round(w * scale);
@@ -60,7 +60,10 @@ function startCard(card) {
   if (card._eng || !card.isConnected) return;
   if (running.size >= MAX_LIVE) { waiting.add(card); return; }
   running.add(card);
-  card._eng = new Engine(card._canvas, card._screen.objects, { input: false, w: card._w, h: card._h });
+  card._eng = new Engine(card._canvas, card._screen.objects, {
+    input: false, w: card._w, h: card._h,
+    display: card._display, hardware: card._hardware   // era-correct attract reels
+  });
   card._eng.start();
 }
 
@@ -109,13 +112,17 @@ export function gameCard(g, { rootPath = "", showOwner = true } = {}) {
     canvas.height = h;
     canvas.className = "card-screen";
     card.appendChild(canvas);
+    // the game's ERA shows on its card too (display from the game's data)
+    const dsp = g.display || g.data?.display, hdw = g.hardware || g.data?.hardware;
     // every screen starts as a still frame; live ones wake when scrolled to
-    drawFrame(canvas.getContext("2d"), screen.objects, { w, h });
+    drawFrame(canvas.getContext("2d"), screen.objects, { w, h, display: dsp });
     if (screen.mode === "live") {
       card._canvas = canvas;
       card._screen = screen;
       card._w = w;
       card._h = h;
+      card._display = dsp;
+      card._hardware = hdw;
       ensureObserver();
       if (observer) observer.observe(card);
       else startCard(card);   // ancient browser: run it (still capped)

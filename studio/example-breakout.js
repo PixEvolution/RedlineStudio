@@ -340,5 +340,7 @@ export function buildBreakoutExample() {
   // the stick wears the knob's name
   objects.push({ id: "bo_s1", name: "stick1tag", type: "text", x: 0, y: 0, size: 1, color: DIM, glow: 0, visible: 0, text: "KNOB", script: [] });
 
-  return { title: "Breakout (1976)", w: W, h: H, objects };
+  return { title: "Breakout (1976)",
+    display: "bw72", hardware: "logic72",   // the real machine's era
+    w: W, h: H, objects };
 }

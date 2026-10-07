@@ -8,7 +8,7 @@
 import { stripModules } from "./export.js";
 
 const STUDIO_BUNDLE = [
-  "js/redscript.js", "js/engine.js", "js/convert.js", "js/blocks.js", "js/behaviors.js",
+  "js/redscript.js", "js/hardware.js", "js/engine.js", "js/convert.js", "js/blocks.js", "js/behaviors.js",
   "js/sprite-editor.js",
   "js/studio-tools.js", "js/gamefile.js", "js/touch-controls.js",
   "js/terminal.js", "js/casino-odds.js", "js/localwire.js", "js/intro.js"
@@ -125,6 +125,20 @@ export async function buildOfflineStudioHtml({ rootPath = "", fetchText } = {}) 
     <option value="7">7 players</option>
     <option value="8">8 players</option>
   </select>
+  <select id="eradisplay" title="Display hardware — the era monitor your game shows through (picture only; revert anytime)">
+    <option value="modern">MODERN display</option>
+    <option value="vector79">VECTOR '79</option>
+    <option value="arcade8">ARCADE 8-BIT</option>
+    <option value="tv2600">HOME TV '77</option>
+    <option value="bw72">B&amp;W TV '72</option>
+  </select>
+  <select id="erahw" title="Engine hardware — what the era's chip could draw and sound (limits shape the picture only; logic never changes)">
+    <option value="modern">MODERN chip</option>
+    <option value="logic72">LOGIC '72</option>
+    <option value="vector79">VECTOR '79</option>
+    <option value="tv2600">ATARI 2600</option>
+    <option value="arcade8">ARCADE 8-BIT</option>
+  </select>
   <button id="new">New</button>
   <button id="open">📂 Open</button>
   <button id="save">💾 Save .rlgame</button>
@@ -180,13 +194,13 @@ ${sources.join("\n\n")}
 (function () {
   var $ = function (s) { return document.querySelector(s); };
   var canvas = $("#workspace"), stage = $("#stage");
-  var game = { title: "", w: 480, h: 360, seats: 1, objects: [] };
+  var game = { title: "", w: 480, h: 360, seats: 1, display: "modern", hardware: "modern", objects: [] };
   var selectedId = null, engine = null, controls = null, term = null, casino = null, clip = null;
   var dragging = null, snapOn = false;
   try { snapOn = localStorage.getItem("rl_off_snap") === "1"; } catch (e) {}
 
   var hist = createHistory(60);
-  var snap = function () { return JSON.stringify({ o: game.objects, w: game.w, h: game.h, st: game.seats || 1, sel: selectedId }); };
+  var snap = function () { return JSON.stringify({ o: game.objects, w: game.w, h: game.h, st: game.seats || 1, dp: game.display || "modern", hw: game.hardware || "modern", sel: selectedId }); };
   var commitTimer = null;
   function saveDraft() {
     try { localStorage.setItem("rl_off_draft", packGame(game)); } catch (e) {}
@@ -197,6 +211,7 @@ ${sources.join("\n\n")}
   function applySnap(s) {
     var st = JSON.parse(s);
     game.objects = st.o; game.w = st.w; game.h = st.h; game.seats = st.st || 1;
+    game.display = st.dp || "modern"; game.hardware = st.hw || "modern";
     selectedId = st.sel;
     applyDims(); renderAll(); saveDraft(); syncUndo();
   }
@@ -216,6 +231,8 @@ ${sources.join("\n\n")}
     canvas.style.aspectRatio = game.w + " / " + game.h;
     $("#worldsize").value = game.w + "x" + game.h;
     $("#seats").value = String(Math.min(8, Math.max(1, Number(game.seats) || 1)));
+    $("#eradisplay").value = game.display || "modern";
+    $("#erahw").value = game.hardware || "modern";
   }
   function redraw() {
     if (engine) return;
@@ -427,6 +444,16 @@ ${sources.join("\n\n")}
     game.seats = Math.min(8, Math.max(1, Number($("#seats").value) || 1));
     commit();
   });
+  // the ERA settings — display (monitor) × hardware (chip), mix and match.
+  // Both shape the picture and sound only; logic never changes, MODERN reverts.
+  $("#eradisplay").addEventListener("change", function () {
+    if (engine) { applyDims(); return; }
+    game.display = $("#eradisplay").value; commit();
+  });
+  $("#erahw").addEventListener("change", function () {
+    if (engine) { applyDims(); return; }
+    game.hardware = $("#erahw").value; commit();
+  });
 
   // ---- multiplayer on the LOCAL wire, file:// edition. BroadcastChannel
   // can't be trusted between file:// windows, so THIS window is the hub:
@@ -476,7 +503,7 @@ ${sources.join("\n\n")}
     canvas.width = B.w * 2; canvas.height = B.h * 2;
     canvas.getContext("2d").setTransform(2, 0, 0, 2, 0, 0);
     canvas.style.aspectRatio = B.w + " / " + B.h;
-    var eng = new Engine(canvas, B.objects, { w: B.w, h: B.h });
+    var eng = new Engine(canvas, B.objects, { w: B.w, h: B.h, display: B.display, hardware: B.hardware });
     eng.start();
     var oHub = window.opener.__RLHUB;
     var mk = function () {
@@ -503,7 +530,7 @@ ${sources.join("\n\n")}
       "width=" + Math.min(game.w + 60, 1000) + ",height=" + Math.min(game.h + 190, 900));
     if (!w) { alert("The browser blocked the player window — allow popups for this file and try again."); return; }
     var lib = document.getElementById("rl-lib").textContent.replace(/<\\/script/gi, "<\\\\/script");
-    var boot = JSON.stringify({ slot: s, seats: wireSeats, w: game.w, h: game.h, objects: game.objects })
+    var boot = JSON.stringify({ slot: s, seats: wireSeats, w: game.w, h: game.h, display: game.display, hardware: game.hardware, objects: game.objects })
       .replace(/</g, "\\\\u003c");
     var safeTitle = String(game.title || $("#title").value || "Untitled Game").replace(/[<>&"]/g, "");
     var css = document.querySelector("style").textContent;
@@ -544,7 +571,7 @@ ${sources.join("\n\n")}
       $("#test").textContent = "▶ Test";
       applyDims(); redraw(); return;
     }
-    engine = new Engine(canvas, game.objects, { w: game.w, h: game.h });
+    engine = new Engine(canvas, game.objects, { w: game.w, h: game.h, display: game.display, hardware: game.hardware });
     if (engine.errors.length) alert("Script problems:\\n" + engine.errors.slice(0, 4).join("\\n"));
     // casino machines test in FREE PLAY: pretend coins, the platform's real odds
     if (engine.usesCasino()) casino = attachCasinoLoop(engine, localWallet(100, 1000));
@@ -580,7 +607,7 @@ ${sources.join("\n\n")}
           text = inner;
         }
         var g = unpackGame(text);
-        game = { title: g.title, w: g.w || 480, h: g.h || 360, seats: g.seats || 1, objects: g.objects };
+        game = { title: g.title, w: g.w || 480, h: g.h || 360, seats: g.seats || 1, display: g.display || "modern", hardware: g.hardware || "modern", objects: g.objects };
         $("#title").value = game.title;
         selectedId = game.objects[0] ? game.objects[0].id : null;
         applyDims(); renderAll();
@@ -591,7 +618,7 @@ ${sources.join("\n\n")}
   });
   $("#new").addEventListener("click", function () {
     if (!confirm("Start a new empty game? (↶ undo can bring this one back.)")) return;
-    game = { title: "", w: 480, h: 360, seats: 1, objects: [] };
+    game = { title: "", w: 480, h: 360, seats: 1, display: "modern", hardware: "modern", objects: [] };
     $("#title").value = ""; selectedId = null;
     applyDims(); renderAll(); commit();
   });
@@ -602,7 +629,7 @@ ${sources.join("\n\n")}
     var d = localStorage.getItem("rl_off_draft");
     if (d) {
       var g0 = unpackGame(d);
-      game = { title: g0.title, w: g0.w || 480, h: g0.h || 360, seats: g0.seats || 1, objects: g0.objects };
+      game = { title: g0.title, w: g0.w || 480, h: g0.h || 360, seats: g0.seats || 1, display: g0.display || "modern", hardware: g0.hardware || "modern", objects: g0.objects };
       $("#title").value = game.title === "Untitled Game" ? "" : game.title;
       selectedId = game.objects[0] ? game.objects[0].id : null;
     }
