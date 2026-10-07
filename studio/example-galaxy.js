@@ -413,7 +413,7 @@ export function buildGalaxyExample() {
   objects.push({
     id: "cs_help", name: "help", type: "text",
     x: 240, y: 348, size: 10, color: "#1f8f3c", glow: 4, visible: 1,
-    text: "COMPUTER SPACE 1971 · A/D TURN · W THRUST · S FIRE · WIN = FREE GAME",
+    text: "A/D TURN · W THRUST · S FIRE · WIN = FREE GAME",
     script: []
   });
 

@@ -460,7 +460,7 @@ export function buildTankExample() {
   objects.push({
     id: "tk_help", name: "help", type: "text",
     x: 240, y: 334, size: 10, color: "#0e3018", glow: 0, visible: 1,
-    text: "KEE GAMES 1974 · A/D TURN · W/S DRIVE · SPACE FIRE · P2: ARROWS + ENTER",
+    text: "P1 WASD + SPACE · P2 ARROWS + ENTER",
     script: []
   });
 

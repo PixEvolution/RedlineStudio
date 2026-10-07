@@ -206,10 +206,10 @@ function brainCode() {
   push("    set game to 2");
   push("    set endplay to 1");
   push("    if mode == 2 and score2 > score1 then");
-  push('      set status.text to "TIME — PLAYER 2 TAKES THE ARENA. CLICK FOR A NEW GAME"');
+  push('      set status.text to "TIME — PLAYER 2 TAKES THE ARENA. CLICK AGAIN"');
   push("    else");
   push("      if mode == 2 and score1 > score2 then");
-  push('        set status.text to "TIME — PLAYER 1 TAKES THE ARENA. CLICK FOR A NEW GAME"');
+  push('        set status.text to "TIME — PLAYER 1 TAKES THE ARENA. CLICK AGAIN"');
   push("      else");
   push('        set status.text to "TIME UP — CLICK FOR A NEW GAME"');
   push("      end");
@@ -293,7 +293,7 @@ export function buildDeathraceExample() {
   objects.push({
     id: "dr_help", name: "help", type: "text",
     x: W / 2, y: 336, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "P1 A/D + W OR WHEEL 1 · P2 ARROWS OR WHEEL 2 · GRAVES ARE SOLID",
+    text: "P1 A/D+W · P2 ARROWS · GRAVES ARE SOLID",
     script: []
   });
 

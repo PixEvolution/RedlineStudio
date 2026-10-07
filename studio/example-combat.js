@@ -194,7 +194,7 @@ function brainCode() {
     push(`${pad}set veh2.x to 410`);
     push(`${pad}set veh2.y to ${H / 2}`);
     push(`${pad}set veh2.angle to 180`);
-    push(`${pad}set status.text to "${mode === 3 ? "DOGFIGHT — THE CLOUDS HIDE YOU FROM EVERYONE" : mode === 2 ? "SHELLS RICOCHET — BANK THEM AROUND THE WALLS" : "TWO TANKS, ONE FIELD — MOST HITS BY 0:00 WINS"}"`);
+    push(`${pad}set status.text to "${mode === 3 ? "DOGFIGHT — THE CLOUDS HIDE YOU" : mode === 2 ? "SHELLS RICOCHET — BANK THEM AROUND" : "TWO TANKS — MOST HITS BY 0:00 WINS"}"`);
   };
 
   push("when start");
@@ -247,12 +247,12 @@ function brainCode() {
   push("    set game to 2");
   push("    set endplay to 1");
   push("    if score1 > score2 then");
-  push('      set status.text to "0:00 — PLAYER 1 TAKES IT. CLICK FOR A NEW GAME"');
+  push('      set status.text to "0:00 — PLAYER 1 WINS. CLICK TO REMATCH"');
   push("    else");
   push("      if score2 > score1 then");
-  push('        set status.text to "0:00 — PLAYER 2 TAKES IT. CLICK FOR A NEW GAME"');
+  push('        set status.text to "0:00 — PLAYER 2 WINS. CLICK TO REMATCH"');
   push("      else");
-  push('        set status.text to "0:00 — A DRAW. 1977 CALLS IT A FRIENDSHIP. CLICK TO GO AGAIN"');
+  push('        set status.text to "0:00 — A DRAW. CLICK TO SETTLE IT"');
   push("      end");
   push("    end");
   push("  end");
@@ -329,7 +329,7 @@ export function buildCombatExample() {
   objects.push({
     id: "cb_help", name: "help", type: "text",
     x: 240, y: 315, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "TWO PLAYERS ONLY — NO COMPUTER OPPONENT IN THE BOX, IT'S 1977. P1 W/A/D+Q · P2 ARROWS+M",
+    text: "1977: TWO PLAYERS · P1 WAD+Q · P2 ←→↑+M",
     script: []
   });
 

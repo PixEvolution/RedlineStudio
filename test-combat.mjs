@@ -29,7 +29,7 @@ console.log("Combat (1977):");
     ex.objects.filter(o => o.name.startsWith("cloud")).length === 2);
   check("speaks the arcade contract (score + endplay)", eng.usesScoreboard());
   check("NO computer opponent — the help says so out loud",
-    ex.objects.some(o => o.name === "help" && o.text.includes("NO COMPUTER OPPONENT")));
+    ex.objects.some(o => o.name === "help" && o.text.includes("TWO PLAYERS")));
   check("two sticks wear player names", ex.objects.some(o => o.name === "stick1tag") && ex.objects.some(o => o.name === "stick2tag"));
 }
 

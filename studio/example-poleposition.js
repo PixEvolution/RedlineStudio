@@ -97,7 +97,7 @@ export function buildPolePositionExample() {
     push(`${pad}set crash to 0`);
     push(`${pad}set tik to 0`);
     for (let c = 0; c < NCAR; c++) push(`${pad}set con[${c}] to 0`);
-    push(`${pad}set status.text to "QUALIFYING — ONE FLYING LAP. UNDER 45.0 OR GO HOME."`);
+    push(`${pad}set status.text to "QUALIFYING — ONE LAP. UNDER 45.0 OR GO HOME."`);
   };
 
   // ======== start
@@ -470,19 +470,19 @@ end` }]
 
   // attract
   objects.push({ id: "pp_big", name: "bigtitle", type: "text", x: W / 2, y: 104, size: 40, color: RED, glow: 18, visible: 1, text: "POLE POSITION", script: [] });
-  objects.push({ id: "pp_sub", name: "subline", type: "text", x: W / 2, y: 136, size: 10, color: DIM, glow: 4, visible: 1, text: "NAMCO 1982 · A REAL CIRCUIT, A QUALIFYING LAP · 1983'S TOP GROSSER", script: [] });
+  objects.push({ id: "pp_sub", name: "subline", type: "text", x: W / 2, y: 136, size: 10, color: DIM, glow: 4, visible: 1, text: "NAMCO 1982 · REAL CIRCUIT · 1983'S TOP GROSSER", script: [] });
   objects.push({ id: "pp_coin", name: "coinline", type: "text", x: W / 2, y: 168, size: 12, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — CLICK FOR THE GRID ◎", script: [] });
   objects.push({ id: "pp_play", name: "playbtn", type: "text", x: W / 2, y: 206, size: 16, color: GREEN, glow: 12, visible: 1, text: "[ QUALIFY ]", script: [] });
   objects.push({
     id: "pp_help", name: "help", type: "text",
     x: W / 2, y: 240, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "A·D STEER · W GAS, S BRAKE · SPACE SHIFTS LO/HI · HAIRPIN WANTS 130",
+    text: "A·D STEER · W GAS · SPACE SHIFTS · HAIRPIN = 130",
     script: []
   });
   objects.push({
     id: "pp_help2", name: "help2", type: "text",
     x: W / 2, y: 258, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "QUALIFY UNDER 45.0 · THEN 4 LAPS, TRAFFIC, AND THE CLOCK",
+    text: "QUALIFY UNDER 45.0 · THEN 4 LAPS VS THE CLOCK",
     script: []
   });
 

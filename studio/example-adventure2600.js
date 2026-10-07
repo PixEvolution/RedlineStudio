@@ -22,12 +22,13 @@ const W = 480, H = 360;
 const SPEED = 2.6;
 const NAMES = ["", "GOLD KEY", "BLACK KEY", "THE SWORD", "THE CHALICE", "SOMETHING…"];
 // the carry line doubles as the quest compass — what the item is FOR
+// (full line = NAME + HINT, kept under the 2600 display's 41-char width)
 const HINTS = [
   "",
-  " — IT OPENS THE GOLD CASTLE GATE",
-  " — IT OPENS THE BLACK CASTLE GATE",
+  " — OPENS THE GOLD CASTLE GATE",
+  " — OPENS THE BLACK CASTLE GATE",
   " — TOUCH A DRAGON TO SLAY IT",
-  " — CARRY IT INTO THE GOLD CASTLE TO WIN",
+  " — GOLD CASTLE = VICTORY",
   "",
 ];
 // map: 0 1 2 / 3 4 5 outdoors · 9 gold inside · 10 black inside · 11 secret
@@ -234,7 +235,7 @@ function brainCode() {
   push("      set ggate to 1");
   push("      change score by 50");
   push("      beep 660 for 0.1");
-  push('      set status.text to "THE GOLD GATE RISES — WALK THROUGH THE OPENING"');
+  push('      set status.text to "THE GOLD GATE RISES — WALK THROUGH"');
   push("    end");
   push("    if ggate == 1 and abs(hero.x - 240) < 14 and hero.y < 20 then");
   push("      set room to 9");
@@ -246,7 +247,7 @@ function brainCode() {
   push("      set bgate to 1");
   push("      change score by 50");
   push("      beep 660 for 0.1");
-  push('      set status.text to "THE BLACK GATE RISES — WALK THROUGH THE OPENING"');
+  push('      set status.text to "THE BLACK GATE RISES — WALK THROUGH"');
   push("    end");
   push("    if bgate == 1 and abs(hero.x - 240) < 14 and hero.y < 20 then");
   push("      set room to 10");
@@ -267,7 +268,7 @@ function brainCode() {
   push("            set chget to 1");
   push("            change score by 200");
   push("          end");
-  push('          set status.text to "THE CHALICE! CARRY IT INTO THE GOLD CASTLE!"');
+  push('          set status.text to "THE CHALICE! TAKE IT TO THE GOLD CASTLE"');
   push("        end");
   push("        if i == 5 then");
   push('          set status.text to "YOU ARE CARRYING… SOMETHING?"');
@@ -301,12 +302,12 @@ function brainCode() {
   push("    if lives <= 0 then");
   push("      set game to 2");
   push("      set endplay to 1");
-  push('      set status.text to "SWALLOWED — GAME OVER. CLICK TO QUEST AGAIN"');
+  push('      set status.text to "SWALLOWED — GAME OVER. CLICK TO RETRY"');
   push("    else");
   push("      set room to 0");
   push("      set hero.x to 240");
   push("      set hero.y to 200");
-  push('      set status.text to "SWALLOWED! THE QUEST RESUMES AT THE GOLD CASTLE"');
+  push('      set status.text to "SWALLOWED! BACK TO THE GOLD CASTLE"');
   push("    end");
   push("  end");
 
@@ -319,7 +320,7 @@ function brainCode() {
   push("    beep 659 for 0.1");
   push("    beep 784 for 0.1");
   push("    beep 1047 for 0.25");
-  push('    set status.text to "THE CHALICE IS HOME — THE KINGDOM IS SAVED"');
+  push('    set status.text to "THE CHALICE IS HOME — KINGDOM SAVED"');
   push("  end");
 
   // ---- HUD text
@@ -333,7 +334,7 @@ function brainCode() {
   push('  set carrytx.text to ""');
   for (let i = 1; i <= 5; i++) {
     push(`  if carry == ${i} then`);
-    push(`    set carrytx.text to "CARRYING: ${NAMES[i]}${HINTS[i]}"`);
+    push(`    set carrytx.text to "${NAMES[i]}${HINTS[i]}"`);
     push("  end");
   }
   push("end");
@@ -529,19 +530,19 @@ end`;
 
   // attract furniture
   objects.push({ id: "ad_big", name: "bigtitle", type: "text", x: W / 2, y: 120, size: 44, color: GOLD, glow: 18, visible: 1, text: "ADVENTURE", script: [] });
-  objects.push({ id: "ad_sub", name: "subline", type: "text", x: W / 2, y: 152, size: 10, color: DIM, glow: 4, visible: 1, text: "ATARI 2600 · 1979 · HOME OF THE FIRST FAMOUS EASTER EGG", script: [] });
+  objects.push({ id: "ad_sub", name: "subline", type: "text", x: W / 2, y: 152, size: 10, color: DIM, glow: 4, visible: 1, text: "ATARI 2600 · 1979 · THE FIRST EASTER EGG", script: [] });
   objects.push({ id: "ad_coin", name: "coinline", type: "text", x: W / 2, y: 184, size: 12, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — CLICK TO QUEST ◎", script: [] });
   objects.push({ id: "ad_play", name: "playbtn", type: "text", x: W / 2, y: 222, size: 16, color: GREEN, glow: 12, visible: 1, text: "[ QUEST ]", script: [] });
   objects.push({
     id: "ad_help", name: "help", type: "text",
     x: W / 2, y: 256, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "WASD/STICK MOVES · TOUCH PICKS UP (ONE ITEM) · SPACE DROPS",
+    text: "WASD MOVES · TOUCH PICKS UP · SPACE DROPS",
     script: []
   });
   objects.push({
     id: "ad_help2", name: "help2", type: "text",
     x: W / 2, y: 272, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "THE QUEST: STEAL THE CHALICE FROM THE BLACK CASTLE — BRING IT HOME TO THE GOLD CASTLE",
+    text: "BLACK CASTLE'S CHALICE → GOLD CASTLE",
     script: []
   });
 

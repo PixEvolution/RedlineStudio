@@ -31,7 +31,7 @@ console.log("Sweeper (1980 style):");
   check("four power cells in the corners", ex.objects.filter(o => o.name.startsWith("power")).length === 4);
   check("four hunters with four names in the attract",
     ex.objects.filter(o => o.name.startsWith("drone")).length === 4
-    && ex.objects.some(o => o.name === "help" && /SNAP.*TRAP.*FLANK.*GLITCH/.test(o.text)));
+    && ex.objects.some(o => o.name === "help" && /FOUR HUNTERS/.test(o.text)));
 
   // the maze is one connected room: every speck of dust is reachable
   const nodes = new Set();

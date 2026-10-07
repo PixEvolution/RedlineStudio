@@ -135,7 +135,7 @@ export function buildTronExample() {
     push(`${pad}  set ttm to 720`);
     push(`${pad}  set bspawn to 30`);
     for (let b = 0; b < 8; b++) push(`${pad}  set bgon[${b}] to 0`);
-    push(`${pad}  set status.text to "THE TOWER — HOLD THE BUGS OFF UNTIL THE WINDOW OPENS"`);
+    push(`${pad}  set status.text to "THE TOWER — HOLD OFF THE BUGS TILL IT OPENS"`);
     push(`${pad}end`);
     // ---- stage 4: the cone
     push(`${pad}if stg == 4 then`);
@@ -148,7 +148,7 @@ export function buildTronExample() {
     push(`${pad}  end`);
     push(`${pad}  set bofs to 0`);
     push(`${pad}  set bdy to 0`);
-    push(`${pad}  set status.text to "THE CONE — CUT A COLUMN, RIDE THE GAP, TOUCH THE CORE"`);
+    push(`${pad}  set status.text to "THE CONE — CUT A COLUMN, RIDE THE GAP IN"`);
     push(`${pad}end`);
   };
 
@@ -893,19 +893,19 @@ end` }]
 
   // attract
   objects.push({ id: "tr_big", name: "bigtitle", type: "text", x: W / 2, y: 100, size: 44, color: CYAN, glow: 20, visible: 1, text: "TRON", script: [] });
-  objects.push({ id: "tr_sub", name: "subline", type: "text", x: W / 2, y: 134, size: 10, color: DIM, glow: 4, visible: 1, text: "BALLY MIDWAY 1982 · THE TIE-IN THAT OUTEARNED ITS FILM", script: [] });
+  objects.push({ id: "tr_sub", name: "subline", type: "text", x: W / 2, y: 134, size: 10, color: DIM, glow: 4, visible: 1, text: "BALLY MIDWAY 1982 · IT OUTEARNED ITS FILM", script: [] });
   objects.push({ id: "tr_coin", name: "coinline", type: "text", x: W / 2, y: 166, size: 12, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — CLICK TO ENTER ◎", script: [] });
   objects.push({ id: "tr_play", name: "playbtn", type: "text", x: W / 2, y: 204, size: 16, color: GREEN, glow: 12, visible: 1, text: "[ ENTER ]", script: [] });
   objects.push({
     id: "tr_help", name: "help", type: "text",
     x: W / 2, y: 238, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "FOUR DUELS ON ONE CREDIT: CYCLES · TANKS · TOWER · CONE",
+    text: "FOUR DUELS: CYCLES · TANKS · TOWER · CONE",
     script: []
   });
   objects.push({
     id: "tr_help2", name: "help2", type: "text",
     x: W / 2, y: 256, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "WASD MOVES (CYCLES NEVER REVERSE) · SPACE FIRES · BANK YOUR TANK SHOT",
+    text: "WASD MOVES · SPACE FIRES · BANK YOUR TANK SHOT",
     script: []
   });
 

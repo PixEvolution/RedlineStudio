@@ -126,7 +126,7 @@ export function buildBerzerkExample() {
     push(`${pad}set fdx to 1`);
     push(`${pad}set fdy to 0`);
     regenRoom(pad, 40, 180);
-    push(`${pad}set status.text to "EVERY WALL IS LIVE. THE ROBOTS ARE CLUMSY. YOU AREN'T."`);
+    push(`${pad}set status.text to "EVERY WALL IS LIVE. THE ROBOTS ARE CLUMSY."`);
   };
 
   // ======== start
@@ -568,13 +568,13 @@ end` }]
 
   // attract
   objects.push({ id: "bk_big", name: "bigtitle", type: "text", x: W / 2, y: 112, size: 42, color: RED, glow: 18, visible: 1, text: "BERZERK", script: [] });
-  objects.push({ id: "bk_sub", name: "subline", type: "text", x: W / 2, y: 144, size: 10, color: DIM, glow: 4, visible: 1, text: "STERN 1980 · ONE OF THE FIRST GAMES WITH SPEECH SYNTHESIS", script: [] });
+  objects.push({ id: "bk_sub", name: "subline", type: "text", x: W / 2, y: 144, size: 10, color: DIM, glow: 4, visible: 1, text: "STERN 1980 · AMONG THE FIRST TALKING GAMES", script: [] });
   objects.push({ id: "bk_coin", name: "coinline", type: "text", x: W / 2, y: 176, size: 12, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — CLICK TO INTRUDE ◎", script: [] });
   objects.push({ id: "bk_play", name: "playbtn", type: "text", x: W / 2, y: 214, size: 16, color: GREEN, glow: 12, visible: 1, text: "[ INTRUDE ]", script: [] });
   objects.push({
     id: "bk_help", name: "help", type: "text",
     x: W / 2, y: 248, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "WASD RUNS · SPACE FIRES YOUR FACING · EVERY WALL IS LIVE · DON'T LINGER",
+    text: "WASD RUNS · SPACE FIRES YOUR FACING · WALLS KILL",
     script: []
   });
 

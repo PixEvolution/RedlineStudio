@@ -231,7 +231,7 @@ function ballCode() {
   push("          else");
   push("            set game to 2");
   push("            set endplay to 1");
-  push('            set status.text to "BOTH WALLS DOWN — A PERFECT MACHINE. CLICK FOR A NEW GAME"');
+  push('            set status.text to "BOTH WALLS DOWN — PERFECT. CLICK TO GO AGAIN"');
   push("          end");
   push("        end");
   push("      end");
@@ -334,7 +334,7 @@ export function buildBreakoutExample() {
   objects.push({
     id: "bo_help", name: "help", type: "text",
     x: W / 2, y: 470, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "ATARI 1976 · A/D OR THE KNOB · SPACE SERVES · 896 IS PERFECT",
+    text: "A/D OR THE KNOB · SPACE SERVES · 896 = PERFECT",
     script: []
   });
   // the stick wears the knob's name

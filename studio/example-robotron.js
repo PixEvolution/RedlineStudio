@@ -136,7 +136,7 @@ export function buildRobotronExample() {
     push(`${pad}set cool to 0`);
     push(`${pad}set tik to 0`);
     dealWave(pad, true);
-    push(`${pad}set status.text to "WAVE 1 — THE LAST FAMILY IS LOOSE IN HERE. SO ARE THEY."`);
+    push(`${pad}set status.text to "WAVE 1 — SAVE THE LAST FAMILY"`);
   };
 
   // ======== start
@@ -694,19 +694,19 @@ end` }]
 
   // attract
   objects.push({ id: "rb_big", name: "bigtitle", type: "text", x: W / 2, y: 106, size: 36, color: RED, glow: 18, visible: 1, text: "ROBOTRON: 2084", script: [] });
-  objects.push({ id: "rb_sub", name: "subline", type: "text", x: W / 2, y: 138, size: 10, color: DIM, glow: 4, visible: 1, text: "WILLIAMS 1982 · EUGENE JARVIS · THE TWIN-STICK TEMPLATE", script: [] });
+  objects.push({ id: "rb_sub", name: "subline", type: "text", x: W / 2, y: 138, size: 10, color: DIM, glow: 4, visible: 1, text: "WILLIAMS 1982 · THE TWIN-STICK TEMPLATE", script: [] });
   objects.push({ id: "rb_coin", name: "coinline", type: "text", x: W / 2, y: 170, size: 12, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — CLICK TO SAVE THEM ◎", script: [] });
   objects.push({ id: "rb_play", name: "playbtn", type: "text", x: W / 2, y: 208, size: 16, color: GREEN, glow: 12, visible: 1, text: "[ RESIST ]", script: [] });
   objects.push({
     id: "rb_help", name: "help", type: "text",
     x: W / 2, y: 242, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "WASD / STICK 1 RUNS · ARROWS / STICK 2 FIRE — INDEPENDENTLY",
+    text: "WASD RUNS · ARROWS FIRE — INDEPENDENTLY",
     script: []
   });
   objects.push({
     id: "rb_help2", name: "help2", type: "text",
     x: W / 2, y: 260, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "SAVE THE FAMILY: 1000, 2000... 5000 A TOUCH · HULKS ONLY PUSH",
+    text: "FAMILY: 1000, 2000… 5000 · HULKS ONLY PUSH",
     script: []
   });
 

@@ -319,7 +319,7 @@ export function buildScrapyardExample() {
   push("    beep 659 for 0.08");
   push("    beep 784 for 0.08");
   push("    beep 1047 for 0.2");
-  push('    set status.text to "CRUSHER OFF! BONUS BANKED — IT RESTARTS ANGRIER (LEVEL " + level + ")"');
+  push('    set status.text to "CRUSHER OFF! BANKED — ANGRIER NOW (LVL " + level + ")"');
   dealLevel("    ");
   push("  end");
 
@@ -449,7 +449,7 @@ end` }]
   objects.push({
     id: "sy_help", name: "help", type: "text",
     x: W / 2, y: 288, size: 8, color: DIM, glow: 3, visible: 1,
-    text: "A/D WALK · W/S CLIMB LADDERS · SPACE JUMPS TIRES (+100) · W IS THE WRENCH",
+    text: "A/D WALK · W/S CLIMB · SPACE JUMPS TIRES +100",
     script: []
   });
 

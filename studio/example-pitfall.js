@@ -80,7 +80,7 @@ export function buildPitfallExample() {
     push(`${pad}set itim to 60`);
     push(`${pad}set lcool to 0`);
     push(`${pad}set dealflag to 1`);
-    push(`${pad}set status.text to "32 TREASURES, 255 SCREENS, ONE BYTE, 3:00 — RUN"`);
+    push(`${pad}set status.text to "32 TREASURES · 255 SCREENS · 3:00 — RUN"`);
   };
 
   // ======== start
@@ -346,7 +346,7 @@ export function buildPitfallExample() {
   push("      if zone == 2 and py > 300 then");
   push("        set under to 1");
   push("        beep 196 for 0.08");
-  push('        set status.text to "DOWN TO THE TUNNEL — IT PASSES 3 SCREENS A FLIP"');
+  push('        set status.text to "THE TUNNEL — 3 SCREENS A FLIP"');
   push("      end");
   push("    end");
   push("  end");
@@ -414,7 +414,7 @@ export function buildPitfallExample() {
   push("      change score by 10000");
   push("      set game to 2");
   push("      set endplay to 1");
-  push('      set status.text to "ALL 32 TREASURES — PERFECT RUN +10000 — SCORE " + score');
+  push('      set status.text to "ALL 32! PERFECT RUN +10000 — SCORE " + score');
   push("      beep 523 for 0.1");
   push("      beep 659 for 0.1");
   push("      beep 784 for 0.1");
@@ -685,19 +685,19 @@ end` }]
 
   // attract
   objects.push({ id: "pf_big", name: "bigtitle", type: "text", x: W / 2, y: 108, size: 42, color: GREEN, glow: 18, visible: 1, text: "PITFALL!", script: [] });
-  objects.push({ id: "pf_sub", name: "subline", type: "text", x: W / 2, y: 140, size: 10, color: DIM, glow: 4, visible: 1, text: "ACTIVISION 1982 · DAVID CRANE · 255 SCREENS FROM ONE 8-BIT COUNTER", script: [] });
+  objects.push({ id: "pf_sub", name: "subline", type: "text", x: W / 2, y: 140, size: 10, color: DIM, glow: 4, visible: 1, text: "ACTIVISION 1982 · 255 SCREENS, ONE BYTE", script: [] });
   objects.push({ id: "pf_coin", name: "coinline", type: "text", x: W / 2, y: 172, size: 12, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — CLICK TO RUN ◎", script: [] });
   objects.push({ id: "pf_play", name: "playbtn", type: "text", x: W / 2, y: 210, size: 16, color: GREEN, glow: 12, visible: 1, text: "[ RUN ]", script: [] });
   objects.push({
     id: "pf_help", name: "help", type: "text",
     x: W / 2, y: 244, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "A·D RUN · SPACE JUMPS + GRABS THE VINE · W/S CLIMB · CLOSED JAWS HOLD",
+    text: "A·D RUN · SPACE JUMPS + GRABS · W/S CLIMB",
     script: []
   });
   objects.push({
     id: "pf_help2", name: "help2", type: "text",
     x: W / 2, y: 262, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "32 TREASURES · THE TUNNEL SKIPS 3 SCREENS · LEFT RUNS THE WORLD BACKWARD",
+    text: "32 TREASURES · THE WORLD RUNS BOTH WAYS",
     script: []
   });
 

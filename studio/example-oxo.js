@@ -344,12 +344,12 @@ export function buildOxoExample() {
 
   objects.push({
     id: "ox_you", name: "youfirst", type: "text",
-    x: 168, y: 335, size: 16, color: "#7dff9e", glow: 14, visible: 1,
+    x: 130, y: 335, size: 16, color: "#7dff9e", glow: 14, visible: 1,
     text: "[ YOU FIRST ]", script: chooserScript()
   });
   objects.push({
     id: "ox_ed", name: "edsacfirst", type: "text",
-    x: 315, y: 335, size: 16, color: "#ff9d4a", glow: 14, visible: 1,
+    x: 352, y: 335, size: 16, color: "#ff9d4a", glow: 14, visible: 1,
     text: "[ EDSAC FIRST ]", script: chooserScript()
   });
 
@@ -361,7 +361,7 @@ export function buildOxoExample() {
   objects.push({
     id: "ox_sub", name: "subtitle", type: "text",
     x: 240, y: 44, size: 10, color: "#1f8f3c", glow: 4, visible: 1,
-    text: "ONE OF THE FIRST GAMES WITH A GRAPHICAL DISPLAY · EDSAC PLAYS PERFECTLY",
+    text: "THE FIRST GRAPHICAL GAME · EDSAC IS PERFECT",
     script: []
   });
 

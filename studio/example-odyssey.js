@@ -50,7 +50,7 @@ function ballCode() {
     push(`${pad}set self.y to 180`);
     push(`${pad}set vx to 0`);
     push(`${pad}set vy to 0`);
-    push(`${pad}set status.text to "FIRST TO ${WIN} — THE ODYSSEY KEEPS SCORE SO YOU DON'T HAVE TO"`);
+    push(`${pad}set status.text to "FIRST TO ${WIN} — THE ODYSSEY KEEPS SCORE"`);
   };
   const scoreBlock = (who /* "l" or "r" */, pad) => {
     push(`${pad}set ${who}score to ${who}score + 1`);
@@ -193,7 +193,7 @@ export function buildOdysseyExample() {
   objects.push({
     id: "od_title", name: "title", type: "text",
     x: 240, y: 350, size: 10, color: DIM, glow: 3, visible: 1,
-    text: "ODYSSEY 1972 · LEFT W/S · RIGHT ↑/↓ · HOLD KEYS AFTER A HIT = ENGLISH",
+    text: "LEFT W/S · RIGHT ↑/↓ · HOLD A HIT = ENGLISH",
     script: []
   });
 

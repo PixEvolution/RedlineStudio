@@ -42,7 +42,7 @@ console.log("Castle Wolfenstein (1981):");
   const keys = eng.usedKeys();
   check("E and SPACE on the panel", keys.includes("e") && keys.includes("Space"));
   check("subline states plain facts only",
-    ex.objects.find(o => o.name === "subline").text === "MUSE SOFTWARE 1981 · APPLE II · ANCESTOR OF THE STEALTH GENRE");
+    ex.objects.find(o => o.name === "subline").text === "MUSE 1981 · ANCESTOR OF THE STEALTH GENRE");
 }
 
 // ---- the castle and the stocking

@@ -431,7 +431,7 @@ export function buildDefenderExample() {
     push("    end");
   }
   push("    beep 70 for 0.5");
-  push('    set status.text to "THE PLANET IS LOST — EVERYTHING ARRIVES AS A MUTANT NOW"');
+  push('    set status.text to "PLANET LOST — EVERYTHING ARRIVES AS MUTANTS"');
   push("  end");
 
   // ---- a hit on the defender
@@ -624,13 +624,13 @@ end` }]
 
   // attract
   objects.push({ id: "df_big", name: "bigtitle", type: "text", x: W / 2, y: 112, size: 42, color: CYAN, glow: 18, visible: 1, text: "DEFENDER", script: [] });
-  objects.push({ id: "df_sub", name: "subline", type: "text", x: W / 2, y: 144, size: 10, color: DIM, glow: 4, visible: 1, text: "WILLIAMS 1980 · SIDE-SCROLLING SHOOTER · AMONG THE HIGHEST-GROSSING EVER", script: [] });
+  objects.push({ id: "df_sub", name: "subline", type: "text", x: W / 2, y: 144, size: 10, color: DIM, glow: 4, visible: 1, text: "WILLIAMS 1980 · AMONG THE HIGHEST-GROSSING EVER", script: [] });
   objects.push({ id: "df_coin", name: "coinline", type: "text", x: W / 2, y: 176, size: 12, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — CLICK TO DEFEND ◎", script: [] });
   objects.push({ id: "df_play", name: "playbtn", type: "text", x: W / 2, y: 214, size: 16, color: GREEN, glow: 12, visible: 1, text: "[ DEFEND ]", script: [] });
   objects.push({
     id: "df_help", name: "help", type: "text",
     x: W / 2, y: 248, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "A/D THRUST · W/S CLIMB · SPACE FIRES · B SMART BOMB · SAVE THE TEN",
+    text: "A/D THRUST · W/S CLIMB · SPACE FIRE · B BOMB",
     script: []
   });
 

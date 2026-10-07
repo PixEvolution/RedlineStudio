@@ -390,7 +390,7 @@ end` }]
   objects.push({
     id: "fg_help", name: "help", type: "text",
     x: W / 2, y: 288, size: 8, color: DIM, glow: 3, visible: 1,
-    text: "WASD HOPS ONE SQUARE · RIDE THE LOGS · MIND THE DIVING TURTLES · 5 BAYS",
+    text: "WASD HOPS · RIDE LOGS · TURTLES DIVE · 5 BAYS",
     script: []
   });
 

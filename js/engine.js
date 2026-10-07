@@ -824,7 +824,7 @@ let _offc = null;   // the era-resolution offscreen frame, reused
 // text through the CHARACTER ROM: 5×7 glyphs as solid blocks, the way every
 // pixel display actually drew letters — no font smoothing, CAPS only.
 // (The +0.35 bleed closes seams between blocks, same trick as sprites.)
-function pixelText(ctx, str, cx, cy, size, align = "center", maxW = 0) {
+function pixelText(ctx, str, cx, cy, size, align = "center", maxW = 0, kx = 1, ky = 1) {
   const S = String(str ?? "").toUpperCase();
   if (!S) return;
   let p = size / 7;                   // one ROM pixel, in world units
@@ -835,13 +835,28 @@ function pixelText(ctx, str, cx, cy, size, align = "center", maxW = 0) {
     const total = S.length * 6 * p - p;
     if (limit > 0 && total > limit) p = (p * limit) / total;
   }
-  const cw = 6 * p;                   // a character cell: 5 columns + 1 gap
-  let x = align === "left" ? cx : cx - (S.length * cw - p) / 2;
-  const top = cy - 7 * p;             // sit on the same baseline fillText used
+  // SNAP to the device grid, floored at ONE whole device pixel each way — a
+  // fractional ROM pixel is exactly the anti-aliased halo this font exists
+  // to kill. A line too long even at the floor clips at the edges instead
+  // of mushing (and the era text audit keeps the games' lines shorter).
+  const pw = Math.max(1, Math.round(p * kx)) / kx;
+  const ph = Math.max(1, Math.round(p * ky)) / ky;
+  // a cell is 5 columns + 1 gap; a line that overflows even at the floor
+  // drops the gap first (cramped cabinet lettering) before it clips
+  let cell = 6;
+  if (maxW > 0) {
+    const limit = align === "left" ? maxW - cx - 2 : 2 * Math.min(cx, maxW - cx) - 4;
+    if (limit > 0 && S.length * 6 * pw - pw > limit) cell = 5;
+  }
+  const cw = cell * pw;
+  const lineW = S.length * cw - (cell === 6 ? pw : 0);   // no trailing gap
+  let x = align === "left" ? cx : cx - lineW / 2;
+  x = Math.round(x * kx) / kx;        // origin on the grid = zero smoothing
+  const top = Math.round((cy - 7 * ph) * ky) / ky;   // same baseline fillText used
   for (const ch of S) {
     const g = FONT5[ch] ?? FONT5_UNKNOWN;
     for (let i = 0; i < 35; i++) {
-      if (g[i] === "1") ctx.fillRect(x + (i % 5) * p, top + ((i / 5) | 0) * p, p + 0.35, p + 0.35);
+      if (g[i] === "1") ctx.fillRect(x + (i % 5) * pw, top + ((i / 5) | 0) * ph, pw, ph);
     }
     x += cw;
   }
@@ -885,6 +900,7 @@ export function drawFrame(ctx, objects, opts = {}) {
 function paintScene(ctx, objects, { effects = [], messages = [], selectedIds = [], terminal = null, onNote = null } = {}, disp, plan, w, h) {
   const now = performance.now();
   const eraPx = !!disp.px;                       // raster eras: pixels never glowed
+  const kx = eraPx ? disp.px.w / w : 1, ky = eraPx ? disp.px.h / h : 1;   // world → device
   const tint = (c) => (disp.palette ? snapColor(c, disp.palette) : c);
 
   // CRT background (era monitors bring their own black)
@@ -958,7 +974,7 @@ function paintScene(ctx, objects, { effects = [], messages = [], selectedIds = [
         break;
       }
       case "text":
-        if (eraPx) { pixelText(ctx, o.text, o.x, o.y, s, "center", w); break; }   // the character ROM
+        if (eraPx) { pixelText(ctx, o.text, o.x, o.y, s, "center", w, kx, ky); break; }   // the character ROM
         ctx.font = `${s}px "Courier New", monospace`;
         ctx.textAlign = "center";
         ctx.fillText(String(o.text ?? ""), o.x, o.y); break;
@@ -1038,7 +1054,7 @@ function paintScene(ctx, objects, { effects = [], messages = [], selectedIds = [
   messages.forEach((msg, idx) => {
     ctx.shadowColor = tint("#39ff5e");
     ctx.fillStyle = tint("#b9ffcb");
-    if (eraPx) { pixelText(ctx, msg.text, w / 2, 40 + idx * 26, 20, "center", w); return; }
+    if (eraPx) { pixelText(ctx, msg.text, w / 2, 40 + idx * 26, 20, "center", w, kx, ky); return; }
     ctx.font = '20px "Courier New", monospace';
     ctx.textAlign = "center";
     ctx.fillText(msg.text, w / 2, 40 + idx * 26);
@@ -1057,7 +1073,7 @@ function paintScene(ctx, objects, { effects = [], messages = [], selectedIds = [
     ctx.shadowBlur = eraPx ? 0 : 4;
     ctx.fillStyle = tint("#8dffa9");
     lines.forEach((line, i) => {
-      if (eraPx) pixelText(ctx, String(line).slice(0, COLS), X, Y0 + i * LINE_H, 12, "left", w);
+      if (eraPx) pixelText(ctx, String(line).slice(0, COLS), X, Y0 + i * LINE_H, 12, "left", w, kx, ky);
       else ctx.fillText(String(line).slice(0, COLS), X, Y0 + i * LINE_H);
     });
     // a blinking cursor under the last line, like the real thing

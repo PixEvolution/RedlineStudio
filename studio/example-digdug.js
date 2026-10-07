@@ -765,7 +765,7 @@ end` }]
   objects.push({
     id: "dd_help", name: "help", type: "text",
     x: 180, y: 308, size: 8, color: DIM, glow: 3, visible: 1,
-    text: "WASD DIGS · HOLD SPACE PUMPS · ROCKS FALL WHEN UNDERMINED",
+    text: "WASD DIGS · HOLD SPACE PUMPS · ROCKS FALL",
     script: []
   });
 

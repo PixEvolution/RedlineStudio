@@ -236,7 +236,7 @@ export function buildSharkjawsExample() {
   objects.push({
     id: "sj_sub", name: "subline", type: "text",
     x: 320, y: 182, size: 10, color: AMBER, glow: 8, visible: 1,
-    text: "\"HORROR GAMES\" 1975 · DEFINITELY NOT ATARI · DEFINITELY NOT THAT MOVIE", script: []
+    text: "\"HORROR GAMES\" 1975 · DEFINITELY NOT ATARI", script: []
   });
   objects.push({
     id: "sj_coin", name: "coinline", type: "text",
@@ -253,7 +253,7 @@ export function buildSharkjawsExample() {
   objects.push({
     id: "sj_help", name: "help", type: "text",
     x: 320, y: 344, size: 10, color: DIM, glow: 3, visible: 1,
-    text: "1975 · WASD OR THE STICK TO SWIM · GRAB FISH · THE SHARK IS FASTER THAN YOU", script: []
+    text: "WASD SWIMS · GRAB FISH · THE SHARK IS FASTER", script: []
   });
 
   // name the on-screen joystick

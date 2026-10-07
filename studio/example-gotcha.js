@@ -263,7 +263,7 @@ export function buildGotchaExample() {
   objects.push({
     id: "gt_help", name: "help", type: "text",
     x: 240, y: 350, size: 10, color: DIM, glow: 3, visible: 1,
-    text: "ATARI 1973 · CHASER W A S D · RUNNER ARROWS · THE MAZE NEVER STOPS",
+    text: "CHASER WASD · RUNNER ARROWS · THE MAZE SHIFTS",
     script: []
   });
 

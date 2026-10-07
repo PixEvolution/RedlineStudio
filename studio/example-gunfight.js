@@ -378,7 +378,7 @@ export function buildGunfightExample() {
   objects.push({
     id: "gf_help", name: "help", type: "text",
     x: 400, y: 580, size: 10, color: DIM, glow: 3, visible: 1,
-    text: "1975 · P1 WASD + Q/E TILT + SPACE · P2 ARROWS + ,/. TILT + ENTER · OR TWO STICKS EACH, LIKE THE REAL CABINET",
+    text: "P1 WASD+Q/E+SPACE · P2 ARROWS+,/.+ENTER",
     script: []
   });
 

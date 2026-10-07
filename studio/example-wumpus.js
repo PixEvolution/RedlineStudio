@@ -269,7 +269,7 @@ export function buildWumpusExample() {
   objects.push({
     id: "wu_help", name: "help", type: "text",
     x: 240, y: 350, size: 10, color: DIM, glow: 3, visible: 1,
-    text: "GREGORY YOB 1973 · WALK THE LIT ROOMS · SHOOT MODE FIRES INTO A TUNNEL",
+    text: "YOB 1973 · WALK LIT ROOMS · SHOOT INTO TUNNELS",
     script: []
   });
 

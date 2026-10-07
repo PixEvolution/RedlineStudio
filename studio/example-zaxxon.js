@@ -87,7 +87,7 @@ export function buildZaxxonExample() {
     push(`${pad}set tik to 0`);
     dealLap(pad);
     resetShip(pad);
-    push(`${pad}set status.text to "WATCH THE SHADOW — IT NEVER LIES. SHOOT THE FUEL DUMPS."`);
+    push(`${pad}set status.text to "WATCH THE SHADOW. SHOOT THE FUEL DUMPS."`);
   };
 
   // ======== start
@@ -714,13 +714,13 @@ end` }]
   objects.push({
     id: "zx_help", name: "help", type: "text",
     x: W / 2, y: 240, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "W/S CLIMB AND DIVE · A/D SLIDE · SPACE FIRES · WATCH YOUR SHADOW",
+    text: "W/S CLIMB · A/D SLIDE · WATCH YOUR SHADOW",
     script: []
   });
   objects.push({
     id: "zx_help2", name: "help2", type: "text",
     x: W / 2, y: 258, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "THREAD THE LIT WINDOWS · SHOOT FUEL DUMPS TO REFUEL · EMPTY IS A CRASH",
+    text: "THREAD LIT WINDOWS · FUEL DUMPS REFUEL YOU",
     script: []
   });
 

@@ -352,7 +352,7 @@ export function buildGrantrakExample() {
   objects.push({
     id: "gk_help", name: "help", type: "text",
     x: 240, y: 350, size: 10, color: DIM, glow: 3, visible: 1,
-    text: "ATARI 1974 · A/D STEER · W GAS · S BRAKE · Q/E SHIFT · GATES IN ORDER",
+    text: "A/D STEER · W GAS · Q/E SHIFT · GATES IN ORDER",
     script: []
   });
 

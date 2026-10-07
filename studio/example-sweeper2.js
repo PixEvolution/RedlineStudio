@@ -704,7 +704,7 @@ end` }]
   objects.push({
     id: "s2_help", name: "help", type: "text",
     x: 180, y: 312, size: 8, color: DIM, glow: 3, visible: 1,
-    text: "4 MAZES · THE PART WANDERS · DRONES TURN RANDOM 1 IN 5",
+    text: "4 MAZES · THE PART WANDERS · DRONES GO RANDOM",
     script: []
   });
 

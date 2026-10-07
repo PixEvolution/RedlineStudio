@@ -178,7 +178,7 @@ export function buildWolfensteinExample() {
       push(`${pad}end`);
     }
     dealRoom(pad, 240, 300);
-    push(`${pad}set status.text to "READ THEIR FACING. THE PLANS ARE IN A TOWER OR A CELLAR."`);
+    push(`${pad}set status.text to "READ THEIR FACING. THE PLANS HIDE HIGH OR LOW."`);
   };
 
   // ======== start: carve the castle into the tables once
@@ -335,7 +335,7 @@ export function buildWolfensteinExample() {
   push("      if loot == 2 then");
   push("        set uniform to 1");
   push("        change score by 200");
-  push('        set status.text to "A GUARD\'S UNIFORM — THE RANK AND FILE IGNORE YOU NOW"');
+  push('        set status.text to "A GUARD\'S UNIFORM — THE RANK AND FILE IGNORE YOU"');
   push("        beep 523 for 0.08");
   push("        beep 659 for 0.08");
   push("        beep 784 for 0.12");
@@ -432,9 +432,9 @@ export function buildWolfensteinExample() {
   push("          change score by 1500 + lives * 300");
   push("          if kills == 0 then");
   push("            change score by 500");
-  push('            set status.text to "OUT WITH THE PLANS, NOT ONE SHOT FIRED — +500. CLICK FOR MORE."');
+  push('            set status.text to "OUT SILENT, NOT ONE SHOT — +500. CLICK FOR MORE."');
   push("          else");
-  push('            set status.text to "OUT THE GREAT DOOR WITH THE PLANS — CLICK TO BREAK IN AGAIN"');
+  push('            set status.text to "OUT WITH THE PLANS — CLICK TO BREAK IN AGAIN"');
   push("          end");
   push('          say "THE PLANS LEAVE WITH YOU." for 1.5');
   push("          beep 523 for 0.1");
@@ -475,7 +475,7 @@ export function buildWolfensteinExample() {
   }
   push("      else");
   push("        beep 165 for 0.05");
-  push('        set status.text to "CLICK. NO ROUNDS — SEARCH THE CHESTS, FRISK THE GUARDS."');
+  push('        set status.text to "CLICK. NO ROUNDS — SEARCH CHESTS, FRISK GUARDS."');
   push("      end");
   push("    end");
   push("    set pf0 to pf");
@@ -865,19 +865,19 @@ end` }]
 
   // attract
   objects.push({ id: "cw_big", name: "bigtitle", type: "text", x: W / 2, y: 108, size: 36, color: STONE, glow: 16, visible: 1, text: "CASTLE WOLFENSTEIN", script: [] });
-  objects.push({ id: "cw_sub", name: "subline", type: "text", x: W / 2, y: 140, size: 10, color: DIM, glow: 4, visible: 1, text: "MUSE SOFTWARE 1981 · APPLE II · ANCESTOR OF THE STEALTH GENRE", script: [] });
+  objects.push({ id: "cw_sub", name: "subline", type: "text", x: W / 2, y: 140, size: 10, color: DIM, glow: 4, visible: 1, text: "MUSE 1981 · ANCESTOR OF THE STEALTH GENRE", script: [] });
   objects.push({ id: "cw_coin", name: "coinline", type: "text", x: W / 2, y: 172, size: 12, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — CLICK TO BREAK IN ◎", script: [] });
   objects.push({ id: "cw_play", name: "playbtn", type: "text", x: W / 2, y: 210, size: 16, color: GREEN, glow: 12, visible: 1, text: "[ BREAK IN ]", script: [] });
   objects.push({
     id: "cw_help", name: "help", type: "text",
     x: W / 2, y: 244, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "WASD SNEAKS · E HOLDS UP GUARDS + SEARCHES CHESTS · SPACE IS LOUD",
+    text: "WASD SNEAKS · E HOLD UP + SEARCH · SPACE IS LOUD",
     script: []
   });
   objects.push({
     id: "cw_help2", name: "help2", type: "text",
     x: W / 2, y: 262, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "GUARDS SEE ONLY WHERE THEY FACE — FIND THE PLANS, GO NORTH",
+    text: "GUARDS SEE ONLY THEIR FACING · PLANS, THEN NORTH",
     script: []
   });
 

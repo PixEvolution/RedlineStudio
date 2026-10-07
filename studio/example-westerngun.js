@@ -412,7 +412,7 @@ export function buildWesterngunExample() {
   objects.push({
     id: "wg_sub", name: "subline", type: "text",
     x: 400, y: 236, size: 11, color: AMBER, glow: 8, visible: 1,
-    text: "TAITO 1975 · NISHIKADO'S ORIGINAL — HARDWIRED, NO CPU", script: []
+    text: "TAITO 1975 · NISHIKADO — HARDWIRED, NO CPU", script: []
   });
   objects.push({
     id: "wg_coin", name: "coinline", type: "text",
@@ -433,7 +433,7 @@ export function buildWesterngunExample() {
   objects.push({
     id: "wg_help", name: "help", type: "text",
     x: 400, y: 580, size: 10, color: DIM, glow: 3, visible: 1,
-    text: "1975 · ROAM ANYWHERE · ROCKS RICOCHET (EVEN AT YOU) · CACTI SHOOT APART · YOU FIRE THE WAY YOU FACE",
+    text: "ROCKS RICOCHET · CACTI SHATTER · AIM = FACING",
     script: []
   });
 

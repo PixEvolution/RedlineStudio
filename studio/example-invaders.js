@@ -420,7 +420,7 @@ end` }]
   objects.push({
     id: "si_help", name: "help", type: "text",
     x: W / 2, y: 390, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "←/→ OR A/D OR THE STICK · SPACE FIRES · ONE SHOT AT A TIME",
+    text: "A/D OR THE STICK · SPACE — ONE SHOT AT A TIME",
     script: []
   });
 

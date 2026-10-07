@@ -66,7 +66,7 @@ export function buildGalagaExample() {
     for (let j = 0; j < NSHOT; j++) push(`${pad}set son[${j}] to 0`);
     for (let b = 0; b < NBOMB; b++) push(`${pad}set bon[${b}] to 0`);
     push(`${pad}if chstage == 1 then`);
-    push(`${pad}  set status.text to "CHALLENGING STAGE — THEY WON'T FIRE. ALL 24 = 10000"`);
+    push(`${pad}  set status.text to "CHALLENGING STAGE — NO FIRE. ALL 24 = 10000"`);
     push(`${pad}else`);
     push(`${pad}  set status.text to "WAVE " + wave`);
     push(`${pad}end`);
@@ -273,7 +273,7 @@ export function buildGalagaExample() {
   push("            set endplay to 1");
   push('            set status.text to "LAST FIGHTER CAPTURED — CLICK TO LAUNCH AGAIN"');
   push("          else");
-  push('            set status.text to "FIGHTER CAPTURED — SHOOT ITS CARRIER TO GET IT BACK"');
+  push('            set status.text to "FIGHTER CAPTURED — SHOOT THE CARRIER"');
   push("            set grace to 90");
   push("            set px to 180");
   push("          end");
@@ -553,7 +553,7 @@ end` }]
   objects.push({
     id: "gg_help", name: "help", type: "text",
     x: W / 2, y: 290, size: 8, color: DIM, glow: 3, visible: 1,
-    text: "A/D SLIDES · SPACE FIRES · DODGE THE BEAM — OR GET CAUGHT, THEN RESCUE",
+    text: "A/D SLIDES · SPACE FIRES · THE BEAM CAPTURES",
     script: []
   });
 

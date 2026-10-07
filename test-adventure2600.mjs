@@ -150,7 +150,7 @@ console.log("The quest explains itself:");
   e.vars.carry = 4;
   e.step();
   check("carrying the chalice, the HUD points HOME",
-    String(e.byName.carrytx.text).includes("GOLD CASTLE TO WIN"));
+    String(e.byName.carrytx.text).includes("GOLD CASTLE = VICTORY"));
   e.vars.carry = 2;
   e.step();
   check("carrying a key, the HUD names its castle",

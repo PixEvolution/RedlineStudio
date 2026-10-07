@@ -455,7 +455,7 @@ end` }]
   objects.push({
     id: "gx_help", name: "help", type: "text",
     x: W / 2, y: 390, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "←/→ OR A/D OR THE STICK · SPACE FIRES · DIVERS PAY DOUBLE",
+    text: "A/D OR THE STICK · SPACE FIRES · DIVERS PAY 2X",
     script: []
   });
 
