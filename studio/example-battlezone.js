@@ -243,7 +243,13 @@ export function buildBattlezoneExample() {
   }
   push("    if pshot == 1 and abs(psx - ex) < 16 and abs(psz - ez) < 16 then");
   push("      set pshot to 0");
-  push("      explode enemy");
+  // the explosion lives in the WORLD, not on the glass: it keeps the dead
+  // tank's ground position and is re-projected every frame, so turning the
+  // periscope sweeps it past like everything else
+  push("      set wrecon to 1");
+  push("      set wrecx to ex");
+  push("      set wrecz to ez");
+  push("      set wrect to 55");
   push("      beep 90 for 0.3");
   push("      set kills to kills + 1");
   push("      if emiss == 1 then");
@@ -268,6 +274,21 @@ export function buildBattlezoneExample() {
   push("  end");
   push("  set erx to rxv");
   push("  set erz to rzv");
+  // ---- the burning wreck: a world point like any other
+  push("  set wkv to 0");
+  push("  if wrecon == 1 then");
+  push("    set wrect to wrect - 1");
+  push("    if wrect <= 0 then");
+  push("      set wrecon to 0");
+  push("    end");
+  push("  end");
+  rel("  ", "wrecx", "wrecz");
+  push("  set wkx to 240 + rxv * 260 / max(8, rzv)");
+  push(`  set wky to ${HOR} + 3400 / max(8, rzv)`);
+  push("  set wks to min(56, 3200 / max(8, rzv))");
+  push("  if wrecon == 1 and rzv > 8 then");
+  push("    set wkv to 1");
+  push("  end");
   for (let i = 0; i < NOBS; i++) {
     rel("  ", String(OBST[i][0]), String(OBST[i][1]));
     push(`  set o${i}x to 240 + rxv * 260 / max(8, rzv)`);
@@ -402,6 +423,43 @@ else
   set self.text to "[Ξ]"
   set self.color to "${GREEN}"
 end
+end` }]
+  });
+
+  // the wreck: two expanding rings + a guttering flame, pinned to the ground
+  // where the tank died — they slide across the glass as you turn, like the
+  // mountains do, because they live in the world
+  objects.push({
+    id: "bz_wk1", name: "wreckring1", type: "ring",
+    x: -90, y: -90, size: 8, color: WHITE, glow: 14, visible: 0, text: "",
+    script: [{
+      event: "code", source: `when tick
+set self.visible to (game == 0 and wkv == 1)
+set self.x to wkx
+set self.y to wky
+set self.size to wks * (0.15 + (55 - wrect) / 55 * 0.85)
+end` }]
+  });
+  objects.push({
+    id: "bz_wk2", name: "wreckring2", type: "ring",
+    x: -90, y: -90, size: 5, color: RED, glow: 12, visible: 0, text: "",
+    script: [{
+      event: "code", source: `when tick
+set self.visible to (game == 0 and wkv == 1)
+set self.x to wkx
+set self.y to wky
+set self.size to wks * (0.08 + (55 - wrect) / 55 * 0.45)
+end` }]
+  });
+  objects.push({
+    id: "bz_wk3", name: "wreckflame", type: "dot",
+    x: -90, y: -90, size: 4, color: WHITE, glow: 16, visible: 0, text: "",
+    script: [{
+      event: "code", source: `when tick
+set self.visible to (game == 0 and wkv == 1 and wrect % 6 < 4)
+set self.x to wkx
+set self.y to wky
+set self.size to max(2, wks * 0.12 * wrect / 55 * (1 + sin(time() * 900) * 0.4))
 end` }]
   });
   objects.push({

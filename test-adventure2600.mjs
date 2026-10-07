@@ -105,6 +105,58 @@ console.log("Keys, gates, castles:");
   check("the gold key does NOT move the black gate", e2.vars.bgate === 0);
 }
 
+console.log("An open gate LOOKS open:");
+{
+  const e = fresh();
+  play(e);
+  benchDragons(e);
+  put(e, 0, 240, 200);
+  e.step();
+  check("gate shut: the full north wall spans the doorway",
+    e.byName.wallN.visible === 1 && e.byName.gatewallL.visible === 0 && e.byName.gatewallR.visible === 0);
+  e.vars.carry = 1;
+  put(e, 0, 240, 80);
+  walk(e, "w", 12);
+  e.step();
+  check("gate open: the wall over the doorway is GONE",
+    e.vars.ggate === 1 && e.byName.wallN.visible === 0);
+  check("…replaced by two segments framing the real 28px opening",
+    e.byName.gatewallL.visible === 1 && e.byName.gatewallR.visible === 1
+    && e.byName.gatewallL.size === 226 && e.byName.gatewallR.x === 254);
+  // the black castle gets the same doorway
+  const e2 = fresh();
+  play(e2);
+  benchDragons(e2);
+  e2.vars.carry = 2;
+  put(e2, 2, 240, 80);
+  walk(e2, "w", 12);
+  e2.step();
+  check("the black gate opens the same hole in ITS wall",
+    e2.vars.bgate === 1 && e2.byName.wallN.visible === 0 && e2.byName.gatewallL.visible === 1);
+  // other rooms are untouched
+  put(e2, 4, 240, 200);
+  e2.step(); e2.step();
+  check("an open gate never punches holes in OTHER rooms",
+    e2.byName.gatewallL.visible === 0 && e2.byName.gatewallR.visible === 0);
+}
+
+console.log("The quest explains itself:");
+{
+  const e = fresh();
+  check("the attract mode states the quest",
+    String(e.byName.help2.text).includes("CHALICE") && String(e.byName.help2.text).includes("GOLD CASTLE"));
+  play(e);
+  benchDragons(e);
+  e.vars.carry = 4;
+  e.step();
+  check("carrying the chalice, the HUD points HOME",
+    String(e.byName.carrytx.text).includes("GOLD CASTLE TO WIN"));
+  e.vars.carry = 2;
+  e.step();
+  check("carrying a key, the HUD names its castle",
+    String(e.byName.carrytx.text).includes("OPENS THE BLACK CASTLE"));
+}
+
 console.log("Three dragons, one sword:");
 {
   const e = fresh();

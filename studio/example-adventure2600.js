@@ -21,6 +21,15 @@
 const W = 480, H = 360;
 const SPEED = 2.6;
 const NAMES = ["", "GOLD KEY", "BLACK KEY", "THE SWORD", "THE CHALICE", "SOMETHING…"];
+// the carry line doubles as the quest compass — what the item is FOR
+const HINTS = [
+  "",
+  " — IT OPENS THE GOLD CASTLE GATE",
+  " — IT OPENS THE BLACK CASTLE GATE",
+  " — TOUCH A DRAGON TO SLAY IT",
+  " — CARRY IT INTO THE GOLD CASTLE TO WIN",
+  "",
+];
 // map: 0 1 2 / 3 4 5 outdoors · 9 gold inside · 10 black inside · 11 secret
 const EXITS = {
   //      N   S   E   W
@@ -120,6 +129,7 @@ function brainCode() {
   push("set coinline.visible to (game == 9)");
   push("set playbtn.visible to (game == 9)");
   push("set help.visible to (game == 9)");
+  push("set help2.visible to (game == 9)");
   push("set coinline.glow to 8 + sin(time() * 300) * 6");
   push("if arcade == 1 then");
   push('  set coinline.text to "◎ COIN ACCEPTED — CLICK TO QUEST ◎"');
@@ -224,7 +234,7 @@ function brainCode() {
   push("      set ggate to 1");
   push("      change score by 50");
   push("      beep 660 for 0.1");
-  push('      set status.text to "THE GOLD GATE RISES"');
+  push('      set status.text to "THE GOLD GATE RISES — WALK THROUGH THE OPENING"');
   push("    end");
   push("    if ggate == 1 and abs(hero.x - 240) < 14 and hero.y < 20 then");
   push("      set room to 9");
@@ -236,7 +246,7 @@ function brainCode() {
   push("      set bgate to 1");
   push("      change score by 50");
   push("      beep 660 for 0.1");
-  push('      set status.text to "THE BLACK GATE RISES"');
+  push('      set status.text to "THE BLACK GATE RISES — WALK THROUGH THE OPENING"');
   push("    end");
   push("    if bgate == 1 and abs(hero.x - 240) < 14 and hero.y < 20 then");
   push("      set room to 10");
@@ -257,7 +267,7 @@ function brainCode() {
   push("            set chget to 1");
   push("            change score by 200");
   push("          end");
-  push('          set status.text to "THE CHALICE! TAKE IT HOME!"');
+  push('          set status.text to "THE CHALICE! CARRY IT INTO THE GOLD CASTLE!"');
   push("        end");
   push("        if i == 5 then");
   push('          set status.text to "YOU ARE CARRYING… SOMETHING?"');
@@ -323,7 +333,7 @@ function brainCode() {
   push('  set carrytx.text to ""');
   for (let i = 1; i <= 5; i++) {
     push(`  if carry == ${i} then`);
-    push(`    set carrytx.text to "CARRYING: ${NAMES[i]}"`);
+    push(`    set carrytx.text to "CARRYING: ${NAMES[i]}${HINTS[i]}"`);
     push("  end");
   }
   push("end");
@@ -443,7 +453,16 @@ export function buildAdventure2600Example() {
 set self.visible to (game != 9 and ${exList}[room] >= 0)
 set self.color to roomc
 end`;
-  objects.push({ id: "ad_wn", name: "wallN", type: "line", x: 0, y: 16, size: W, angle: 0, color: GOLD, glow: 6, visible: 0, text: "", script: [{ event: "code", source: wallCode("exn1") }] });
+  // the north wall hides over an OPEN castle gate (rooms 0/2) so the
+  // doorway reads as a doorway — two snug segments frame the real 28px gap
+  const gateOpen = "(room == 0 and ggate == 1) or (room == 2 and bgate == 1)";
+  objects.push({ id: "ad_wn", name: "wallN", type: "line", x: 0, y: 16, size: W, angle: 0, color: GOLD, glow: 6, visible: 0, text: "", script: [{ event: "code", source: wallCode("exn1", ` and not (${gateOpen})`) }] });
+  const doorCode = `when tick
+set self.visible to (game != 9 and (${gateOpen}))
+set self.color to roomc
+end`;
+  objects.push({ id: "ad_wdl", name: "gatewallL", type: "line", x: 0, y: 16, size: 226, angle: 0, color: GOLD, glow: 6, visible: 0, text: "", script: [{ event: "code", source: doorCode }] });
+  objects.push({ id: "ad_wdr", name: "gatewallR", type: "line", x: 254, y: 16, size: W - 254, angle: 0, color: GOLD, glow: 6, visible: 0, text: "", script: [{ event: "code", source: doorCode }] });
   objects.push({ id: "ad_wna", name: "wallNa", type: "line", x: 0, y: 16, size: 204, angle: 0, color: GOLD, glow: 6, visible: 0, text: "", script: [{ event: "code", source: gapCode("exn1") }] });
   objects.push({ id: "ad_wnb", name: "wallNb", type: "line", x: 276, y: 16, size: 204, angle: 0, color: GOLD, glow: 6, visible: 0, text: "", script: [{ event: "code", source: gapCode("exn1") }] });
   objects.push({ id: "ad_ws", name: "wallS", type: "line", x: 0, y: 344, size: W, angle: 0, color: GOLD, glow: 6, visible: 0, text: "", script: [{ event: "code", source: wallCode("exs1") }] });
@@ -516,7 +535,13 @@ end`;
   objects.push({
     id: "ad_help", name: "help", type: "text",
     x: W / 2, y: 256, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "WASD/STICK MOVES · TOUCH PICKS UP (ONE ITEM) · SPACE DROPS · CHALICE HOME",
+    text: "WASD/STICK MOVES · TOUCH PICKS UP (ONE ITEM) · SPACE DROPS",
+    script: []
+  });
+  objects.push({
+    id: "ad_help2", name: "help2", type: "text",
+    x: W / 2, y: 272, size: 9, color: DIM, glow: 3, visible: 1,
+    text: "THE QUEST: STEAL THE CHALICE FROM THE BLACK CASTLE — BRING IT HOME TO THE GOLD CASTLE",
     script: []
   });
 

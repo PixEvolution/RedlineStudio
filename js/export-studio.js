@@ -11,7 +11,7 @@ const STUDIO_BUNDLE = [
   "js/redscript.js", "js/engine.js", "js/convert.js", "js/blocks.js", "js/behaviors.js",
   "js/sprite-editor.js",
   "js/studio-tools.js", "js/gamefile.js", "js/touch-controls.js",
-  "js/terminal.js", "js/casino-odds.js", "js/intro.js"
+  "js/terminal.js", "js/casino-odds.js", "js/localwire.js", "js/intro.js"
 ];
 
 export async function buildOfflineStudioHtml({ rootPath = "", fetchText } = {}) {
@@ -115,10 +115,22 @@ export async function buildOfflineStudioHtml({ rootPath = "", fetchText } = {}) 
     <option value="960x540">960×540 · widescreen</option>
     <option value="360x480">360×480 · portrait</option>
   </select>
+  <select id="seats" title="Players — pick 2 or more and ▶ Test grows a ➕ Player button: every extra player is a REAL seat in its own window, its own keyboard">
+    <option value="1">1 player</option>
+    <option value="2">2 players</option>
+    <option value="3">3 players</option>
+    <option value="4">4 players</option>
+    <option value="5">5 players</option>
+    <option value="6">6 players</option>
+    <option value="7">7 players</option>
+    <option value="8">8 players</option>
+  </select>
   <button id="new">New</button>
   <button id="open">📂 Open</button>
   <button id="save">💾 Save .rlgame</button>
   <button id="test" class="go">▶ Test</button>
+  <button id="addplayer" class="go" style="display:none"
+    title="Opens another window that's a REAL player on the local wire — its own seat, its own keyboard">➕ Player</button>
 </div>
 <div class="grid">
   <div class="panel">
@@ -152,24 +164,29 @@ export async function buildOfflineStudioHtml({ rootPath = "", fetchText } = {}) 
   </div>
   <div id="scripted" class="hint">Select an object to edit its script.</div>
 </div>
-<p class="credit">The offline workshop. Save a <b>.rlgame</b> file, then ⬆ Import it in the online Studio at
+<p class="credit">The offline workshop — casino machines test in FREE PLAY (pretend coins, the real odds), and
+with 2+ players set, <b>➕ Player</b> opens real extra seats in their own windows.
+Save a <b>.rlgame</b> file, then ⬆ Import it in the online Studio at
 <a href="https://redlinestudio.dev/studio/studio.html" target="_blank" rel="noopener">redlinestudio.dev</a> to publish —
 the import verifies the file's seal, so save with 💾 here rather than editing the file by hand.</p>
 <input type="file" id="filein" accept=".rlgame,.json,.html" style="display:none">
-<script>
+<!-- the LIBRARY script carries an id: ➕ Player windows get this exact text
+     injected, so every extra seat runs its own engine on its own keyboard -->
+<script id="rl-lib">
 ${sources.join("\n\n")}
-
+</script>
+<script>
 // ---- the offline editor -----------------------------------------------------
 (function () {
   var $ = function (s) { return document.querySelector(s); };
   var canvas = $("#workspace"), stage = $("#stage");
-  var game = { title: "", w: 480, h: 360, objects: [] };
+  var game = { title: "", w: 480, h: 360, seats: 1, objects: [] };
   var selectedId = null, engine = null, controls = null, term = null, casino = null, clip = null;
   var dragging = null, snapOn = false;
   try { snapOn = localStorage.getItem("rl_off_snap") === "1"; } catch (e) {}
 
   var hist = createHistory(60);
-  var snap = function () { return JSON.stringify({ o: game.objects, w: game.w, h: game.h, sel: selectedId }); };
+  var snap = function () { return JSON.stringify({ o: game.objects, w: game.w, h: game.h, st: game.seats || 1, sel: selectedId }); };
   var commitTimer = null;
   function saveDraft() {
     try { localStorage.setItem("rl_off_draft", packGame(game)); } catch (e) {}
@@ -179,7 +196,7 @@ ${sources.join("\n\n")}
   function commitSoon() { clearTimeout(commitTimer); commitTimer = setTimeout(commit, 500); }
   function applySnap(s) {
     var st = JSON.parse(s);
-    game.objects = st.o; game.w = st.w; game.h = st.h;
+    game.objects = st.o; game.w = st.w; game.h = st.h; game.seats = st.st || 1;
     selectedId = st.sel;
     applyDims(); renderAll(); saveDraft(); syncUndo();
   }
@@ -198,6 +215,7 @@ ${sources.join("\n\n")}
     canvas.getContext("2d").setTransform(2, 0, 0, 2, 0, 0);
     canvas.style.aspectRatio = game.w + " / " + game.h;
     $("#worldsize").value = game.w + "x" + game.h;
+    $("#seats").value = String(Math.min(8, Math.max(1, Number(game.seats) || 1)));
   }
   function redraw() {
     if (engine) return;
@@ -403,10 +421,122 @@ ${sources.join("\n\n")}
     game.w = Number(p[0]); game.h = Number(p[1]);
     applyDims(); redraw(); commit();
   });
+  // players (seats) — saved into the .rlgame, so the online Studio imports it
+  $("#seats").addEventListener("change", function () {
+    if (engine) { applyDims(); return; }
+    game.seats = Math.min(8, Math.max(1, Number($("#seats").value) || 1));
+    commit();
+  });
+
+  // ---- multiplayer on the LOCAL wire, file:// edition. BroadcastChannel
+  // can't be trusted between file:// windows, so THIS window is the hub:
+  // every ➕ Player window is an about:blank child of this page (same
+  // origin), gets the library script injected, runs its OWN engine on its
+  // OWN keyboard, and every message hops through direct window references.
+  // The net contract is still localwire's — identical to the online wire.
+  var hub = (function () {
+    var subs = [];
+    return {
+      join: function (fn) { subs.push(fn); return function () { var i = subs.indexOf(fn); if (i >= 0) subs.splice(i, 1); }; },
+      post: function (msg, from) { for (var i = subs.length - 1; i >= 0; i--) { if (subs[i] !== from) { try { subs[i](msg); } catch (e) {} } } }
+    };
+  })();
+  window.__RLHUB = hub;
+  function hubChannel() {
+    var me = { onmessage: null, closed: false };
+    var recv = function (msg) { if (!me.closed && me.onmessage) me.onmessage({ data: msg }); };
+    var leave = hub.join(recv);
+    me.postMessage = function (msg) { if (!me.closed) hub.post(msg, recv); };
+    me.close = function () { me.closed = true; leave(); };
+    return me;
+  }
+  var wire = null, wireSeats = 0, players = {};
+  function startWire() {
+    var declared = Math.min(8, Math.max(1, Number(game.seats) || 1));
+    wireSeats = declared > 1 ? declared : (engine.usesDuel() ? 2 : 0);
+    if (!wireSeats) return;
+    wire = attachLocalParty(engine, "offwire", 1, wireSeats, "P1", { makeChannel: hubChannel });
+    $("#addplayer").style.display = "";
+  }
+  function stopWire() {
+    if (wire) { wire.destroy(); wire = null; }
+    for (var s in players) {
+      var w = players[s];
+      try { if (w && !w.closed) { try { w.__RLSTOP(); } catch (e) {} w.close(); } } catch (e) {}
+      delete players[s];
+    }
+    $("#addplayer").style.display = "none";
+    wireSeats = 0;
+  }
+  // this function is SERIALIZED into every player window — it only touches
+  // the child's own globals (the injected library) plus the opener's hub
+  function childBoot() {
+    var B = window.__BOOT;
+    var canvas = document.getElementById("glass"), stage = document.getElementById("stage");
+    canvas.width = B.w * 2; canvas.height = B.h * 2;
+    canvas.getContext("2d").setTransform(2, 0, 0, 2, 0, 0);
+    canvas.style.aspectRatio = B.w + " / " + B.h;
+    var eng = new Engine(canvas, B.objects, { w: B.w, h: B.h });
+    eng.start();
+    var oHub = window.opener.__RLHUB;
+    var mk = function () {
+      var me = { onmessage: null, closed: false };
+      var recv = function (msg) { if (!me.closed && me.onmessage) me.onmessage({ data: msg }); };
+      var leave = oHub.join(recv);
+      me.postMessage = function (msg) { if (!me.closed) oHub.post(msg, recv); };
+      me.close = function () { me.closed = true; leave(); };
+      return me;
+    };
+    var cwire = attachLocalParty(eng, "offwire", B.slot, B.seats, "P" + B.slot, { makeChannel: mk });
+    try { createTouchControls(eng, stage); } catch (e) {}
+    try { attachTerminalInput(eng, stage); } catch (e) {}
+    window.__RLSTOP = function () {
+      try { cwire.destroy(); } catch (e) {}
+      try { eng.stop(); } catch (e) {}
+      var ov = document.getElementById("over");
+      if (ov) ov.style.display = "flex";
+    };
+    window.addEventListener("beforeunload", function () { try { cwire.destroy(); } catch (e) {} });
+  }
+  function openPlayer(s) {
+    var w = window.open("", "rl_off_p" + s,
+      "width=" + Math.min(game.w + 60, 1000) + ",height=" + Math.min(game.h + 190, 900));
+    if (!w) { alert("The browser blocked the player window — allow popups for this file and try again."); return; }
+    var lib = document.getElementById("rl-lib").textContent.replace(/<\\/script/gi, "<\\\\/script");
+    var boot = JSON.stringify({ slot: s, seats: wireSeats, w: game.w, h: game.h, objects: game.objects })
+      .replace(/</g, "\\\\u003c");
+    var safeTitle = String(game.title || $("#title").value || "Untitled Game").replace(/[<>&"]/g, "");
+    var css = document.querySelector("style").textContent;
+    w.document.open();
+    w.document.write('<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">'
+      + '<meta name="viewport" content="width=device-width, initial-scale=1.0">'
+      + '<title>PLAYER ' + s + ' \\u2014 ' + safeTitle + '</title><style>' + css
+      + ' body { display: flex; flex-direction: column; align-items: center; }'
+      + ' .pbadge { font-weight: 800; letter-spacing: 1px; color: #0a1408; background: #57ff9a; padding: 3px 10px; border-radius: 4px; font-size: 13px; }'
+      + ' #over { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(3,17,10,.88); color: #b9ffc9; flex-direction: column; gap: 8px; border-radius: 12px; }'
+      + '</style></head><body>'
+      + '<div class="bar"><span class="pbadge">PLAYER ' + s + '</span><h1 style="font-size:13px">' + safeTitle + '</h1></div>'
+      + '<div class="stage" id="stage" style="width:100%"><canvas id="glass"></canvas>'
+      + '<div id="over"><b>TEST ENDED</b><span class="hint">The Studio stopped the test \\u2014 close this window.</span></div></div>'
+      + '<p class="hint">This window is its own PLAYER \\u2014 click it, then play on its keyboard.</p>'
+      + '<scr' + 'ipt>window.__BOOT = ' + boot + ';\\n' + lib + '\\n;(' + String(childBoot) + ')();</scr' + 'ipt>'
+      + '</body></html>');
+    w.document.close();
+    players[s] = w;
+  }
+  $("#addplayer").addEventListener("click", function () {
+    if (!engine || !wireSeats) return;
+    for (var s = 2; s <= wireSeats; s++) {
+      if (!players[s] || players[s].closed) { openPlayer(s); return; }
+    }
+    alert("All " + wireSeats + " seats are open.");
+  });
+  window.addEventListener("beforeunload", stopWire);
 
   // ▶ Test
   $("#test").addEventListener("click", function () {
     if (engine) {
+      stopWire();
       engine.stop(); engine = null;
       if (controls) { controls.destroy(); controls = null; }
       if (term) { term.destroy(); term = null; }
@@ -416,8 +546,10 @@ ${sources.join("\n\n")}
     }
     engine = new Engine(canvas, game.objects, { w: game.w, h: game.h });
     if (engine.errors.length) alert("Script problems:\\n" + engine.errors.slice(0, 4).join("\\n"));
+    // casino machines test in FREE PLAY: pretend coins, the platform's real odds
     if (engine.usesCasino()) casino = attachCasinoLoop(engine, localWallet(100, 1000));
     engine.start();
+    startWire();   // 2+ players (or a duel-contract game): ➕ Player appears
     controls = createTouchControls(engine, stage);
     term = attachTerminalInput(engine, stage);
     $("#test").textContent = "■ Stop";
@@ -448,7 +580,7 @@ ${sources.join("\n\n")}
           text = inner;
         }
         var g = unpackGame(text);
-        game = { title: g.title, w: g.w || 480, h: g.h || 360, objects: g.objects };
+        game = { title: g.title, w: g.w || 480, h: g.h || 360, seats: g.seats || 1, objects: g.objects };
         $("#title").value = game.title;
         selectedId = game.objects[0] ? game.objects[0].id : null;
         applyDims(); renderAll();
@@ -459,7 +591,7 @@ ${sources.join("\n\n")}
   });
   $("#new").addEventListener("click", function () {
     if (!confirm("Start a new empty game? (↶ undo can bring this one back.)")) return;
-    game = { title: "", w: 480, h: 360, objects: [] };
+    game = { title: "", w: 480, h: 360, seats: 1, objects: [] };
     $("#title").value = ""; selectedId = null;
     applyDims(); renderAll(); commit();
   });
@@ -470,7 +602,7 @@ ${sources.join("\n\n")}
     var d = localStorage.getItem("rl_off_draft");
     if (d) {
       var g0 = unpackGame(d);
-      game = { title: g0.title, w: g0.w || 480, h: g0.h || 360, objects: g0.objects };
+      game = { title: g0.title, w: g0.w || 480, h: g0.h || 360, seats: g0.seats || 1, objects: g0.objects };
       $("#title").value = game.title === "Untitled Game" ? "" : game.title;
       selectedId = game.objects[0] ? game.objects[0].id : null;
     }

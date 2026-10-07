@@ -16,6 +16,27 @@
 import { Engine, drawFrame, CANVAS_W, CANVAS_H } from "./engine.js";
 import { fmtDate } from "./ui.js";
 
+// Render a scene once into a small JPEG dataURL — the card THUMBNAIL that
+// rides on the light cards collection (same trick as model thumbs). Static
+// screens become one picture instead of a sack of objects; only LIVE screens
+// still carry objects. Returns "" when anything goes wrong (headless, etc).
+export function renderThumb(objects, w = CANVAS_W, h = CANVAS_H, maxW = 240) {
+  try {
+    if (!Array.isArray(objects) || objects.length === 0) return "";
+    const full = document.createElement("canvas");
+    full.width = w; full.height = h;
+    drawFrame(full.getContext("2d"), JSON.parse(JSON.stringify(objects)), { w, h });
+    const scale = Math.min(1, maxW / w);
+    const small = document.createElement("canvas");
+    small.width = Math.round(w * scale);
+    small.height = Math.round(h * scale);
+    const c = small.getContext("2d");
+    c.drawImage(full, 0, 0, small.width, small.height);
+    const url = small.toDataURL("image/jpeg", 0.65);
+    return url.length <= 60000 ? url : small.toDataURL("image/jpeg", 0.4);
+  } catch { return ""; }
+}
+
 const SMALL = typeof matchMedia !== "undefined"
   && (matchMedia("(pointer: coarse)").matches || matchMedia("(max-width: 700px)").matches);
 const MAX_LIVE = SMALL ? 5 : 24;        // phone: a handful · PC: the whole room
@@ -69,10 +90,20 @@ export function gameCard(g, { rootPath = "", showOwner = true } = {}) {
   card.href = rootPath + "play.html?id=" + encodeURIComponent(g.id);
 
   const screen = g.screen;
-  if (screen && screen.mode !== "none" && screen.objects?.length > 0) {
+  const hasObjects = screen && screen.mode !== "none" && screen.objects?.length > 0;
+  if (!hasObjects && g.thumb) {
+    // a cards-collection card: the screen is one small picture
+    const img = document.createElement("img");
+    img.src = g.thumb;
+    img.alt = g.title || "";
+    img.className = "card-screen";
+    img.draggable = false;
+    card.appendChild(img);
+  }
+  if (hasObjects) {
     // the card's screen matches the game's own world size (default 480×360)
-    const w = Number(g.data?.w) || CANVAS_W;
-    const h = Number(g.data?.h) || CANVAS_H;
+    const w = Number(g.w) || Number(g.data?.w) || CANVAS_W;
+    const h = Number(g.h) || Number(g.data?.h) || CANVAS_H;
     const canvas = document.createElement("canvas");
     canvas.width = w;
     canvas.height = h;

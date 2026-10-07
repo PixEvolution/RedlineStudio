@@ -106,6 +106,39 @@ for (const [what, needle] of [
   ["saved behaviors join the ✨ menu", '"my:" + m.id'],
   ["…and apply as editable script chunks", "applyBehaviorScript"],
 ]) check(what, studio.includes(needle));
+console.log("🔍 Find + 📋 Copy all scripts:");
+for (const [what, needle] of [
+  ["the 🔍 Find button", 'id="btn-find"'],
+  ["the find box searches as you type", 'findBox.addEventListener("input", runFind)'],
+  ["hits are labeled like the debug panel (object → event, line)", "when ${h.ev}, line ${h.n}"],
+  ["clicking a hit selects the object and jumps", "jumpToHit"],
+  ["…and highlights the matching field", "setSelectionRange(at, at + needle.length)"],
+  ["the 📋 Copy all scripts button", 'id="btn-copy-scripts"'],
+  ["every object gets a labeled section", "=== ${o.name} — ${o.type} at"],
+  ["sections print real RedScript via blocksToCode", "objScriptText"],
+  ["the clipboard has a blocked-browser fallback", 'document.execCommand("copy")'],
+]) check(what, studio.includes(needle));
+{
+  // the search mechanics the Studio relies on: blocksToCode prints a
+  // script as lines, with "when <event>" opening each section — so the
+  // scan can label every hit with its event and line number
+  const { blocksToCode } = await import("./js/convert.js");
+  const { buildPongExample } = await import("./studio/example-pong.js");
+  const brainObj = buildPongExample().objects.find(o =>
+    blocksToCode(o.script || []).includes("score"));
+  const lines = blocksToCode(brainObj.script).split("\n");
+  let ev = "start"; const hits = [];
+  for (let n = 0; n < lines.length; n++) {
+    const m = lines[n].match(/^when\s+(\S+)/);
+    if (m) ev = m[1];
+    if (lines[n].toLowerCase().includes("score")) hits.push({ ev, n: n + 1 });
+  }
+  check("the scan finds real hits in a real example, each with an event + line",
+    hits.length > 0 && hits.every(h => h.ev && h.n > 0));
+  check("line numbers point at the right lines",
+    hits.every(h => lines[h.n - 1].toLowerCase().includes("score")));
+}
+
 check("the Market knows a 🧩 behavior card from a model card",
   readFileSync("market.html", "utf8").includes('m.kind === "behavior"'));
 check("behaviors travel through buying like models do",

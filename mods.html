@@ -18,6 +18,15 @@
     </div>
 
     <div class="panel">
+      <h2>🧱 Game cards</h2>
+      <p class="hint">The list pages read a light <span class="code">cards</span> collection so phones open
+      instantly. This button builds (or rebuilds) a card for every existing game — run it ONCE after the
+      cards update goes live. Safe to run again: it just rewrites the same cards.</p>
+      <button class="btn" id="btn-backfill">Build cards for every game</button>
+      <span class="hint" id="backfill-status" style="margin-left:10px"></span>
+    </div>
+
+    <div class="panel">
       <h2>What you can do from here (and from any game page)</h2>
       <p class="hint">On any game's page you get a 🛡 row: unlist/relist, re-rate, or delete it. Comments and
       forum posts grow a mod ✕. Removing a whole ACCOUNT stays deliberate, console-only work: Firebase console →
@@ -30,7 +39,7 @@
   <script type="module">
     import { renderNav, toast, $, fmtDate } from "./js/ui.js";
     import { requireLogin } from "./js/auth.js";
-    import { amIMod, listReports, resolveReport } from "./js/mod.js";
+    import { amIMod, listReports, resolveReport, backfillCards } from "./js/mod.js";
 
     renderNav("");
     const user = requireLogin("login.html");
@@ -79,6 +88,21 @@
       }
     }
     load();
+
+    $("#btn-backfill").addEventListener("click", async () => {
+      const btn = $("#btn-backfill"), status = $("#backfill-status");
+      btn.disabled = true;
+      status.textContent = "Reading every game…";
+      try {
+        const n = await backfillCards((done, total) => { status.textContent = `Writing cards… ${done}/${total}`; });
+        status.textContent = `Done — ${n} card(s) written.`;
+        toast("Cards built. Check the Games page on your phone!");
+      } catch (err) {
+        status.textContent = "";
+        toast("Backfill failed: " + err.message, true);
+      }
+      btn.disabled = false;
+    });
   </script>
 </body>
 </html>

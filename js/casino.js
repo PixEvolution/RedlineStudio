@@ -16,6 +16,13 @@ import {
 
 const GAMES = "games";
 
+// the Casino floor sorts by pool off the light CARDS — mirror it there after
+// every move. Fire-and-forget: a missing card must never break a spin.
+import { updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+function mirrorPool(gameId, pool) {
+  updateDoc(doc(db, "cards", gameId), { pool }).catch(() => {});
+}
+
 // One pull of the lever. Returns { mult, win, coins, pool }.
 export async function spinMachine(gameId, username, bet) {
   bet = clampBet(bet);
@@ -38,7 +45,7 @@ export async function spinMachine(gameId, username, bet) {
     tx.update(userRef, { coins: newCoins, lastSpin: { game: gameId } });
     tx.update(gameRef, { pool: s.pool, lastSpin: { user: userDocId(username) } });
     return { mult, win: s.win, coins: newCoins, pool: s.pool };
-  });
+  }).then((r) => { mirrorPool(gameId, r.pool); return r; });
 }
 
 // Owner loads the machine. Returns { coins, pool }.
@@ -58,7 +65,7 @@ export async function fundMachine(gameId, username, amount) {
     tx.update(userRef, { coins: coins - amount, lastSpin: { game: gameId } });
     tx.update(gameRef, { pool, lastSpin: { user: userDocId(username) } });
     return { coins: coins - amount, pool };
-  });
+  }).then((r) => { mirrorPool(gameId, r.pool); return r; });
 }
 
 // Owner empties (part of) the till. Returns { coins, pool }.
@@ -78,5 +85,5 @@ export async function collectPool(gameId, username, amount) {
     tx.update(userRef, { coins, lastSpin: { game: gameId } });
     tx.update(gameRef, { pool: pool - amount, lastSpin: { user: userDocId(username) } });
     return { coins, pool: pool - amount };
-  });
+  }).then((r) => { mirrorPool(gameId, r.pool); return r; });
 }

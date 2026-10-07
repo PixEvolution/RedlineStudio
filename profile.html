@@ -49,7 +49,7 @@
     import { renderNav, toast, fmtDate } from "./js/ui.js";
     import { currentUser } from "./js/auth.js";
     import { getProfile } from "./js/profiles.js";
-    import { listGamesBy } from "./js/games.js";
+    import { listCardsBy } from "./js/games.js";
     import { Engine } from "./js/engine.js";
     import { createTouchControls, isTouchDevice } from "./js/touch-controls.js";
     import { attachFullscreenButton } from "./js/fullscreen.js";
@@ -72,7 +72,7 @@
       document.title = `${username} — RedlineStudio`;
 
       const profile = await getProfile(username);
-      const games = await listGamesBy(username);
+      const games = await listCardsBy(username);
 
       nameEl.textContent = profile.username;
       document.title = "RedlineStudio — " + profile.username;

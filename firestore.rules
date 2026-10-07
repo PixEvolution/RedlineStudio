@@ -150,6 +150,35 @@ service cloud.firestore {
             || !('ownerUid' in resource.data)));
     }
 
+    // ------------------------------------------------------------- cards
+    // The LIGHT mirror of /games that list pages read (one doc per game,
+    // same id). It never holds the game itself — just what a card shows —
+    // so phones load the arcade instantly. Writes follow the game's owner.
+    match /cards/{gameId} {
+      allow read: if true;
+
+      // created in the same batch as its game (getAfter sees the new game),
+      // by the owner republishing an old game, or by a mod (the backfill)
+      allow create: if isMod() || (signedIn()
+        && getAfter(/databases/$(database)/documents/games/$(gameId)).data.ownerUid == request.auth.uid);
+
+      allow update: if
+        // the play counter: anyone, even logged out (same as games)
+        changedKeys().hasOnly(['plays'])
+        // a moderator mirrors unlist/re-rate — and touches NOTHING else
+        || (isMod() && changedKeys().hasOnly(['unlisted', 'rating']))
+        || (signedIn() && (
+          // vote and pool mirrors — counters only, by any signed-in player
+          changedKeys().hasOnly(['likes', 'dislikes', 'pool'])
+          // the owner: everything (getAfter, so a same-batch game update counts)
+          || getAfter(/databases/$(database)/documents/games/$(gameId)).data.ownerUid == request.auth.uid
+        ));
+
+      // deleted with its game (same batch) by the owner, or by a mod
+      allow delete: if isMod() || (signedIn()
+        && get(/databases/$(database)/documents/games/$(gameId)).data.ownerUid == request.auth.uid);
+    }
+
     // ------------------------------------------------------------- models
     match /models/{modelId} {
       allow read: if true;

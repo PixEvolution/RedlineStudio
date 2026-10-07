@@ -14,10 +14,14 @@ const RATE_MS = 150;      // outgoing state, ~7×/second — same beat as party.
 const FRESH_MS = 3000;    // silence this long = that window is gone
                           // (shorter than online: local silence means closed)
 
+// opts.makeChannel: a factory returning a BroadcastChannel-shaped object
+// ({ postMessage, onmessage, close }) — the offline Studio passes one that
+// relays through the opener window, because BroadcastChannel can't be
+// trusted between file:// windows. Online callers leave it out.
 export function attachLocalParty(engine, channelName, slot, seats, username, opts = {}) {
   const rateMs = opts.rateMs || RATE_MS;
   const freshMs = opts.freshMs || FRESH_MS;
-  const bc = new BroadcastChannel(channelName);
+  const bc = opts.makeChannel ? opts.makeChannel(channelName) : new BroadcastChannel(channelName);
   engine.vars.netslot = slot;
   engine.vars.hits = 0;
 

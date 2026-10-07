@@ -212,6 +212,10 @@
       <div class="script-head-row">
         <h3 id="script-title">Script</h3>
         <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center">
+          <button class="btn btn-small btn-ghost" id="btn-find"
+            title="Search EVERY object's script at once — click a hit to jump to it">🔍 Find</button>
+          <button class="btn btn-small btn-ghost" id="btn-copy-scripts"
+            title="Copy every script in the game as labeled RedScript — paste it to a friend or an AI for help">📋 Copy all scripts</button>
           <button class="btn btn-small btn-ghost" id="btn-toblocks"
             title="Unfold every 📜 Code section into real blocks — the best way to READ an example">🧱 To blocks</button>
           <button class="btn btn-small btn-ghost" id="btn-tocode"
@@ -223,6 +227,15 @@
             <option value="">✨ Add behavior…</option>
           </select>
         </div>
+      </div>
+      <!-- 🔍 FIND: one box, every object's script. Hits read like the debug
+           panel — "object → when event, line N" — and clicking one selects
+           the object and highlights the matching field. -->
+      <div id="find-row" style="display:none; margin:8px 0">
+        <input id="find-box" type="text" spellcheck="false" autocomplete="off"
+          placeholder="Find in every script… e.g. score, keydown, hero.x"
+          style="width:100%; box-sizing:border-box">
+        <div id="find-results" class="hint" style="margin-top:6px; max-height:200px; overflow:auto"></div>
       </div>
       <p class="hint">No code needed: pick a <b>✨ behavior</b> above, or build with blocks — a <b>📜 Code</b> block is the same language as text.
         Expressions work in every field: <code>self.x + 2</code>, <code>rand(10,90)</code>, <code>dist(self, target1) &lt; 20</code>, <code>keydown("ArrowUp")</code>, <code>xor(a, b)</code> — and lists: <code>board[i]</code></p>
@@ -260,6 +273,7 @@
     import { publishGame, updateGame, deleteGame, listGamesBy } from "../js/games.js";
     import { Engine, drawFrame, makeObject, CANVAS_W, CANVAS_H } from "../js/engine.js";
     import { mountSpriteEditor } from "../js/sprite-editor.js";
+    import { renderThumb } from "../js/cards.js";
     import { createBlockEditor } from "../js/blocks.js";
     import { saveModel, saveBehavior, listMyModels, instantiateModel } from "../js/models.js";
     import { createTouchControls, isTouchDevice, describeControls } from "../js/touch-controls.js";
@@ -269,7 +283,7 @@
     import { downloadStandalone } from "../js/export.js";
     import { downloadOfflineStudio } from "../js/export-studio.js";
     import { unpackGame, extractFromHtml } from "../js/gamefile.js";
-    import { scriptToBlocks, scriptToCode, compiledEqual } from "../js/convert.js";
+    import { scriptToBlocks, scriptToCode, compiledEqual, blocksToCode } from "../js/convert.js";
     import { attachTerminalInput } from "../js/terminal.js";
     import { attachCasinoLoop, localWallet } from "../js/casino-odds.js";
     import { attachLocalParty } from "../js/localwire.js";
@@ -1091,6 +1105,12 @@
             rating: isCasino ? "A18" : $("#g-rating").value,
             screen: { mode: $("#g-screenmode").value, objects: JSON.parse(JSON.stringify(scenes.screen.objects)) }
           };
+          // the card thumbnail: the attract screen if there is one, else the
+          // game itself — one small JPEG that makes phone lists instant
+          const dims = gameDims();
+          const thumbSrc = payload.screen.mode !== "none" && payload.screen.objects.length
+            ? payload.screen.objects : scenes.game.objects;
+          payload.thumb = renderThumb(thumbSrc, dims.w, dims.h);
           if (check.errors.length) toast("Published, but check scripts:\n" + check.errors.slice(0, 3).join("\n"), true);
           if (editingId) {
             await updateGame(editingId, payload);
@@ -1147,6 +1167,7 @@
           scenes.screen = { objects: g.screen ? g.screen.objects : [] };
           healIds();
           if (!pageMode && g.screen) $("#g-screenmode").value = g.screen.mode;
+          if (!pageMode && Number(g.seats) > 1) $("#g-seats").value = String(g.seats);
           editingId = null;
           titleInput.value = g.title;
           setTarget("game");
@@ -1395,6 +1416,122 @@
       flipScript("🧱 Unfolded into blocks", scriptToBlocks));
     $("#btn-tocode").addEventListener("click", () =>
       flipScript("📜 Printed as RedScript", scriptToCode));
+
+    // 🔍 FIND in every script — big games bury a "set score" fifteen blocks
+    // deep in the referee. One box searches every object's script printed as
+    // RedScript; each hit reads like the debug panel ("hero → when tick,
+    // line 4") and clicking it selects the object and highlights the field.
+    const findRow = $("#find-row"), findBox = $("#find-box"), findOut = $("#find-results");
+    const objScriptText = (o) => {
+      try { return blocksToCode(o.script || []); } catch { return ""; }
+    };
+    function runFind() {
+      const needle = findBox.value.trim().toLowerCase();
+      findOut.innerHTML = "";
+      if (needle.length < 2) {
+        findOut.textContent = "Type at least 2 characters — every object's script is searched.";
+        return;
+      }
+      const hits = [];
+      outer: for (const o of scene.objects) {
+        const text = objScriptText(o);
+        if (!text) continue;
+        let ev = "start";
+        const lines = text.split("\n");
+        for (let n = 0; n < lines.length; n++) {
+          const m = lines[n].match(/^when\s+(\S+)/);
+          if (m) ev = m[1];
+          if (lines[n].toLowerCase().includes(needle)) {
+            hits.push({ o, ev, n: n + 1, line: lines[n].trim() });
+            if (hits.length >= 200) break outer;
+          }
+        }
+      }
+      if (!hits.length) {
+        findOut.textContent = `No script contains “${findBox.value.trim()}”.`;
+        return;
+      }
+      for (const h of hits) {
+        const row = document.createElement("div");
+        row.style.cursor = "pointer";
+        row.style.padding = "3px 4px";
+        row.style.borderBottom = "1px solid rgba(255,255,255,0.06)";
+        row.title = "Click to jump there";
+        const who = document.createElement("b");
+        who.textContent = h.o.name;
+        const where = document.createTextNode(` → when ${h.ev}, line ${h.n}:  `);
+        const what = document.createElement("code");
+        what.textContent = h.line.length > 90 ? h.line.slice(0, 90) + "…" : h.line;
+        row.append(who, where, what);
+        row.addEventListener("click", () => jumpToHit(h, needle));
+        findOut.appendChild(row);
+      }
+      if (hits.length >= 200) {
+        const more = document.createElement("div");
+        more.textContent = "…200 hits shown — narrow the search.";
+        findOut.appendChild(more);
+      }
+    }
+    function jumpToHit(h, needle) {
+      select(h.o.id);
+      $("#script-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+      // after the editor re-renders, light up the first field holding the text
+      setTimeout(() => {
+        for (const f of $("#script-editor").querySelectorAll("input, textarea")) {
+          const at = String(f.value || "").toLowerCase().indexOf(needle);
+          if (at < 0) continue;
+          f.scrollIntoView({ behavior: "smooth", block: "center" });
+          try { f.focus({ preventScroll: true }); f.setSelectionRange(at, at + needle.length); } catch { /* number inputs */ }
+          const old = f.style.outline;
+          f.style.outline = "2px solid #39ff5e";
+          setTimeout(() => { f.style.outline = old; }, 1800);
+          return;
+        }
+      }, 80);
+    }
+    $("#btn-find").addEventListener("click", () => {
+      const show = findRow.style.display === "none";
+      findRow.style.display = show ? "" : "none";
+      if (show) { findBox.focus(); runFind(); }
+    });
+    findBox.addEventListener("input", runFind);
+
+    // 📋 COPY ALL SCRIPTS — the whole game's logic as labeled RedScript, on
+    // the clipboard in one click, so a maker can paste it to a friend or an
+    // AI for help. Each section says which object it came from.
+    $("#btn-copy-scripts").addEventListener("click", async () => {
+      const d = gameDims();
+      const objs = scenes.game.objects;
+      const L = [];
+      L.push(`RedlineStudio game — "${(titleInput.value || "Untitled Game").trim()}" (${d.w}×${d.h}), ${objs.length} object(s)`);
+      L.push("Language: RedScript — one section per object, printed from the blocks.");
+      L.push("");
+      let sections = 0;
+      for (const o of objs) {
+        const text = objScriptText(o).trim();
+        const vis = Number(o.visible) === 0 ? ", invisible" : "";
+        L.push(`=== ${o.name} — ${o.type} at (${Math.round(o.x)}, ${Math.round(o.y)}) size ${o.size}${vis} ===`);
+        if (text) { L.push(text); sections++; }
+        else L.push("(no script)");
+        L.push("");
+      }
+      const out = L.join("\n");
+      try {
+        await navigator.clipboard.writeText(out);
+        toast(`📋 Copied — ${objs.length} object(s), ${sections} with scripts, ${out.length.toLocaleString()} characters. Paste it anywhere.`);
+      } catch {
+        // clipboard blocked (http, permissions) — offer the text itself
+        const ta = document.createElement("textarea");
+        ta.value = out;
+        ta.style.position = "fixed"; ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand && document.execCommand("copy");
+        ta.remove();
+        if (ok) toast(`📋 Copied — ${objs.length} object(s), ${sections} with scripts.`);
+        else toast("Couldn't reach the clipboard — your browser blocked it.", true);
+      }
+    });
 
     // 🎓 the tutorial: a guided walk for people who've never made a game.
     // A BRAND-NEW maker gets it automatically on their first visit — no tour

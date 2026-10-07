@@ -170,5 +170,24 @@ console.log("The missile round and the last hull:");
   check("a click after the end returns to attract", e2.vars.game === 9);
 }
 
+// ---- the wreck lives in the WORLD, not on the glass
+{
+  const e = fresh(); play(e);
+  e.vars.pshot = 1; e.vars.psage = 30;
+  e.vars.psvx = 0; e.vars.psvz = 0;
+  e.vars.psx = e.vars.ex; e.vars.psz = e.vars.ez;
+  e.step();
+  check("a kill lights a wreck with a world position and a timer",
+    e.vars.wrecon === 1 && e.vars.wrect > 40 && Number.isFinite(e.vars.wrecx));
+  const wx0 = e.vars.wrecx, wz0 = e.vars.wrecz, sx1 = e.vars.wkx;
+  e.vars.hdg = (e.vars.hdg + 40) % 360;
+  e.step();
+  check("turning the periscope sweeps the wreck across the glass",
+    Math.abs(e.vars.wkx - sx1) > 30);
+  check("…while its WORLD position never moves", e.vars.wrecx === wx0 && e.vars.wrecz === wz0);
+  for (let i = 0; i < 60; i++) e.step();
+  check("the fire burns out after its time", e.vars.wrecon === 0);
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

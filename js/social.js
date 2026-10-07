@@ -45,6 +45,11 @@ export async function vote(kind, id, value, username) {
     t.update(ref, { votes, likes, dislikes });
     out = { likes, dislikes, my: next };
   });
+  // games keep a light CARD for the list pages — mirror the counts onto it.
+  // Fire-and-forget: a missing card (pre-backfill) must never break a vote.
+  if (kind === "games") {
+    updateDoc(doc(db, "cards", id), { likes: out.likes, dislikes: out.dislikes }).catch(() => {});
+  }
   return out;
 }
 

@@ -32,13 +32,15 @@ export function hashStr(s) {
 }
 
 // ---- saving ---------------------------------------------------------------
-export function packGame({ title, w, h, objects, screen }) {
+export function packGame({ title, w, h, seats, objects, screen }) {
+  const st = Math.min(8, Math.max(1, Number(seats) || 1));
   const payload = {
     format: GAME_FORMAT,
     engine: "v1",
     title: String(title || "Untitled Game").slice(0, 40),
     w: Number(w) || undefined,
     h: Number(h) || undefined,
+    seats: st > 1 ? st : undefined,   // multiplayer games remember their seats
     objects: objects || [],
     screen: screen && screen.objects ? { mode: screen.mode || "none", objects: screen.objects } : undefined
   };
@@ -159,6 +161,7 @@ export function unpackGame(text) {
     title: str(d.title, 40) || "Untitled Game",
     w: Number(d.w) || undefined,
     h: Number(d.h) || undefined,
+    seats: Math.min(8, Math.max(1, Number(d.seats) || 1)),
     objects: cleanObjects(d.objects),
     screen: d.screen && Array.isArray(d.screen.objects)
       ? { mode: ["none", "static", "live"].includes(d.screen.mode) ? d.screen.mode : "static", objects: cleanObjects(d.screen.objects) }

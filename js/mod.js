@@ -17,8 +17,11 @@
 import { auth, authReady } from "./auth.js";
 import { db } from "./firebase.js";
 import {
-  doc, getDoc, updateDoc, deleteDoc, collection, getDocs, query, orderBy, limit
+  doc, getDoc, updateDoc, deleteDoc, collection, getDocs, query, orderBy, limit,
+  writeBatch
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { cardFields } from "./games.js";
+import { renderThumb } from "./cards.js";
 
 let cached = null;
 
@@ -37,9 +40,47 @@ export async function amIMod() {
 // to change exactly these fields and nothing else).
 export async function modUnlistGame(gameId, unlisted) {
   await updateDoc(doc(db, "games", gameId), { unlisted: !!unlisted });
+  updateDoc(doc(db, "cards", gameId), { unlisted: !!unlisted }).catch(() => {});
 }
 export async function modRateGame(gameId, rating) {
   await updateDoc(doc(db, "games", gameId), { rating });
+  updateDoc(doc(db, "cards", gameId), { rating }).catch(() => {});
+}
+
+// ---- THE ONE-TIME BACKFILL: give every existing game its light card.
+// Mod-only (the rules let a mod create any card). Idempotent — running it
+// twice just rewrites the same cards, counters included. Thumbs are rendered
+// right here in the browser from each game's screen (or the game itself).
+export async function backfillCards(onProgress = () => {}) {
+  const snap = await getDocs(collection(db, "games"));
+  const docs = snap.docs;
+  let done = 0, batch = writeBatch(db), inBatch = 0;
+  for (const d of docs) {
+    const g = d.data();
+    const src = (g.screen && g.screen.mode !== "none" && g.screen.objects?.length)
+      ? g.screen.objects : (g.data?.objects || []);
+    const thumb = renderThumb(src, Number(g.data?.w) || 480, Number(g.data?.h) || 360);
+    batch.set(doc(db, "cards", d.id), {
+      ...cardFields({
+        title: g.title, owner: g.owner, ownerUid: g.ownerUid || null,
+        description: g.description, price: g.price, casino: g.casino,
+        unlisted: g.unlisted, seats: g.seats, rating: g.rating,
+        data: g.data, screen: g.screen, thumb
+      }),
+      plays: Number(g.plays) || 0,
+      likes: Number(g.likes) || 0,
+      dislikes: Number(g.dislikes) || 0,
+      ...(g.casino ? { pool: Number(g.pool) || 0 } : {}),
+      createdAt: g.createdAt || null,
+      updatedAt: g.updatedAt || null
+    }, { merge: false });
+    inBatch++;
+    done++;
+    if (inBatch >= 300) { await batch.commit(); batch = writeBatch(db); inBatch = 0; onProgress(done, docs.length); }
+  }
+  if (inBatch > 0) await batch.commit();
+  onProgress(done, docs.length);
+  return done;
 }
 
 // ⚑ reports: the mod inbox
