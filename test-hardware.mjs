@@ -22,8 +22,11 @@ console.log("The eras:");
     displayOf("vga") === "modern" && hardwareOf("") === "modern" && displayOf("tv2600") === "tv2600");
   check("the TIA palette is the real shape: 16 hues × 8 luminances = 128",
     DISPLAYS.tv2600.palette.length === 128 && new Set(DISPLAYS.tv2600.palette).size > 100);
-  check("MODERN changes nothing: no palette, no pixels, no outline",
+  check("the default changes nothing: no palette, no pixels, no outline",
     DISPLAYS.modern.palette === null && DISPLAYS.modern.px === null && !DISPLAYS.modern.outline);
+  check("the default is honestly NAMED: CRT phosphor + REDLINE silicon (true MODERN is a later era)",
+    DISPLAYS.modern.name === "CRT" && HARDWARE.modern.name === "REDLINE"
+    && displayOf("modern") === "modern");   // the KEY stays, so old games load
   check("describeEra tells the maker the one promise that matters",
     describeEra("tv2600", "arcade8").includes("logic never changes")
     && describeEra("modern", "modern") === "");
@@ -180,7 +183,13 @@ console.log("The Studio and the players' pages wear it:");
   check("two era selects sit in the publish panel",
     st.includes('id="g-display"') && st.includes('id="g-hardware"'));
   check("flipping either select is non-destructive and undoable",
-    st.includes('delete scenes.game[key]') && st.includes("MODERN reverts everything"));
+    st.includes('delete scenes.game[key]') && st.includes("the defaults revert everything"));
+  check("the WORKSPACE previews the era display live — no Test needed to see it",
+    /drawFrame\(canvas\.getContext\("2d"\), scene\.objects, \{[^}]*display: scenes\.game\.display/s.test(st));
+  check("…and the offline workspace previews it too",
+    src("js/export-studio.js").includes("h: game.h, display: game.display })"));
+  check("the selects name the defaults honestly: CRT and REDLINE",
+    st.includes("CRT · the Studio's phosphor (default)") && st.includes("REDLINE · no limits (default)"));
   check("▶ Test runs the era and the debug panel narrates it",
     st.includes("display: scenes.game.display, hardware: scenes.game.hardware")
     && st.includes("engine.onHwNote"));

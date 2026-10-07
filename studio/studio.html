@@ -141,18 +141,18 @@
       <div>
         <label for="g-display">Display hardware</label>
         <select id="g-display" class="blk-add" style="margin:0; width:100%">
-          <option value="modern">MODERN · today's neon CRT</option>
+          <option value="modern">CRT · the Studio's phosphor (default)</option>
           <option value="vector79">VECTOR '79 · XY phosphor monitor</option>
           <option value="arcade8">ARCADE 8-BIT · 256×240 raster</option>
-          <option value="tv2600">HOME TV '77 · 160 fat pixels</option>
+          <option value="tv2600">HOME TV '77 · fat pixels</option>
           <option value="bw72">B&amp;W TV '72 · black and white</option>
         </select>
-        <p class="hint" style="margin:6px 0 0">The monitor your game shows through. Mix with any hardware; revert anytime.</p>
+        <p class="hint" style="margin:6px 0 0">The monitor your game shows through — the workspace previews it live. Mix with any hardware; revert anytime.</p>
       </div>
       <div>
         <label for="g-hardware">Engine hardware</label>
         <select id="g-hardware" class="blk-add" style="margin:0; width:100%">
-          <option value="modern">MODERN · no limits</option>
+          <option value="modern">REDLINE · no limits (default)</option>
           <option value="logic72">LOGIC '72 · wired chips, no CPU</option>
           <option value="vector79">VECTOR '79 · a beam, no sprites</option>
           <option value="tv2600">ATARI 2600 · 5 movables a line</option>
@@ -623,7 +623,13 @@
 
     function redraw() {
       if (engine) return; // engine owns the canvas while testing
-      drawFrame(canvas.getContext("2d"), scene.objects, { selectedIds: selectedId ? [selectedId] : [], ...gameDims() });
+      // the edit canvas shows the game's ERA DISPLAY live, so the maker sees
+      // what they're building without testing. (Hardware flicker is temporal,
+      // so it stays a ▶ Test thing — a frozen frame would just hide objects.)
+      drawFrame(canvas.getContext("2d"), scene.objects, {
+        selectedIds: selectedId ? [selectedId] : [], ...gameDims(),
+        display: scenes.game.display
+      });
       if (snapOn) {
         // the snap grid: faint dots at every landing spot
         const ctx = canvas.getContext("2d");
@@ -1011,8 +1017,8 @@
       commit();
       const d = scenes.game.display || "modern", hw = scenes.game.hardware || "modern";
       toast(d === "modern" && hw === "modern"
-        ? "Back to MODERN — the full engine, every pixel as you built it."
-        : "Era set — ▶ Test to see it. Limits shape the picture and sound only; your logic and scores never change, and MODERN reverts everything.");
+        ? "Back to the CRT/REDLINE defaults — every pixel as you built it."
+        : "Era set — the workspace previews the display now; ▶ Test adds the chip's limits. Picture and sound only; your logic never changes, and the defaults revert everything.");
     };
     $("#g-display").addEventListener("change", () => eraChanged("display", "#g-display"));
     $("#g-hardware").addEventListener("change", () => eraChanged("hardware", "#g-hardware"));

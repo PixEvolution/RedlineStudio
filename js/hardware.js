@@ -58,8 +58,11 @@ const BW_PAL = ["#000000", "#242424", "#484848", "#6c6c6c", "#909090", "#b4b4b4"
 // frame is rendered at before scaling up with hard pixels (null = native);
 // palette snaps every color; scan = extra scanline strength; outline = draw
 // filled shapes as glowing strokes (an XY monitor has no "fill").
+// (the default keeps the KEY "modern" so every saved game still loads, but
+// its NAME is CRT — the Studio's native phosphor. A true flat MODERN display
+// is a later era, still to be added above it.)
 export const DISPLAYS = {
-  modern:   { name: "MODERN",        blurb: "today's neon CRT — the engine as it is",            px: null,           palette: null,         scan: 0,    outline: false, bg: null },
+  modern:   { name: "CRT",           blurb: "the Studio's native phosphor CRT — the default",    px: null,           palette: null,         scan: 0,    outline: false, bg: null },
   vector79: { name: "VECTOR '79",    blurb: "XY phosphor monitor — glowing strokes, no fills",   px: null,           palette: null,         scan: 0,    outline: true,  bg: "#020503" },
   arcade8:  { name: "ARCADE 8-BIT",  blurb: "8-bit raster arcade — 256×240, the classic colors", px: { w: 256, h: 240 }, palette: ARCADE8_PAL, scan: 0.14, outline: false, bg: "#000000" },
   tv2600:   { name: "HOME TV '77",   blurb: "a 2600 on the living-room set — 160 fat pixels",    px: { w: 208, h: 156 }, palette: tiaPalette(), scan: 0.2,  outline: false, bg: "#000000" },
@@ -76,7 +79,7 @@ export const DISPLAYS = {
 //   voices    — simultaneous beep channels (a new sound steals the oldest)
 //   beam      — stroke budget before an XY monitor's beam visibly dims
 export const HARDWARE = {
-  modern:   { name: "MODERN",       blurb: "no limits — the full engine",                                          movables: 0, bandPx: 0,  sprPerBand: 0, sprColors: 0, voices: 0, beam: 0 },
+  modern:   { name: "REDLINE",      blurb: "the Studio's own silicon — no limits",                                 movables: 0, bandPx: 0,  sprPerBand: 0, sprColors: 0, voices: 0, beam: 0 },
   logic72:  { name: "LOGIC '72",    blurb: "wired TTL chips, no CPU — silhouettes only, one voice",                movables: 6, bandPx: 24, sprPerBand: 0, sprColors: -1, voices: 1, beam: 0 },
   vector79: { name: "VECTOR '79",   blurb: "an XY beam — ~48 strokes before it dims, pixels impossible",           movables: 0, bandPx: 0,  sprPerBand: 0, sprColors: -1, voices: 2, beam: 48 },
   tv2600:   { name: "ATARI 2600",   blurb: "2 players, 2 missiles, a ball per line — 5 movables, 1-color sprites", movables: 5, bandPx: 16, sprPerBand: 0, sprColors: 1,  voices: 2, beam: 0 },
@@ -211,5 +214,5 @@ export function planHardware(objects, tik, hwKey, movedFlag = "_hwMoved") {
 export function describeEra(displayKey, hardwareKey) {
   const d = DISPLAYS[displayOf(displayKey)], h = HARDWARE[hardwareOf(hardwareKey)];
   if (d === DISPLAYS.modern && h === HARDWARE.modern) return "";
-  return `${d.name} display · ${h.name} hardware — era limits shape the picture and sound only; the game's logic never changes, and MODERN reverts everything.`;
+  return `${d.name} display · ${h.name} hardware — era limits shape the picture and sound only; the game's logic never changes, and the CRT/REDLINE defaults revert everything.`;
 }

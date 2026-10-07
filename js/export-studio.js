@@ -125,15 +125,15 @@ export async function buildOfflineStudioHtml({ rootPath = "", fetchText } = {}) 
     <option value="7">7 players</option>
     <option value="8">8 players</option>
   </select>
-  <select id="eradisplay" title="Display hardware — the era monitor your game shows through (picture only; revert anytime)">
-    <option value="modern">MODERN display</option>
+  <select id="eradisplay" title="Display hardware — the era monitor your game shows through; the workspace previews it live (picture only; revert anytime)">
+    <option value="modern">CRT display</option>
     <option value="vector79">VECTOR '79</option>
     <option value="arcade8">ARCADE 8-BIT</option>
     <option value="tv2600">HOME TV '77</option>
     <option value="bw72">B&amp;W TV '72</option>
   </select>
   <select id="erahw" title="Engine hardware — what the era's chip could draw and sound (limits shape the picture only; logic never changes)">
-    <option value="modern">MODERN chip</option>
+    <option value="modern">REDLINE chip</option>
     <option value="logic72">LOGIC '72</option>
     <option value="vector79">VECTOR '79</option>
     <option value="tv2600">ATARI 2600</option>
@@ -236,7 +236,8 @@ ${sources.join("\n\n")}
   }
   function redraw() {
     if (engine) return;
-    drawFrame(canvas.getContext("2d"), game.objects, { selectedIds: selectedId ? [selectedId] : [], w: game.w, h: game.h });
+    // the workspace previews the era DISPLAY live; the chip's limits show in ▶ Test
+    drawFrame(canvas.getContext("2d"), game.objects, { selectedIds: selectedId ? [selectedId] : [], w: game.w, h: game.h, display: game.display });
     var ctx = canvas.getContext("2d");
     if (snapOn) {
       ctx.save(); ctx.fillStyle = "rgba(57,255,94,0.18)";
