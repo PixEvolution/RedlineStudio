@@ -95,6 +95,12 @@ console.log("Cards collection:");
   check("plays update by anyone; counters by signed-in; the rest by owner/mod",
     r.includes("changedKeys().hasOnly(['plays'])") &&
     r.includes("changedKeys().hasOnly(['likes', 'dislikes', 'pool'])"));
+  check("a PRE-RULES game (no ownerUid) deletes its card like it deletes itself",
+    (() => {
+      const cards = r.slice(r.indexOf("match /cards/"), r.indexOf("match /models/"));
+      const del = cards.slice(cards.indexOf("allow delete"));
+      return del.includes("!('ownerUid' in get(") && del.includes("games/$(gameId)).data)");
+    })());
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

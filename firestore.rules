@@ -174,9 +174,12 @@ service cloud.firestore {
           || getAfter(/databases/$(database)/documents/games/$(gameId)).data.ownerUid == request.auth.uid
         ));
 
-      // deleted with its game (same batch) by the owner, or by a mod
+      // deleted with its game (same batch) by the owner, or by a mod —
+      // and a PRE-RULES game (no ownerUid stamp yet) deletes like its game
+      // does, or the batch would always half-fail on the card
       allow delete: if isMod() || (signedIn()
-        && get(/databases/$(database)/documents/games/$(gameId)).data.ownerUid == request.auth.uid);
+        && (get(/databases/$(database)/documents/games/$(gameId)).data.ownerUid == request.auth.uid
+            || !('ownerUid' in get(/databases/$(database)/documents/games/$(gameId)).data)));
     }
 
     // ------------------------------------------------------------- models
