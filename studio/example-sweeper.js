@@ -607,7 +607,7 @@ end` }]
 
   // attract (over the dim maze, like a real cabinet)
   objects.push({ id: "sw_big", name: "bigtitle", type: "text", x: 180, y: 190, size: 40, color: GOLD, glow: 18, visible: 1, text: "SWEEPER", script: [] });
-  objects.push({ id: "sw_sub", name: "subline", type: "text", x: 180, y: 220, size: 9, color: DIM, glow: 4, visible: 1, text: "AN ORIGINAL MAZE-CHASE · 1980 STYLE · IN TRIBUTE", script: [] });
+  objects.push({ id: "sw_sub", name: "subline", type: "text", x: 180, y: 220, size: 9, color: DIM, glow: 4, visible: 1, text: "ORIGINAL MAZE-CHASE · 1980 STYLE · TRIBUTE", script: [] });
   objects.push({ id: "sw_coin", name: "coinline", type: "text", x: 180, y: 248, size: 11, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — CLICK TO SWEEP ◎", script: [] });
   objects.push({ id: "sw_play", name: "playbtn", type: "text", x: 180, y: 282, size: 15, color: GREEN, glow: 12, visible: 1, text: "[ SWEEP ]", script: [] });
   objects.push({

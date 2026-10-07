@@ -178,7 +178,7 @@ export function buildWolfensteinExample() {
       push(`${pad}end`);
     }
     dealRoom(pad, 240, 300);
-    push(`${pad}set status.text to "READ THEIR FACING. THE PLANS HIDE HIGH OR LOW."`);
+    push(`${pad}set status.text to "READ THEIR FACING. PLANS HIDE HIGH OR LOW."`);
   };
 
   // ======== start: carve the castle into the tables once
@@ -297,7 +297,7 @@ export function buildWolfensteinExample() {
     push("      change score by 100");
     push('      say "KAMERAD!" for 0.9');
     push("      beep 494 for 0.08");
-    push('      set status.text to "HANDS UP — +100. PRESS E AGAIN TO FRISK HIM."');
+    push('      set status.text to "HANDS UP — +100. E AGAIN FRISKS HIM."');
     push("    end");
     push(`    if acted == 0 and gon[${k}] == 1 and gst[${k}] == 2 and gfrisk[${k}] == 0 and abs(px - gx[${k}]) < 42 and abs(py - gy[${k}]) < 42 then`);
     push(`      set gfrisk[${k}] to 1`);
@@ -335,7 +335,7 @@ export function buildWolfensteinExample() {
   push("      if loot == 2 then");
   push("        set uniform to 1");
   push("        change score by 200");
-  push('        set status.text to "A GUARD\'S UNIFORM — THE RANK AND FILE IGNORE YOU"');
+  push('        set status.text to "A UNIFORM — THE RANK AND FILE IGNORE YOU"');
   push("        beep 523 for 0.08");
   push("        beep 659 for 0.08");
   push("        beep 784 for 0.12");
@@ -344,7 +344,7 @@ export function buildWolfensteinExample() {
   push("        set plans to 1");
   push("        change score by 500");
   push('        say "THE WAR PLANS!" for 1.2');
-  push('        set status.text to "THE WAR PLANS — NOW OUT THE GREAT DOOR, NORTH"');
+  push('        set status.text to "THE WAR PLANS — NOW OUT THE DOOR, NORTH"');
   push("        beep 659 for 0.08");
   push("        beep 784 for 0.08");
   push("        beep 988 for 0.15");
@@ -432,9 +432,9 @@ export function buildWolfensteinExample() {
   push("          change score by 1500 + lives * 300");
   push("          if kills == 0 then");
   push("            change score by 500");
-  push('            set status.text to "OUT SILENT, NOT ONE SHOT — +500. CLICK FOR MORE."');
+  push('            set status.text to "OUT SILENT — +500 PACIFIST. CLICK AGAIN."');
   push("          else");
-  push('            set status.text to "OUT WITH THE PLANS — CLICK TO BREAK IN AGAIN"');
+  push('            set status.text to "OUT WITH THE PLANS — CLICK TO REPLAY"');
   push("          end");
   push('          say "THE PLANS LEAVE WITH YOU." for 1.5');
   push("          beep 523 for 0.1");
@@ -446,7 +446,7 @@ export function buildWolfensteinExample() {
   push("          if barmsg <= 0 then");
   push("            set barmsg to 120");
   push(`            if roomn == ${EXIT_ROOM} then`);
-  push('              set status.text to "THE GREAT DOOR IS BARRED — FIND THE WAR PLANS"');
+  push('              set status.text to "THE DOOR IS BARRED — FIND THE WAR PLANS"');
   push("              beep 147 for 0.1");
   push("            end");
   push("          end");
@@ -475,7 +475,7 @@ export function buildWolfensteinExample() {
   }
   push("      else");
   push("        beep 165 for 0.05");
-  push('        set status.text to "CLICK. NO ROUNDS — SEARCH CHESTS, FRISK GUARDS."');
+  push('        set status.text to "CLICK. NO ROUNDS — SEARCH AND FRISK."');
   push("      end");
   push("    end");
   push("    set pf0 to pf");
@@ -871,13 +871,13 @@ end` }]
   objects.push({
     id: "cw_help", name: "help", type: "text",
     x: W / 2, y: 244, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "WASD SNEAKS · E HOLD UP + SEARCH · SPACE IS LOUD",
+    text: "WASD SNEAKS · E HOLDS UP · SPACE IS LOUD",
     script: []
   });
   objects.push({
     id: "cw_help2", name: "help2", type: "text",
     x: W / 2, y: 262, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "GUARDS SEE ONLY THEIR FACING · PLANS, THEN NORTH",
+    text: "GUARDS SEE ONE WAY · PLANS, THEN NORTH",
     script: []
   });
 

@@ -357,7 +357,7 @@ export function buildGunfightExample() {
   objects.push({
     id: "gf_sub", name: "subline", type: "text",
     x: 400, y: 236, size: 11, color: AMBER, glow: 8, visible: 1,
-    text: "MIDWAY 1975 · THE FIRST MICROPROCESSOR GAME", script: []
+    text: "MIDWAY 1975 · THE FIRST CPU ARCADE GAME", script: []
   });
   objects.push({
     id: "gf_coin", name: "coinline", type: "text",

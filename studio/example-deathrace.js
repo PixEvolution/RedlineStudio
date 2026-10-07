@@ -165,7 +165,7 @@ function brainCode() {
       push(`${pad}set gremlin${g + 1}.x to ${spots[g][0]}`);
       push(`${pad}set gremlin${g + 1}.y to ${spots[g][1]}`);
     }
-    push(`${pad}set status.text to "RUN THEM DOWN — THE CLOCK IS THE ONLY JUDGE"`);
+    push(`${pad}set status.text to "RUN THEM DOWN — THE CLOCK IS THE JUDGE"`);
   };
 
   push("when start");
@@ -206,10 +206,10 @@ function brainCode() {
   push("    set game to 2");
   push("    set endplay to 1");
   push("    if mode == 2 and score2 > score1 then");
-  push('      set status.text to "TIME — PLAYER 2 TAKES THE ARENA. CLICK AGAIN"');
+  push('      set status.text to "TIME — PLAYER 2 TAKES IT. CLICK AGAIN"');
   push("    else");
   push("      if mode == 2 and score1 > score2 then");
-  push('        set status.text to "TIME — PLAYER 1 TAKES THE ARENA. CLICK AGAIN"');
+  push('        set status.text to "TIME — PLAYER 1 TAKES IT. CLICK AGAIN"');
   push("      else");
   push('        set status.text to "TIME UP — CLICK FOR A NEW GAME"');
   push("      end");

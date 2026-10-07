@@ -574,7 +574,7 @@ end` }]
   objects.push({
     id: "bk_help", name: "help", type: "text",
     x: W / 2, y: 248, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "WASD RUNS · SPACE FIRES YOUR FACING · WALLS KILL",
+    text: "WASD RUNS · SPACE FIRES · WALLS KILL",
     script: []
   });
 

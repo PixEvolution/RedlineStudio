@@ -202,7 +202,7 @@ end` }]
   objects.push({
     id: "nd_help", name: "help", type: "text",
     x: 240, y: 290, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "A/D STEER · W GAS · CURVES SHOVE — COUNTERSTEER",
+    text: "A/D STEER · W GAS · CURVES SHOVE BACK",
     script: []
   });
 

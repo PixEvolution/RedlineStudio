@@ -66,7 +66,7 @@ export function buildGalagaExample() {
     for (let j = 0; j < NSHOT; j++) push(`${pad}set son[${j}] to 0`);
     for (let b = 0; b < NBOMB; b++) push(`${pad}set bon[${b}] to 0`);
     push(`${pad}if chstage == 1 then`);
-    push(`${pad}  set status.text to "CHALLENGING STAGE — NO FIRE. ALL 24 = 10000"`);
+    push(`${pad}  set status.text to "CHALLENGE STAGE — NO FIRE. ALL 24 = 10000"`);
     push(`${pad}else`);
     push(`${pad}  set status.text to "WAVE " + wave`);
     push(`${pad}end`);
@@ -271,7 +271,7 @@ export function buildGalagaExample() {
   push("          if lives <= 0 then");
   push("            set game to 2");
   push("            set endplay to 1");
-  push('            set status.text to "LAST FIGHTER CAPTURED — CLICK TO LAUNCH AGAIN"');
+  push('            set status.text to "LAST FIGHTER CAPTURED — CLICK TO RELAUNCH"');
   push("          else");
   push('            set status.text to "FIGHTER CAPTURED — SHOOT THE CARRIER"');
   push("            set grace to 90");
@@ -346,7 +346,7 @@ export function buildGalagaExample() {
     push("          beep 659 for 0.08");
     push("          beep 784 for 0.08");
     push("          beep 1047 for 0.15");
-    push('          set status.text to "FIGHTER RESCUED — DUAL FIGHTER, DOUBLE GUNS"');
+    push('          set status.text to "FIGHTER RESCUED — DUAL SHIP, DOUBLE GUNS"');
     push("        end");
     push("      else");
     push("        beep 392 for 0.04");
@@ -547,13 +547,13 @@ end` }]
 
   // attract
   objects.push({ id: "gg_big", name: "bigtitle", type: "text", x: W / 2, y: 170, size: 42, color: RED, glow: 18, visible: 1, text: "GALAGA", script: [] });
-  objects.push({ id: "gg_sub", name: "subline", type: "text", x: W / 2, y: 200, size: 9, color: DIM, glow: 4, visible: 1, text: "NAMCO 1981 · GALAXIAN SEQUEL · THE TRACTOR BEAM", script: [] });
+  objects.push({ id: "gg_sub", name: "subline", type: "text", x: W / 2, y: 200, size: 9, color: DIM, glow: 4, visible: 1, text: "NAMCO 1981 · THE TRACTOR-BEAM SEQUEL", script: [] });
   objects.push({ id: "gg_coin", name: "coinline", type: "text", x: W / 2, y: 228, size: 11, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — CLICK TO LAUNCH ◎", script: [] });
   objects.push({ id: "gg_play", name: "playbtn", type: "text", x: W / 2, y: 260, size: 15, color: GREEN, glow: 12, visible: 1, text: "[ LAUNCH ]", script: [] });
   objects.push({
     id: "gg_help", name: "help", type: "text",
     x: W / 2, y: 290, size: 8, color: DIM, glow: 3, visible: 1,
-    text: "A/D SLIDES · SPACE FIRES · THE BEAM CAPTURES",
+    text: "A/D SLIDES · SPACE FIRES · BEAM CAPTURES",
     script: []
   });
 

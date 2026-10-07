@@ -80,7 +80,7 @@ export function buildPitfallExample() {
     push(`${pad}set itim to 60`);
     push(`${pad}set lcool to 0`);
     push(`${pad}set dealflag to 1`);
-    push(`${pad}set status.text to "32 TREASURES · 255 SCREENS · 3:00 — RUN"`);
+    push(`${pad}set status.text to "32 TREASURES · 255 SCREENS · 3:00"`);
   };
 
   // ======== start
@@ -685,19 +685,19 @@ end` }]
 
   // attract
   objects.push({ id: "pf_big", name: "bigtitle", type: "text", x: W / 2, y: 108, size: 42, color: GREEN, glow: 18, visible: 1, text: "PITFALL!", script: [] });
-  objects.push({ id: "pf_sub", name: "subline", type: "text", x: W / 2, y: 140, size: 10, color: DIM, glow: 4, visible: 1, text: "ACTIVISION 1982 · 255 SCREENS, ONE BYTE", script: [] });
+  objects.push({ id: "pf_sub", name: "subline", type: "text", x: W / 2, y: 140, size: 10, color: DIM, glow: 4, visible: 1, text: "ACTIVISION 1982 · 255 SCREENS, 1 BYTE", script: [] });
   objects.push({ id: "pf_coin", name: "coinline", type: "text", x: W / 2, y: 172, size: 12, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — CLICK TO RUN ◎", script: [] });
   objects.push({ id: "pf_play", name: "playbtn", type: "text", x: W / 2, y: 210, size: 16, color: GREEN, glow: 12, visible: 1, text: "[ RUN ]", script: [] });
   objects.push({
     id: "pf_help", name: "help", type: "text",
     x: W / 2, y: 244, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "A·D RUN · SPACE JUMPS + GRABS · W/S CLIMB",
+    text: "A·D RUN · SPACE JUMP+GRAB · W/S CLIMB",
     script: []
   });
   objects.push({
     id: "pf_help2", name: "help2", type: "text",
     x: W / 2, y: 262, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "32 TREASURES · THE WORLD RUNS BOTH WAYS",
+    text: "32 TREASURES · THE WORLD LOOPS",
     script: []
   });
 

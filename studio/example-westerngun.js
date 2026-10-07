@@ -433,7 +433,7 @@ export function buildWesterngunExample() {
   objects.push({
     id: "wg_help", name: "help", type: "text",
     x: 400, y: 580, size: 10, color: DIM, glow: 3, visible: 1,
-    text: "ROCKS RICOCHET · CACTI SHATTER · AIM = FACING",
+    text: "ROCKS RICOCHET · CACTI SHATTER · AIM=FACE",
     script: []
   });
 

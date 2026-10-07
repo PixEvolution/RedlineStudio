@@ -526,13 +526,13 @@ end` }]
 
   // attract
   objects.push({ id: "rx_big", name: "bigtitle", type: "text", x: W / 2, y: 118, size: 44, color: ORANGE, glow: 18, visible: 1, text: "RALLY-X", script: [] });
-  objects.push({ id: "rx_sub", name: "subline", type: "text", x: W / 2, y: 150, size: 10, color: DIM, glow: 4, visible: 1, text: "NAMCO 1980 · SCROLLING MAP · RADAR · BONUS ROUND", script: [] });
+  objects.push({ id: "rx_sub", name: "subline", type: "text", x: W / 2, y: 150, size: 10, color: DIM, glow: 4, visible: 1, text: "NAMCO 1980 · SCROLLING MAP · RADAR", script: [] });
   objects.push({ id: "rx_coin", name: "coinline", type: "text", x: W / 2, y: 182, size: 12, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — CLICK TO RACE ◎", script: [] });
   objects.push({ id: "rx_play", name: "playbtn", type: "text", x: W / 2, y: 220, size: 16, color: GREEN, glow: 12, visible: 1, text: "[ RACE ]", script: [] });
   objects.push({
     id: "rx_help", name: "help", type: "text",
     x: W / 2, y: 254, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "WASD DRIVES · SPACE LAYS SMOKE · 10 FLAGS · RADAR",
+    text: "WASD DRIVES · SPACE SMOKES · 10 FLAGS",
     script: []
   });
 

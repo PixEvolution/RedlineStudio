@@ -193,7 +193,7 @@ export function buildOdysseyExample() {
   objects.push({
     id: "od_title", name: "title", type: "text",
     x: 240, y: 350, size: 10, color: DIM, glow: 3, visible: 1,
-    text: "LEFT W/S · RIGHT ↑/↓ · HOLD A HIT = ENGLISH",
+    text: "LEFT W/S · RIGHT ↑/↓ · HOLD = ENGLISH",
     script: []
   });
 

@@ -25,8 +25,8 @@ const NAMES = ["", "GOLD KEY", "BLACK KEY", "THE SWORD", "THE CHALICE", "SOMETHI
 // (full line = NAME + HINT, kept under the 2600 display's 41-char width)
 const HINTS = [
   "",
-  " — OPENS THE GOLD CASTLE GATE",
-  " — OPENS THE BLACK CASTLE GATE",
+  " — OPENS THE GOLD CASTLE",
+  " — OPENS THE BLACK CASTLE",
   " — TOUCH A DRAGON TO SLAY IT",
   " — GOLD CASTLE = VICTORY",
   "",
@@ -268,7 +268,7 @@ function brainCode() {
   push("            set chget to 1");
   push("            change score by 200");
   push("          end");
-  push('          set status.text to "THE CHALICE! TAKE IT TO THE GOLD CASTLE"');
+  push('          set status.text to "THE CHALICE! TO THE GOLD CASTLE"');
   push("        end");
   push("        if i == 5 then");
   push('          set status.text to "YOU ARE CARRYING… SOMETHING?"');
@@ -530,13 +530,13 @@ end`;
 
   // attract furniture
   objects.push({ id: "ad_big", name: "bigtitle", type: "text", x: W / 2, y: 120, size: 44, color: GOLD, glow: 18, visible: 1, text: "ADVENTURE", script: [] });
-  objects.push({ id: "ad_sub", name: "subline", type: "text", x: W / 2, y: 152, size: 10, color: DIM, glow: 4, visible: 1, text: "ATARI 2600 · 1979 · THE FIRST EASTER EGG", script: [] });
+  objects.push({ id: "ad_sub", name: "subline", type: "text", x: W / 2, y: 152, size: 10, color: DIM, glow: 4, visible: 1, text: "ATARI 2600 · 1979 · FIRST EASTER EGG", script: [] });
   objects.push({ id: "ad_coin", name: "coinline", type: "text", x: W / 2, y: 184, size: 12, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — CLICK TO QUEST ◎", script: [] });
   objects.push({ id: "ad_play", name: "playbtn", type: "text", x: W / 2, y: 222, size: 16, color: GREEN, glow: 12, visible: 1, text: "[ QUEST ]", script: [] });
   objects.push({
     id: "ad_help", name: "help", type: "text",
     x: W / 2, y: 256, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "WASD MOVES · TOUCH PICKS UP · SPACE DROPS",
+    text: "WASD · TOUCH GRABS · SPACE DROPS",
     script: []
   });
   objects.push({

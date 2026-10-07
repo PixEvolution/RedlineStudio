@@ -361,7 +361,7 @@ export function buildOxoExample() {
   objects.push({
     id: "ox_sub", name: "subtitle", type: "text",
     x: 240, y: 44, size: 10, color: "#1f8f3c", glow: 4, visible: 1,
-    text: "THE FIRST GRAPHICAL GAME · EDSAC IS PERFECT",
+    text: "FIRST GRAPHICAL GAME · EDSAC IS PERFECT",
     script: []
   });
 

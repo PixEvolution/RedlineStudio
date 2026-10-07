@@ -139,7 +139,7 @@ function brainCode() {
   push("      set game to 2");
   push("      set endplay to 1");
   push("      explode cannon");
-  push('      set status.text to "THEY LANDED. GAME OVER — CLICK FOR A NEW STAND"');
+  push('      set status.text to "THEY LANDED — CLICK FOR A NEW STAND"');
   push("    end");
   push("    if game == 9 and fy > 200 then");
   push(`      set fy to ${FY0}`);   // the attract march loops forever
@@ -420,7 +420,7 @@ end` }]
   objects.push({
     id: "si_help", name: "help", type: "text",
     x: W / 2, y: 390, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "A/D OR THE STICK · SPACE — ONE SHOT AT A TIME",
+    text: "A/D MOVES · SPACE — ONE SHOT AT A TIME",
     script: []
   });
 

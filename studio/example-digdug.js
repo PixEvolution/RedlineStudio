@@ -121,7 +121,7 @@ export function buildDigDugExample() {
     push(`${pad}set level to 1`);
     dealLevel(pad);
     resetPositions(pad);
-    push(`${pad}set status.text to "DIG. PUMP. DROP ROCKS. THE DEEP STRATA PAY BEST."`);
+    push(`${pad}set status.text to "DIG. PUMP. DROP ROCKS. DEEP PAYS BEST."`);
   };
 
   // ======== start

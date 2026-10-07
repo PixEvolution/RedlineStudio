@@ -264,7 +264,7 @@ export function buildSpaceraceExample() {
   objects.push({
     id: "sr_help", name: "help", type: "text",
     x: 240, y: 350, size: 10, color: DIM, glow: 3, visible: 1,
-    text: "LEFT W/S · RIGHT ↑/↓ · UP TOP · DODGE THE ROCKS",
+    text: "LEFT W/S · RIGHT ↑/↓ · DODGE THE ROCKS",
     script: []
   });
 

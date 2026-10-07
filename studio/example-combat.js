@@ -247,10 +247,10 @@ function brainCode() {
   push("    set game to 2");
   push("    set endplay to 1");
   push("    if score1 > score2 then");
-  push('      set status.text to "0:00 — PLAYER 1 WINS. CLICK TO REMATCH"');
+  push('      set status.text to "0:00 — PLAYER 1 WINS. CLICK AGAIN"');
   push("    else");
   push("      if score2 > score1 then");
-  push('        set status.text to "0:00 — PLAYER 2 WINS. CLICK TO REMATCH"');
+  push('        set status.text to "0:00 — PLAYER 2 WINS. CLICK AGAIN"');
   push("      else");
   push('        set status.text to "0:00 — A DRAW. CLICK TO SETTLE IT"');
   push("      end");
@@ -321,7 +321,7 @@ export function buildCombatExample() {
 
   // attract furniture
   objects.push({ id: "cb_big", name: "bigtitle", type: "text", x: 240, y: 130, size: 52, color: WHITE, glow: 18, visible: 1, text: "COMBAT", script: [] });
-  objects.push({ id: "cb_sub", name: "subline", type: "text", x: 240, y: 165, size: 11, color: DIM, glow: 4, visible: 1, text: "ATARI 2600, 1977 · THE CART IN EVERY BOX", script: [] });
+  objects.push({ id: "cb_sub", name: "subline", type: "text", x: 240, y: 165, size: 11, color: DIM, glow: 4, visible: 1, text: "ATARI 2600 · 1977 · THE PACK-IN CART", script: [] });
   objects.push({ id: "cb_coin", name: "coinline", type: "text", x: 240, y: 200, size: 13, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — PICK A VARIATION ◎", script: [] });
   objects.push({ id: "cb_m1", name: "m1btn", type: "text", x: 120, y: 268, size: 15, color: GREEN, glow: 12, visible: 1, text: "[ TANK ]", script: [] });
   objects.push({ id: "cb_m2", name: "m2btn", type: "text", x: 240, y: 268, size: 15, color: ORANGE, glow: 12, visible: 1, text: "[ TANK MAZE ]", script: [] });
@@ -329,7 +329,7 @@ export function buildCombatExample() {
   objects.push({
     id: "cb_help", name: "help", type: "text",
     x: 240, y: 315, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "1977: TWO PLAYERS · P1 WAD+Q · P2 ←→↑+M",
+    text: "TWO PLAYERS · P1 WAD+Q · P2 ←→↑+M",
     script: []
   });
 

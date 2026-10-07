@@ -288,7 +288,7 @@ export function buildDefenderExample() {
     push("          set humleft to humleft - 1");
     push(`          set hgrab[${k}] to 0 - 1`);
     push("          beep 98 for 0.25");
-    push('          set status.text to "HUMANOID LOST — IT RETURNS AS A MUTANT\'S MAKER"');
+    push('          set status.text to "HUMANOID LOST — IT RETURNS AS A MUTANT"');
     push("        end");
     push(`        set lst[${k}] to 4`);
     push(`        set ltg[${k}] to 0 - 1`);
@@ -431,7 +431,7 @@ export function buildDefenderExample() {
     push("    end");
   }
   push("    beep 70 for 0.5");
-  push('    set status.text to "PLANET LOST — EVERYTHING ARRIVES AS MUTANTS"');
+  push('    set status.text to "PLANET LOST — EVERYTHING COMES AS MUTANTS"');
   push("  end");
 
   // ---- a hit on the defender
@@ -443,7 +443,7 @@ export function buildDefenderExample() {
   push("    if lives <= 0 then");
   push("      set game to 2");
   push("      set endplay to 1");
-  push('      set status.text to "THE DEFENSE HAS FALLEN — CLICK TO DEFEND AGAIN"');
+  push('      set status.text to "THE DEFENSE FELL — CLICK TO DEFEND AGAIN"');
   push("    else");
   push("      set grace to 90");
   push("      set pvx to 0");
@@ -624,13 +624,13 @@ end` }]
 
   // attract
   objects.push({ id: "df_big", name: "bigtitle", type: "text", x: W / 2, y: 112, size: 42, color: CYAN, glow: 18, visible: 1, text: "DEFENDER", script: [] });
-  objects.push({ id: "df_sub", name: "subline", type: "text", x: W / 2, y: 144, size: 10, color: DIM, glow: 4, visible: 1, text: "WILLIAMS 1980 · AMONG THE HIGHEST-GROSSING EVER", script: [] });
+  objects.push({ id: "df_sub", name: "subline", type: "text", x: W / 2, y: 144, size: 10, color: DIM, glow: 4, visible: 1, text: "WILLIAMS 1980 · ALL-TIME TOP GROSSER", script: [] });
   objects.push({ id: "df_coin", name: "coinline", type: "text", x: W / 2, y: 176, size: 12, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — CLICK TO DEFEND ◎", script: [] });
   objects.push({ id: "df_play", name: "playbtn", type: "text", x: W / 2, y: 214, size: 16, color: GREEN, glow: 12, visible: 1, text: "[ DEFEND ]", script: [] });
   objects.push({
     id: "df_help", name: "help", type: "text",
     x: W / 2, y: 248, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "A/D THRUST · W/S CLIMB · SPACE FIRE · B BOMB",
+    text: "A/D THRUST · W/S CLIMB · SPACE · B BOMB",
     script: []
   });
 

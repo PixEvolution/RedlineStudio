@@ -38,7 +38,7 @@ console.log("Pitfall! (1982):");
   check("speaks the arcade contract (score + endplay)", eng.usesScoreboard());
   check("one stick to RUN", JSON.stringify(eng.usedSticks()) === "[1]");
   check("subline states the 4KB miracle as plain fact",
-    ex.objects.find(o => o.name === "subline").text === "ACTIVISION 1982 · 255 SCREENS, ONE BYTE");
+    ex.objects.find(o => o.name === "subline").text === "ACTIVISION 1982 · 255 SCREENS, 1 BYTE");
 }
 
 // ---- the counter IS the world

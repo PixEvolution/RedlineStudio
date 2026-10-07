@@ -80,7 +80,7 @@ export function buildCubitExample() {
     push(`${pad}set tik to 0`);
     dealLevel(pad);
     resetPositions(pad);
-    push(`${pad}set status.text to "MAKE EVERY CUBE PINK — ONE HOP DOES IT (FOR NOW)"`);
+    push(`${pad}set status.text to "MAKE EVERY CUBE PINK — ONE HOP EACH"`);
   };
 
   // ======== start
@@ -693,19 +693,19 @@ end` }]
 
   // attract
   objects.push({ id: "cb_big", name: "bigtitle", type: "text", x: 180, y: 170, size: 44, color: ORANGE, glow: 18, visible: 1, text: "CUBIT", script: [] });
-  objects.push({ id: "cb_sub", name: "subline", type: "text", x: 180, y: 202, size: 9, color: DIM, glow: 4, visible: 1, text: "AN ORIGINAL ISO-HOPPER · 1982 STYLE · IN TRIBUTE", script: [] });
+  objects.push({ id: "cb_sub", name: "subline", type: "text", x: 180, y: 202, size: 9, color: DIM, glow: 4, visible: 1, text: "ORIGINAL ISO-HOPPER · 1982 STYLE · TRIBUTE", script: [] });
   objects.push({ id: "cb_coin", name: "coinline", type: "text", x: 180, y: 232, size: 11, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — CLICK TO HOP ◎", script: [] });
   objects.push({ id: "cb_play", name: "playbtn", type: "text", x: 180, y: 266, size: 15, color: GREEN, glow: 12, visible: 1, text: "[ HOP ]", script: [] });
   objects.push({
     id: "cb_help", name: "help", type: "text",
     x: 180, y: 298, size: 8, color: DIM, glow: 3, visible: 1,
-    text: "THE STICK IS TURNED 45° — EVERY HOP IS DIAGONAL",
+    text: "STICK TURNED 45° — EVERY HOP IS DIAGONAL",
     script: []
   });
   objects.push({
     id: "cb_help2", name: "help2", type: "text",
     x: 180, y: 316, size: 8, color: DIM, glow: 3, visible: 1,
-    text: "PAINT ALL 28 CUBES · DISCS LURE THE COIL OFF",
+    text: "PAINT ALL 28 CUBES · DISCS LURE THE COIL",
     script: []
   });
 

@@ -490,7 +490,7 @@ export function buildCheckersExample() {
   objects.push({
     id: "ex_cktitle", name: "title", type: "text",
     x: 240, y: 13, size: 12, color: "#1f8f3c", glow: 4, visible: 1,
-    text: "MARK I DRAUGHTS — STRACHEY 1951 · MUST CAPTURE", script: []
+    text: "MARK I DRAUGHTS · 1951 · MUST CAPTURE", script: []
   });
 
   return { title: "Draughts (1951)",

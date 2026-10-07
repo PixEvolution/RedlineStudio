@@ -477,7 +477,7 @@ end` }]
   objects.push({
     id: "mc_help", name: "help", type: "text",
     x: W / 2, y: 248, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "CLICK TO INTERCEPT — THE BLAST DOES THE WORK",
+    text: "CLICK TO INTERCEPT — THE BLAST WORKS",
     script: []
   });
 

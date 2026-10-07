@@ -109,7 +109,7 @@ export function buildTronExample() {
     });
     push(`${pad}  set want to 0`);
     push(`${pad}  set cad to max(3, 5 - floor(level / 2))`);
-    push(`${pad}  set status.text to "LIGHT CYCLES — THE WALLS ARE FOREVER. NO REVERSE."`);
+    push(`${pad}  set status.text to "LIGHT CYCLES — WALLS STAY. NO REVERSE."`);
     push(`${pad}end`);
     // ---- stage 2: battle tanks
     push(`${pad}if stg == 2 then`);
@@ -123,7 +123,7 @@ export function buildTronExample() {
       push(`${pad}  set ty[${k}] to ${y}`);
       push(`${pad}  set tcool[${k}] to ${120 + k * 50}`);
     });
-    push(`${pad}  set status.text to "BATTLE TANKS — YOUR SHOT BANKS OFF A WALL, ONCE"`);
+    push(`${pad}  set status.text to "BATTLE TANKS — YOUR SHOT BANKS ONCE"`);
     push(`${pad}end`);
     // ---- stage 3: the tower
     push(`${pad}if stg == 3 then`);
@@ -135,7 +135,7 @@ export function buildTronExample() {
     push(`${pad}  set ttm to 720`);
     push(`${pad}  set bspawn to 30`);
     for (let b = 0; b < 8; b++) push(`${pad}  set bgon[${b}] to 0`);
-    push(`${pad}  set status.text to "THE TOWER — HOLD OFF THE BUGS TILL IT OPENS"`);
+    push(`${pad}  set status.text to "THE TOWER — HOLD THE BUGS TILL IT OPENS"`);
     push(`${pad}end`);
     // ---- stage 4: the cone
     push(`${pad}if stg == 4 then`);
@@ -648,7 +648,7 @@ export function buildTronExample() {
   push("      set stgdone to 1");
   push("      change score by 2000");
   push('      say "THE CORE IS YOURS." for 1.3');
-  push('      set status.text to "THE CORE — +2000 — THE GRID REBUILDS, FASTER"');
+  push('      set status.text to "THE CORE — +2000 — THE GRID REBUILDS"');
   push("      beep 523 for 0.1");
   push("      beep 659 for 0.1");
   push("      beep 784 for 0.1");
@@ -905,7 +905,7 @@ end` }]
   objects.push({
     id: "tr_help2", name: "help2", type: "text",
     x: W / 2, y: 256, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "WASD MOVES · SPACE FIRES · BANK YOUR TANK SHOT",
+    text: "WASD MOVES · SPACE FIRES · BANK THE SHOT",
     script: []
   });
 

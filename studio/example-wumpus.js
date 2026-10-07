@@ -194,7 +194,7 @@ function brainCode() {
   push("set n1 to adj[(pos - 1) * 3]");
   push("set n2 to adj[(pos - 1) * 3 + 1]");
   push("set n3 to adj[(pos - 1) * 3 + 2]");
-  push('set roomline.text to "ROOM " + pos + " · ARROWS " + arrows');
+  push('set roomline.text to "RM " + pos + " · ARROWS " + arrows');
   push('set tunnels.text to "TUNNELS: " + n1 + " " + n2 + " " + n3');
   push("set warn1.visible to (game == 0 and (n1 == wumpus or n2 == wumpus or n3 == wumpus))");
   push("set warn2.visible to (game == 0 and (n1 == pit1 or n2 == pit1 or n3 == pit1 or n1 == pit2 or n2 == pit2 or n3 == pit2))");
@@ -228,7 +228,7 @@ export function buildWumpusExample() {
   // the printout column
   objects.push({
     id: "wu_room", name: "roomline", type: "text",
-    x: 386, y: 90, size: 11, color: WHITE, glow: 8, visible: 1, text: "ROOM 1 · ARROWS 5", script: []
+    x: 386, y: 90, size: 11, color: WHITE, glow: 8, visible: 1, text: "RM 1 · ARROWS 5", script: []
   });
   objects.push({
     id: "wu_w1", name: "warn1", type: "text",
@@ -269,7 +269,7 @@ export function buildWumpusExample() {
   objects.push({
     id: "wu_help", name: "help", type: "text",
     x: 240, y: 350, size: 10, color: DIM, glow: 3, visible: 1,
-    text: "YOB 1973 · WALK LIT ROOMS · SHOOT INTO TUNNELS",
+    text: "YOB 1973 · WALK LIT ROOMS · SHOOT TUNNELS",
     script: []
   });
 

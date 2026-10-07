@@ -65,8 +65,8 @@ export const DISPLAYS = {
   modern:   { name: "CRT",           blurb: "the Studio's native phosphor CRT — the default",    px: null,           palette: null,         scan: 0,    outline: false, bg: null },
   vector79: { name: "VECTOR '79",    blurb: "XY phosphor monitor — glowing strokes, no fills",   px: null,           palette: null,         scan: 0,    outline: true,  bg: "#020503" },
   arcade8:  { name: "ARCADE 8-BIT",  blurb: "8-bit raster arcade — 256×240, the classic colors", px: { w: 256, h: 240 }, palette: ARCADE8_PAL, scan: 0.14, outline: false, bg: "#000000" },
-  tv2600:   { name: "HOME TV '77",   blurb: "a 2600 on the living-room set — 160 fat pixels",    px: { w: 208, h: 156 }, palette: tiaPalette(), scan: 0.2,  outline: false, bg: "#000000" },
-  bw72:     { name: "B&W TV '72",    blurb: "a 1972 black-and-white television",                 px: { w: 240, h: 180 }, palette: BW_PAL,      scan: 0.22, outline: false, bg: "#000000" },
+  tv2600:   { name: "HOME TV '77",   blurb: "a 2600 on the living-room set — 160 fat pixels",    px: { w: 224, h: 168 }, palette: tiaPalette(), scan: 0.2,  outline: false, bg: "#000000" },
+  bw72:     { name: "B&W TV '72",    blurb: "a 1972 black-and-white television",                 px: { w: 256, h: 192 }, palette: BW_PAL,      scan: 0.22, outline: false, bg: "#000000" },
 };
 
 // HARDWARE — what the video/sound chip can DO per frame. Every tier is a
@@ -340,6 +340,7 @@ export const FONT5 = {
   "⚠": F(["00100","01010","01010","10101","10101","10001","11111"]),
   "✕": F(["00000","10001","01010","00100","01010","10001","00000"]),
   "✶": F(["00100","10101","01110","11111","01110","10101","00100"]),
+  "✦": F(["00100","00100","01110","11111","01110","00100","00100"]),
   "❖": F(["00100","01110","00100","01010","00100","01110","00100"]),
   "➤": F(["11000","01110","00111","00111","01110","11000","00000"]),
   "Λ": F(["00100","01010","01010","10001","10001","10001","10001"]),

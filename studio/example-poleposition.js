@@ -97,7 +97,7 @@ export function buildPolePositionExample() {
     push(`${pad}set crash to 0`);
     push(`${pad}set tik to 0`);
     for (let c = 0; c < NCAR; c++) push(`${pad}set con[${c}] to 0`);
-    push(`${pad}set status.text to "QUALIFYING — ONE LAP. UNDER 45.0 OR GO HOME."`);
+    push(`${pad}set status.text to "QUALIFYING — ONE LAP. BEAT 45.0 OR OUT."`);
   };
 
   // ======== start
@@ -219,7 +219,7 @@ export function buildPolePositionExample() {
   push("        explode racecar");
   push("        beep 110 for 0.25");
   push("        beep 82 for 0.3");
-  push('        set status.text to "OFF AT SPEED — THE CAR IS WRECKED FOR A MOMENT"');
+  push('        set status.text to "OFF AT SPEED — WRECKED FOR A MOMENT"');
   push("      else");
   push("        set v to v * 0.96");
   push("      end");
@@ -249,7 +249,7 @@ export function buildPolePositionExample() {
   push("        if grid == 1 then");
   push("          change score by 1800");
   push('          say "POLE POSITION!" for 1.4');
-  push('          set status.text to "POLE POSITION! +2000 — 4 LAPS, GREEN FLAG, GO"');
+  push('          set status.text to "POLE POSITION! +2000 — GREEN FLAG, GO"');
   push("        else");
   push('          set status.text to "QUALIFIED — GRID " + grid + " — 4 LAPS, GREEN FLAG, GO"');
   push("        end");
@@ -322,7 +322,7 @@ export function buildPolePositionExample() {
     push("      explode racecar");
     push("      beep 110 for 0.25");
     push("      beep 82 for 0.3");
-    push('      set status.text to "INTO THE BACK OF TRAFFIC — WRECKED FOR A MOMENT"');
+    push('      set status.text to "REAR-ENDED TRAFFIC — WRECKED A MOMENT"');
     push("    end");
     push("  end");
   }
@@ -366,7 +366,7 @@ export function buildPolePositionExample() {
   push('    set geartx.text to "GEAR HI"');
   push("  end");
   push("  if phase == 0 then");
-  push('    set laptx.text to "QUALIFYING"');
+  push('    set laptx.text to "QUALIFY"');
   push("  else");
   push('    set laptx.text to "LAP " + (laps + 1) + "/4"');
   push("  end");
@@ -465,24 +465,24 @@ end` }]
   objects.push({ id: "pp_sp", name: "speedtx", type: "text", x: 170, y: 22, size: 12, color: CYAN, glow: 6, visible: 0, text: "0 KM/H", script: [] });
   objects.push({ id: "pp_gr", name: "geartx", type: "text", x: 262, y: 22, size: 11, color: GOLD, glow: 5, visible: 0, text: "GEAR LO", script: [] });
   objects.push({ id: "pp_tm", name: "timetx", type: "text", x: 345, y: 22, size: 12, color: GOLD, glow: 6, visible: 0, text: "LAP 0.0", script: [] });
-  objects.push({ id: "pp_lp", name: "laptx", type: "text", x: 432, y: 22, size: 11, color: DIM, glow: 4, visible: 0, text: "QUALIFYING", script: [] });
+  objects.push({ id: "pp_lp", name: "laptx", type: "text", x: 432, y: 22, size: 11, color: DIM, glow: 4, visible: 0, text: "QUALIFY", script: [] });
   objects.push({ id: "pp_st", name: "status", type: "text", x: W / 2, y: 352, size: 9, color: DIM, glow: 4, visible: 1, text: "", script: [] });
 
   // attract
   objects.push({ id: "pp_big", name: "bigtitle", type: "text", x: W / 2, y: 104, size: 40, color: RED, glow: 18, visible: 1, text: "POLE POSITION", script: [] });
-  objects.push({ id: "pp_sub", name: "subline", type: "text", x: W / 2, y: 136, size: 10, color: DIM, glow: 4, visible: 1, text: "NAMCO 1982 · REAL CIRCUIT · 1983'S TOP GROSSER", script: [] });
+  objects.push({ id: "pp_sub", name: "subline", type: "text", x: W / 2, y: 136, size: 10, color: DIM, glow: 4, visible: 1, text: "NAMCO 1982 · 1983'S TOP GROSSER", script: [] });
   objects.push({ id: "pp_coin", name: "coinline", type: "text", x: W / 2, y: 168, size: 12, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — CLICK FOR THE GRID ◎", script: [] });
   objects.push({ id: "pp_play", name: "playbtn", type: "text", x: W / 2, y: 206, size: 16, color: GREEN, glow: 12, visible: 1, text: "[ QUALIFY ]", script: [] });
   objects.push({
     id: "pp_help", name: "help", type: "text",
     x: W / 2, y: 240, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "A·D STEER · W GAS · SPACE SHIFTS · HAIRPIN = 130",
+    text: "A·D · W GAS · SPACE SHIFTS · HAIRPIN=130",
     script: []
   });
   objects.push({
     id: "pp_help2", name: "help2", type: "text",
     x: W / 2, y: 258, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "QUALIFY UNDER 45.0 · THEN 4 LAPS VS THE CLOCK",
+    text: "QUALIFY UNDER 45.0 · THEN 4 LAPS",
     script: []
   });
 

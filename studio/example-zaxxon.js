@@ -334,7 +334,7 @@ export function buildZaxxonExample() {
     push(`    if grace <= 0 and abs(tsd[${s}]) < 2.4 and abs(tsv[${s}] - sv) < 0.6 and abs(tsh[${s}] - sh) < 0.8 then`);
     push(`      set tson[${s}] to 0`);
     push("      set pdie to 1");
-    push('      set status.text to "TURRET FIRE — CHANGE ALTITUDE, THEY LEAD YOU"');
+    push('      set status.text to "TURRET FIRE — CHANGE ALTITUDE, THEY LEAD"');
     push("    end");
     push("  end");
   }
@@ -708,7 +708,7 @@ end` }]
 
   // attract
   objects.push({ id: "zx_big", name: "bigtitle", type: "text", x: W / 2, y: 104, size: 42, color: CYAN, glow: 18, visible: 1, text: "ZAXXON", script: [] });
-  objects.push({ id: "zx_sub", name: "subline", type: "text", x: W / 2, y: 136, size: 10, color: DIM, glow: 4, visible: 1, text: "SEGA 1982 · THE FIRST AXONOMETRIC 3D ARCADE GAME", script: [] });
+  objects.push({ id: "zx_sub", name: "subline", type: "text", x: W / 2, y: 136, size: 10, color: DIM, glow: 4, visible: 1, text: "SEGA 1982 · FIRST AXONOMETRIC 3D ARCADE", script: [] });
   objects.push({ id: "zx_coin", name: "coinline", type: "text", x: W / 2, y: 168, size: 12, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — CLICK TO LAUNCH ◎", script: [] });
   objects.push({ id: "zx_play", name: "playbtn", type: "text", x: W / 2, y: 206, size: 16, color: GREEN, glow: 12, visible: 1, text: "[ LAUNCH ]", script: [] });
   objects.push({

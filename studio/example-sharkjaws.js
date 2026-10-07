@@ -253,7 +253,7 @@ export function buildSharkjawsExample() {
   objects.push({
     id: "sj_help", name: "help", type: "text",
     x: 320, y: 344, size: 10, color: DIM, glow: 3, visible: 1,
-    text: "WASD SWIMS · GRAB FISH · THE SHARK IS FASTER", script: []
+    text: "WASD SWIMS · GRAB FISH · THE SHARK HUNTS", script: []
   });
 
   // name the on-screen joystick

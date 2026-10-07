@@ -238,7 +238,7 @@ export function buildUltimaExample() {
     push(`${pad}  set i to i + 1`);
     push(`${pad}end`);
     dealWildMons(pad);
-    push(`${pad}set status.text to "THE KING WAITS IN HIS CASTLE. THE WILDS SCALE."`);
+    push(`${pad}set status.text to "THE KING WAITS. THE WILDS SCALE OUT."`);
   };
 
   // ======== start: lay the realm into the tables once
@@ -520,7 +520,7 @@ export function buildUltimaExample() {
       push(`          set mtp[${k}] to ${mt}`);
       push(`          set mhp[${k}] to ${mt * 6}`);
     });
-    push('          set status.text to "THE DEPTHS — YOUR TORCH REACHES THREE PACES"');
+    push('          set status.text to "THE DEPTHS — YOUR TORCH SEES 3 PACES"');
     push("          beep 165 for 0.12");
     push("        end");
   }
@@ -849,19 +849,19 @@ end` }]
 
   // attract
   objects.push({ id: "u1_big", name: "bigtitle", type: "text", x: W / 2, y: 104, size: 44, color: GOLD, glow: 18, visible: 1, text: "ULTIMA I", script: [] });
-  objects.push({ id: "u1_sub", name: "subline", type: "text", x: W / 2, y: 138, size: 10, color: DIM, glow: 4, visible: 1, text: "RICHARD GARRIOTT 1981 · THE LONGEST RPG SAGA", script: [] });
+  objects.push({ id: "u1_sub", name: "subline", type: "text", x: W / 2, y: 138, size: 10, color: DIM, glow: 4, visible: 1, text: "GARRIOTT 1981 · THE LONGEST RPG SAGA", script: [] });
   objects.push({ id: "u1_coin", name: "coinline", type: "text", x: W / 2, y: 170, size: 12, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — CLICK TO SET FORTH ◎", script: [] });
   objects.push({ id: "u1_play", name: "playbtn", type: "text", x: W / 2, y: 208, size: 16, color: GREEN, glow: 12, visible: 1, text: "[ SET FORTH ]", script: [] });
   objects.push({
     id: "u1_help", name: "help", type: "text",
     x: W / 2, y: 242, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "WASD WALKS · BUMP TO FIGHT · THE KING HEALS",
+    text: "WASD WALKS · BUMP FIGHTS · THE KING HEALS",
     script: []
   });
   objects.push({
     id: "u1_help2", name: "help2", type: "text",
     x: W / 2, y: 260, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "FOOD BURNS AS YOU WALK · 3 SIGILS OPEN THE TOWER",
+    text: "FOOD BURNS · 3 SIGILS OPEN THE TOWER",
     script: []
   });
 

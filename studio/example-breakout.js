@@ -79,7 +79,7 @@ function ballCode() {
     push(`${pad}set pad.x to ${W / 2}`);
     push(`${pad}set serving to 1`);
     push(`${pad}set servetimer to 90`);
-    push(`${pad}set status.text to "SPACE SERVES — OR WAIT AND IT SERVES ITSELF"`);
+    push(`${pad}set status.text to "SPACE SERVES — OR WAIT, IT SELF-SERVES"`);
   };
 
   // the 1976 speed ladder: one bump, scaled onto the current direction
@@ -231,7 +231,7 @@ function ballCode() {
   push("          else");
   push("            set game to 2");
   push("            set endplay to 1");
-  push('            set status.text to "BOTH WALLS DOWN — PERFECT. CLICK TO GO AGAIN"');
+  push('            set status.text to "BOTH WALLS DOWN — PERFECT. CLICK AGAIN"');
   push("          end");
   push("        end");
   push("      end");
@@ -334,7 +334,7 @@ export function buildBreakoutExample() {
   objects.push({
     id: "bo_help", name: "help", type: "text",
     x: W / 2, y: 470, size: 9, color: DIM, glow: 3, visible: 1,
-    text: "A/D OR THE KNOB · SPACE SERVES · 896 = PERFECT",
+    text: "A/D OR KNOB · SPACE SERVES · 896 = MAX",
     script: []
   });
   // the stick wears the knob's name

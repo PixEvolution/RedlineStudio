@@ -161,7 +161,7 @@ console.log("The challenging stage:");
   clearAll(e);
   e.step();
   check("every third wave is the CHALLENGING STAGE", e.vars.wave === 3 && e.vars.chstage === 1
-    && String(e.byName.status.text).includes("CHALLENGING"));
+    && String(e.byName.status.text).includes("CHALLENGE"));
   // they fly through and LEAVE
   let gone = false;
   for (let i = 0; i < 1600 && !gone; i++) {
