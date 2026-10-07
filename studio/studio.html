@@ -1762,9 +1762,11 @@
           del.textContent = "Delete";
           del.addEventListener("click", async () => {
             if (!confirm(`Delete "${g.title}" forever?`)) return;
-            await deleteGame(g.id);
+            const collected = await deleteGame(g.id);
             if (editingId === g.id) editingId = null;
-            toast("Deleted.");
+            toast(collected > 0
+              ? `Deleted — and the machine's pool came home: ◎ ${collected.toLocaleString()} collected to your balance.`
+              : "Deleted.");
             loadMyGames();
           });
 

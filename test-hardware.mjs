@@ -250,7 +250,9 @@ console.log("The Studio and the players' pages wear it:");
   check("examples load their authentic era", st.includes("if (ex.display) scenes.game.display = ex.display"));
   check("thumbnails render through the era display", st.includes("scenes.game.display || \"modern\")"));
   check("play.html runs published games in their era",
-    (src("play.html").match(/display: game\.data\?\.display/g) || []).length >= 4);
+    (src("play.html").match(/new Engine\([^)]*display: game\.data\?\.display/gs) || []).length >= 4);
+  check("…and EVERY still frame too: pre-play screens and spectator snapshots",
+    (src("play.html").match(/drawFrame\([^;]*display: game\.data\?\.display/gs) || []).length === 8);
   check("arcade cards show era-correct screens",
     src("js/cards.js").includes("card._display") && src("js/cardfields.js").includes("display:"));
   const off = src("js/export-studio.js");

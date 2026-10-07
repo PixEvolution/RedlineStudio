@@ -176,9 +176,9 @@
             attract = new Engine(canvas, game.screen.objects, { input: false, w: W, h: H, display: game.data?.display, hardware: game.data?.hardware });
             attract.start();
           } else if (game.screen && game.screen.mode !== "none" && game.screen.objects?.length) {
-            drawFrame(canvas.getContext("2d"), game.screen.objects, { w: W, h: H });
+            drawFrame(canvas.getContext("2d"), game.screen.objects, { w: W, h: H, display: game.data?.display });
           } else {
-            drawFrame(canvas.getContext("2d"), [], { w: W, h: H });
+            drawFrame(canvas.getContext("2d"), [], { w: W, h: H, display: game.data?.display });
           }
         }
 
@@ -208,11 +208,11 @@
               if (!liveUn) liveUn = watchLive(game.id, (f) => {
                 if (engine || !f) return;
                 if (attract) { attract.stop(); attract = null; }
-                drawFrame(canvas.getContext("2d"), snapToObjects(f), { terminal: f.term || [], w: W, h: H });
+                drawFrame(canvas.getContext("2d"), snapToObjects(f), { terminal: f.term || [], w: W, h: H, display: game.data?.display });
               });
               if (data.snap) {
                 if (attract) { attract.stop(); attract = null; }
-                drawFrame(canvas.getContext("2d"), snapToObjects(data.snap), { terminal: data.snap.term || [], w: W, h: H });
+                drawFrame(canvas.getContext("2d"), snapToObjects(data.snap), { terminal: data.snap.term || [], w: W, h: H, display: game.data?.display });
               }
             } else {
               if (liveUn) { liveUn(); liveUn = null; }
@@ -394,9 +394,9 @@
             attract = new Engine(canvas, screen.objects, { input: false, w: W, h: H, display: game.data?.display, hardware: game.data?.hardware });
             attract.start();
           } else if (hasScreen) {
-            drawFrame(canvas.getContext("2d"), screen.objects, { w: W, h: H });
+            drawFrame(canvas.getContext("2d"), screen.objects, { w: W, h: H, display: game.data?.display });
           } else {
-            drawFrame(canvas.getContext("2d"), [], { w: W, h: H });
+            drawFrame(canvas.getContext("2d"), [], { w: W, h: H, display: game.data?.display });
           }
         }
 
@@ -444,11 +444,11 @@
               if (!liveUn) liveUn = watchLive(game.id, (f) => {
                 if (engine || !f) return;
                 if (attract) { attract.stop(); attract = null; }
-                drawFrame(canvas.getContext("2d"), snapToObjects(f), { terminal: f.term || [], w: W, h: H });
+                drawFrame(canvas.getContext("2d"), snapToObjects(f), { terminal: f.term || [], w: W, h: H, display: game.data?.display });
               });
               if (data.snap) {
                 if (attract) { attract.stop(); attract = null; }
-                drawFrame(canvas.getContext("2d"), snapToObjects(data.snap), { terminal: data.snap.term || [], w: W, h: H });
+                drawFrame(canvas.getContext("2d"), snapToObjects(data.snap), { terminal: data.snap.term || [], w: W, h: H, display: game.data?.display });
               }
             } else {
               if (liveUn) { liveUn(); liveUn = null; }

@@ -96,11 +96,27 @@ function cleanScreen(s) {
   return { mode: s.mode === "live" ? "live" : "static", objects: s.objects || [] };
 }
 
+// Deleting a game takes its card with it — and a CASINO machine's pool
+// belongs to its owner, so every coin is collected (the same conservation
+// transaction the ◎ Collect button uses) before the cabinet goes. Returns
+// the coins collected, so the Studio can say so.
 export async function deleteGame(gameId) {
+  let collected = 0;
+  try {
+    const snap = await getDoc(doc(db, GAMES, gameId));
+    const g = snap.exists() ? snap.data() : null;
+    const pool = Math.floor(Number(g?.pool) || 0);
+    if (g && g.casino && pool > 0 && g.owner) {
+      const { collectPool } = await import("./casino.js");
+      await collectPool(gameId, g.owner, pool);
+      collected = pool;
+    }
+  } catch { /* not the owner, or an empty pool — the delete itself decides below */ }
   const batch = writeBatch(db);
   batch.delete(doc(db, GAMES, gameId));
   batch.delete(doc(db, CARDS, gameId));
   await batch.commit();
+  return collected;
 }
 
 // Newest games for the home page.

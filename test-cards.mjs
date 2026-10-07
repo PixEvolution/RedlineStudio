@@ -46,6 +46,12 @@ console.log("Cards collection:");
     g.includes("batch.set(doc(db, CARDS, gameId)") && g.includes("{ merge: true }"));
   check("delete takes the card with the game",
     g.includes("batch.delete(doc(db, CARDS, gameId))"));
+  check("deleting a CASINO machine collects its whole pool to the owner first",
+    g.includes("await collectPool(gameId, g.owner, pool)")
+    && g.indexOf("collectPool") < g.indexOf("batch.delete(doc(db, GAMES, gameId))")
+    && g.includes("return collected"));
+  check("…and the Studio tells the owner the coins came home",
+    src("studio/studio.html").includes("the machine's pool came home"));
   check("countPlay increments both counters",
     g.includes('updateDoc(doc(db, CARDS, gameId), { plays: increment(1) })'));
   check("the lists read CARDS first and fall back to games pre-backfill",
