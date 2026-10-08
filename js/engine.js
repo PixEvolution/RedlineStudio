@@ -828,9 +828,12 @@ function pixelText(ctx, str, cx, cy, size, align = "center", maxW = 0, kx = 1, k
   const S = String(str ?? "").toUpperCase();
   if (!S) return;
   let p = size / 7;                   // one ROM pixel, in world units
-  // ROM cells are wider than the smooth font: a line that would run off the
-  // screen shrinks to fit instead — what cabinet makers did by hand
-  const limit = maxW > 0 ? (align === "left" ? maxW - cx - 2 : 2 * Math.min(cx, maxW - cx) - 4) : 0;
+  // ROM cells are wider than the smooth font: a CAPTION that would run off
+  // the screen shrinks to fit instead — what cabinet makers did by hand.
+  // Short text (a truck, a grave, a two-glyph ship) is a SPRITE: it keeps
+  // its size and simply clips at the edge, so hitboxes always match the art.
+  const limit = maxW > 0 && S.length >= 10
+    ? (align === "left" ? maxW - cx - 2 : 2 * Math.min(cx, maxW - cx) - 4) : 0;
   if (limit > 0) {
     const total = S.length * 6 * p - p;
     if (total > limit) p = (p * limit) / total;

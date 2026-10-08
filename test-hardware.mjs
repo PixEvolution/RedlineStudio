@@ -152,16 +152,25 @@ console.log("The character ROM (5×7 — solid text, like the real boards):");
   check("every glyph is exactly 35 on/off pixels",
     Object.values(FONT5).every(g => g.length === 35 && !/[^01]/.test(g))
     && FONT5_UNKNOWN.length === 35);
-  // the ROM must cover every character the museum's games actually print
+  // the ROM must cover every character the museum's games actually print —
+  // collected at RUNTIME from the BUILT games (object text + every string in
+  // the compiled RedScript sources), not by regexing raw source files, which
+  // quote-escapes can scramble (that's how † and ✦ once slipped through)
   const { readdirSync } = await import("fs");
   const used = new Set();
-  for (const f of readdirSync("studio").filter(f => f.startsWith("example-"))) {
-    for (const m of src("studio/" + f).matchAll(/"([^"\\]*)"/g)) {
-      for (const ch of m[1].toUpperCase()) if (ch.charCodeAt(0) > 31) used.add(ch);
+  for (const f of readdirSync("studio").filter(f => /^example-.*\.js$/.test(f))) {
+    const mod = await import("./studio/" + f);
+    const ex = mod[Object.keys(mod).find(k => k.startsWith("build"))]();
+    const feed = (str) => { for (const ch of String(str).toUpperCase()) if (ch.charCodeAt(0) > 31) used.add(ch); };
+    for (const o of ex.objects) {
+      feed(o.text || "");
+      for (const ev of o.script || []) {
+        for (const m of String(ev.source || "").matchAll(/"([^"]*)"/g)) feed(m[1]);
+      }
     }
   }
-  const missing = [...used].filter(ch => !(ch in FONT5) && /[ -~]|[\u00a0-\uffff]/.test(ch));
-  check(`the ROM covers all ${used.size} characters the museum prints (missing: ${missing.join("") || "none"})`,
+  const missing = [...used].filter(ch => !(ch in FONT5));
+  check(`the ROM covers all ${used.size} characters the museum actually renders (missing: ${missing.join(" ") || "none"})`,
     missing.length === 0);
   check("lowercase maps to CAPITALS — character ROMs had none", !("a" in FONT5) && ("A" in FONT5));
 

@@ -443,12 +443,12 @@ end` }]
 
   // attract
   objects.push({ id: "sy_big", name: "bigtitle", type: "text", x: W / 2, y: 170, size: 30, color: ORANGE, glow: 16, visible: 1, text: "SCRAPYARD CLIMB", script: [] });
-  objects.push({ id: "sy_sub", name: "subline", type: "text", x: W / 2, y: 198, size: 9, color: DIM, glow: 4, visible: 1, text: "ORIGINAL PLATFORMER · 1981 STYLE · TRIBUTE", script: [] });
-  objects.push({ id: "sy_coin", name: "coinline", type: "text", x: W / 2, y: 226, size: 11, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — CLICK TO CLIMB ◎", script: [] });
-  objects.push({ id: "sy_play", name: "playbtn", type: "text", x: W / 2, y: 258, size: 15, color: GREEN, glow: 12, visible: 1, text: "[ CLIMB ]", script: [] });
+  objects.push({ id: "sy_sub", name: "subline", type: "text", x: W / 2, y: 206, size: 9, color: DIM, glow: 4, visible: 1, text: "ORIGINAL PLATFORMER · 1981 STYLE · TRIBUTE", script: [] });
+  objects.push({ id: "sy_coin", name: "coinline", type: "text", x: W / 2, y: 236, size: 11, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — CLICK TO CLIMB ◎", script: [] });
+  objects.push({ id: "sy_play", name: "playbtn", type: "text", x: W / 2, y: 268, size: 15, color: GREEN, glow: 12, visible: 1, text: "[ CLIMB ]", script: [] });
   objects.push({
     id: "sy_help", name: "help", type: "text",
-    x: W / 2, y: 288, size: 8, color: DIM, glow: 3, visible: 1,
+    x: W / 2, y: 300, size: 8, color: DIM, glow: 3, visible: 1,
     text: "A/D WALK · W/S CLIMB · SPACE JUMPS +100",
     script: []
   });
