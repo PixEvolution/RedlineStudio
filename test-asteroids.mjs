@@ -241,5 +241,23 @@ console.log("The cabinet's pulse:");
   check("10,000 points buys an extra ship", e.vars.lives === 4 && e.vars.nextlife === 20000);
 }
 
+console.log("Safe respawn (the cabinet's rule — no spawning into a rock):");
+{
+  const e = fresh();
+  play(e);
+  oneRock(e, 3, 240, 180);     // a big rock parked ON the spawn point
+  park(e, 240, 180, 0);
+  e.step();                     // the collision kills the ship
+  check("the rock takes the ship", e.vars.lives === 2 && e.vars.shipdead > 0);
+  for (let i = 0; i < 300; i++) { e.lists.rx[0] = 240; e.lists.ry[0] = 180; e.step(); }
+  check("with the center blocked, the ship WAITS — no second death",
+    e.vars.shipdead > 0 && e.vars.lives === 2);
+  // the rock drifts away — now the ship comes back
+  e.lists.rx[0] = 60; e.lists.ry[0] = 40;
+  for (let i = 0; i < 20 && e.vars.shipdead > 0; i++) { e.lists.rx[0] = 60; e.lists.ry[0] = 40; e.step(); }
+  check("the moment the center clears, the ship respawns at rest",
+    e.vars.shipdead === 0 && ship(e).x === 240 && ship(e).y === 180 && e.vars.vx === 0 && e.vars.lives === 2);
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

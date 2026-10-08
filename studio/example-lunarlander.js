@@ -228,7 +228,7 @@ export function buildLunarlanderExample() {
 
   // attract furniture
   objects.push({ id: "ll_big", name: "bigtitle", type: "text", x: 240, y: 120, size: 42, color: WHITE, glow: 18, visible: 1, text: "LUNAR LANDER", script: [] });
-  objects.push({ id: "ll_sub", name: "subline", type: "text", x: 240, y: 152, size: 10, color: DIM, glow: 4, visible: 1, text: "ATARI 1979 · VECTORS · BORN A 1969 TEXT GAME", script: [] });
+  objects.push({ id: "ll_sub", name: "subline", type: "text", x: 240, y: 152, size: 10, color: DIM, glow: 4, visible: 1, text: "ATARI 1979 · REMAKE OF A 1969 TEXT GAME", script: [] });
   objects.push({ id: "ll_coin", name: "coinline", type: "text", x: 240, y: 182, size: 12, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — THE COIN IS THE FUEL ◎", script: [] });
   objects.push({ id: "ll_play", name: "playbtn", type: "text", x: 240, y: 218, size: 16, color: GREEN, glow: 12, visible: 1, text: "[ LAND ]", script: [] });
   objects.push({

@@ -206,11 +206,25 @@ function brainCode() {
   push('        set status.text to "GAME OVER — CLICK TO DRIFT AGAIN"');
   push("        set shipdead to 1");
   push("      else");
-  push(`        set ship.x to ${W / 2}`);
-  push(`        set ship.y to ${H / 2}`);
-  push("        set ship.angle to -90");
-  push("        set vx to 0");
-  push("        set vy to 0");
+  // the real cabinet's rule: the ship does NOT respawn until the center
+  // is clear — otherwise a drifting rock eats every life in a row
+  push("        set safec to 1");
+  push("        set i to 0");
+  push(`        repeat ${NROCK}`);
+  push(`          if rsz[i] > 0 and abs(${W / 2} - rx[i]) < ${rockR} + 52 and abs(${H / 2} - ry[i]) < ${rockR} + 52 then`);
+  push("            set safec to 0");
+  push("          end");
+  push("          set i to i + 1");
+  push("        end");
+  push("        if safec == 1 then");
+  push(`          set ship.x to ${W / 2}`);
+  push(`          set ship.y to ${H / 2}`);
+  push("          set ship.angle to -90");
+  push("          set vx to 0");
+  push("          set vy to 0");
+  push("        else");
+  push("          set shipdead to 6");   // hold — look again in a tenth of a second
+  push("        end");
   push("      end");
   push("    end");
   push("  end");
