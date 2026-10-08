@@ -23,7 +23,7 @@
 // correctly by 2026 rules. History has a sense of humor.
 
 const W = 480, H = 360;
-const L = 16, R = 464, T = 40, B = 344;       // the fence
+const L = 16, R = 464, T = 40, B = 330;       // the fence (text lives below it)
 const CARSPD = 2.6, TURN = 4, GSPD = 1.25, PLAYSECS = 60;
 const GRAVE_DELAY = 60;   // ticks before a fresh grave appears and turns solid (a full second)
 const NCROSS = 16, NGREM = 6;
@@ -192,6 +192,14 @@ function brainCode() {
   push("set coinline.visible to (game == 9)");
   push("set p1btn.visible to (game == 9)");
   push("set p2btn.visible to (game == 9)");
+  push("set car1.visible to (game != 9)");
+  push("set car2.visible to (game != 9 and mode == 2)");
+  push("set gremlin1.visible to (game != 9)");
+  push("set gremlin2.visible to (game != 9)");
+  push("set gremlin3.visible to (game != 9)");
+  push("set gremlin4.visible to (game != 9)");
+  push("set gremlin5.visible to (game != 9)");
+  push("set gremlin6.visible to (game != 9)");
   push("set help.visible to (game == 9)");
   push("set coinline.glow to 8 + sin(time() * 300) * 6");
   push("if arcade == 1 then");
@@ -292,7 +300,7 @@ export function buildDeathraceExample() {
   objects.push({ id: "dr_p2", name: "p2btn", type: "text", x: 352, y: 268, size: 16, color: ORANGE, glow: 12, visible: 1, text: "[ 2 PLAYERS ]", script: [] });
   objects.push({
     id: "dr_help", name: "help", type: "text",
-    x: W / 2, y: 336, size: 9, color: DIM, glow: 3, visible: 1,
+    x: W / 2, y: 352, size: 9, color: DIM, glow: 3, visible: 1,
     text: "P1 A/D+W · P2 ARROWS · GRAVES ARE SOLID",
     script: []
   });

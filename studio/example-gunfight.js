@@ -333,12 +333,12 @@ export function buildGunfightExample() {
   // HUD (the brain rides on killtx)
   objects.push({
     id: "gf_k", name: "killtx", type: "text",
-    x: 400, y: 30, size: 14, color: GREEN, glow: 8, visible: 0, text: "P1 0 · P2 0",
+    x: 400, y: 64, size: 14, color: GREEN, glow: 8, visible: 0, text: "P1 0 · P2 0",
     script: [{ event: "code", source: brainCode() }]
   });
   objects.push({
     id: "gf_t", name: "timetx", type: "text",
-    x: 400, y: 52, size: 11, color: WHITE, glow: 6, visible: 0, text: "TIME 90", script: []
+    x: 400, y: 86, size: 11, color: WHITE, glow: 6, visible: 0, text: "TIME 90", script: []
   });
   objects.push({
     id: "gf_a1", name: "ammo1tx", type: "text",
@@ -346,7 +346,7 @@ export function buildGunfightExample() {
   });
   objects.push({
     id: "gf_a2", name: "ammo2tx", type: "text",
-    x: 710, y: 30, size: 11, color: AMBER, glow: 6, visible: 0, text: "P2 SHOTS 6", script: []
+    x: 700, y: 30, size: 11, color: AMBER, glow: 6, visible: 0, text: "P2 SHOTS 6", script: []
   });
 
   // the marquee

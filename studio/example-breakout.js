@@ -323,7 +323,7 @@ export function buildBreakoutExample() {
 
   // HUD
   objects.push({ id: "bo_sc", name: "scoretx", type: "text", x: 60, y: 24, size: 26, color: WHITE, glow: 8, visible: 0, text: "0", script: [] });
-  objects.push({ id: "bo_bl", name: "ballstx", type: "text", x: 292, y: 20, size: 12, color: DIM, glow: 4, visible: 0, text: "BALLS 3", script: [] });
+  objects.push({ id: "bo_bl", name: "ballstx", type: "text", x: 292, y: 16, size: 12, color: DIM, glow: 4, visible: 0, text: "BALLS 3", script: [] });
   objects.push({ id: "bo_wn", name: "walltx", type: "text", x: 292, y: 34, size: 12, color: DIM, glow: 4, visible: 0, text: "WALL 1", script: [] });
   objects.push({ id: "bo_st", name: "status", type: "text", x: W / 2, y: 412, size: 11, color: DIM, glow: 4, visible: 1, text: "", script: [] });
 
