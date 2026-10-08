@@ -688,7 +688,7 @@ export function buildTronExample() {
 
   // ---- HUD
   push('  set scoretx.text to "" + score');
-  push('  set livestx.text to "PROGRAMS " + lives');
+  push('  set livestx.text to "PROGS " + lives');
   push('  set leveltx.text to "ROUND " + level');
   push("  if stg == 1 then");
   push('    set stagetx.text to "LIGHT CYCLES"');
@@ -888,7 +888,7 @@ end` }]
   objects.push({ id: "tr_sc", name: "scoretx", type: "text", x: 58, y: 24, size: 18, color: WHITE, glow: 8, visible: 0, text: "0", script: [] });
   objects.push({ id: "tr_sg", name: "stagetx", type: "text", x: 200, y: 22, size: 12, color: CYAN, glow: 6, visible: 0, text: "LIGHT CYCLES", script: [] });
   objects.push({ id: "tr_le", name: "leveltx", type: "text", x: 330, y: 22, size: 11, color: GOLD, glow: 5, visible: 0, text: "ROUND 1", script: [] });
-  objects.push({ id: "tr_lv", name: "livestx", type: "text", x: 420, y: 22, size: 11, color: DIM, glow: 4, visible: 0, text: "PROGRAMS 3", script: [] });
+  objects.push({ id: "tr_lv", name: "livestx", type: "text", x: 430, y: 22, size: 11, color: DIM, glow: 4, visible: 0, text: "PROGS 3", script: [] });
   objects.push({ id: "tr_st", name: "status", type: "text", x: W / 2, y: 352, size: 9, color: DIM, glow: 4, visible: 1, text: "", script: [] });
 
   // attract

@@ -463,9 +463,9 @@ end` }]
   // HUD
   objects.push({ id: "pp_sc", name: "scoretx", type: "text", x: 58, y: 24, size: 18, color: WHITE, glow: 8, visible: 0, text: "0", script: [] });
   objects.push({ id: "pp_sp", name: "speedtx", type: "text", x: 170, y: 22, size: 12, color: CYAN, glow: 6, visible: 0, text: "0 KM/H", script: [] });
-  objects.push({ id: "pp_gr", name: "geartx", type: "text", x: 262, y: 22, size: 11, color: GOLD, glow: 5, visible: 0, text: "GEAR LO", script: [] });
+  objects.push({ id: "pp_gr", name: "geartx", type: "text", x: 250, y: 22, size: 11, color: GOLD, glow: 5, visible: 0, text: "GEAR LO", script: [] });
   objects.push({ id: "pp_tm", name: "timetx", type: "text", x: 345, y: 22, size: 12, color: GOLD, glow: 6, visible: 0, text: "LAP 0.0", script: [] });
-  objects.push({ id: "pp_lp", name: "laptx", type: "text", x: 432, y: 22, size: 11, color: DIM, glow: 4, visible: 0, text: "QUALIFY", script: [] });
+  objects.push({ id: "pp_lp", name: "laptx", type: "text", x: 438, y: 22, size: 11, color: DIM, glow: 4, visible: 0, text: "QUALIFY", script: [] });
   objects.push({ id: "pp_st", name: "status", type: "text", x: W / 2, y: 352, size: 9, color: DIM, glow: 4, visible: 1, text: "", script: [] });
 
   // attract

@@ -437,7 +437,7 @@ end` }]
 
   // HUD
   objects.push({ id: "sy_sc", name: "scoretx", type: "text", x: 48, y: 22, size: 18, color: WHITE, glow: 8, visible: 0, text: "0", script: [] });
-  objects.push({ id: "sy_lv", name: "livestx", type: "text", x: 292, y: 20, size: 11, color: DIM, glow: 4, visible: 0, text: "RUNNERS 3", script: [] });
+  objects.push({ id: "sy_lv", name: "livestx", type: "text", x: 300, y: 20, size: 11, color: DIM, glow: 4, visible: 0, text: "RUNNERS 3", script: [] });
   objects.push({ id: "sy_bn", name: "bonustx", type: "text", x: 170, y: 20, size: 11, color: GOLD, glow: 5, visible: 0, text: "BONUS 5000 · L1", script: [] });
   objects.push({ id: "sy_st", name: "status", type: "text", x: W / 2, y: 468, size: 9, color: DIM, glow: 4, visible: 1, text: "", script: [] });
 

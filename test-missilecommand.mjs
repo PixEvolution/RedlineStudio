@@ -90,7 +90,7 @@ console.log("Click to intercept — the blast does the work:");
   for (let b = 0; b < 3; b++) e3.lists.ammo[b] = 0;
   e3.fireClick(240, 150); e3.step();
   check("no rounds anywhere — the click goes unanswered",
-    e3.lists.son[0] === 0 && String(e3.byName.status.text).includes("OUT OF INTERCEPTORS"));
+    e3.lists.son[0] === 0 && String(e3.byName.status.text).includes("NO SHOTS"));
 }
 
 console.log("Impacts:");

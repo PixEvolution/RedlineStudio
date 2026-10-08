@@ -365,11 +365,11 @@ export function buildGunfightExample() {
   });
   objects.push({
     id: "gf_1p", name: "btn1p", type: "text",
-    x: 300, y: 430, size: 15, color: GREEN, glow: 12, visible: 1, text: "[ 1 PLAYER ]", script: []
+    x: 220, y: 430, size: 15, color: GREEN, glow: 12, visible: 1, text: "[ 1 PLAYER ]", script: []
   });
   objects.push({
     id: "gf_2p", name: "btn2p", type: "text",
-    x: 500, y: 430, size: 15, color: GREEN, glow: 12, visible: 1, text: "[ 2 PLAYERS ]", script: []
+    x: 580, y: 430, size: 15, color: GREEN, glow: 12, visible: 1, text: "[ 2 PLAYERS ]", script: []
   });
   objects.push({
     id: "gf_status", name: "statusline", type: "text",

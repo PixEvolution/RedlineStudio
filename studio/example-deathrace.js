@@ -288,8 +288,8 @@ export function buildDeathraceExample() {
   objects.push({ id: "dr_big", name: "bigtitle", type: "text", x: W / 2, y: 140, size: 52, color: WHITE, glow: 18, visible: 1, text: "DEATH RACE", script: [] });
   objects.push({ id: "dr_sub", name: "subline", type: "text", x: W / 2, y: 172, size: 11, color: DIM, glow: 4, visible: 1, text: "EXIDY 1976 · THE ONE THEY PROTESTED", script: [] });
   objects.push({ id: "dr_coin", name: "coinline", type: "text", x: W / 2, y: 205, size: 13, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — PICK A MODE ◎", script: [] });
-  objects.push({ id: "dr_p1", name: "p1btn", type: "text", x: 168, y: 268, size: 16, color: GREEN, glow: 12, visible: 1, text: "[ 1 PLAYER ]", script: [] });
-  objects.push({ id: "dr_p2", name: "p2btn", type: "text", x: 315, y: 268, size: 16, color: ORANGE, glow: 12, visible: 1, text: "[ 2 PLAYERS ]", script: [] });
+  objects.push({ id: "dr_p1", name: "p1btn", type: "text", x: 130, y: 268, size: 16, color: GREEN, glow: 12, visible: 1, text: "[ 1 PLAYER ]", script: [] });
+  objects.push({ id: "dr_p2", name: "p2btn", type: "text", x: 352, y: 268, size: 16, color: ORANGE, glow: 12, visible: 1, text: "[ 2 PLAYERS ]", script: [] });
   objects.push({
     id: "dr_help", name: "help", type: "text",
     x: W / 2, y: 336, size: 9, color: DIM, glow: 3, visible: 1,

@@ -641,7 +641,7 @@ export function buildWolfensteinExample() {
 
   // ---- HUD
   push('  set scoretx.text to "" + score');
-  push('  set ammotx.text to "ROUNDS " + bullets');
+  push('  set ammotx.text to "AMMO " + bullets');
   push('  set livestx.text to "SPIES " + lives');
   push('  set itemtx.text to ""');
   push("  if uniform == 1 then");
@@ -857,9 +857,9 @@ end` }]
 
   // HUD
   objects.push({ id: "cw_sc", name: "scoretx", type: "text", x: 58, y: 24, size: 20, color: WHITE, glow: 8, visible: 0, text: "0", script: [] });
-  objects.push({ id: "cw_am", name: "ammotx", type: "text", x: 160, y: 22, size: 11, color: CYAN, glow: 5, visible: 0, text: "ROUNDS 8", script: [] });
-  objects.push({ id: "cw_rm", name: "roomtx", type: "text", x: 285, y: 22, size: 11, color: GOLD, glow: 6, visible: 0, text: "GATE CELLS", script: [] });
-  objects.push({ id: "cw_lv", name: "livestx", type: "text", x: 414, y: 22, size: 11, color: DIM, glow: 4, visible: 0, text: "SPIES 3", script: [] });
+  objects.push({ id: "cw_am", name: "ammotx", type: "text", x: 160, y: 22, size: 11, color: CYAN, glow: 5, visible: 0, text: "AMMO 8", script: [] });
+  objects.push({ id: "cw_rm", name: "roomtx", type: "text", x: 290, y: 22, size: 11, color: GOLD, glow: 6, visible: 0, text: "GATE CELLS", script: [] });
+  objects.push({ id: "cw_lv", name: "livestx", type: "text", x: 420, y: 22, size: 11, color: DIM, glow: 4, visible: 0, text: "SPIES 3", script: [] });
   objects.push({ id: "cw_it", name: "itemtx", type: "text", x: 240, y: 40, size: 9, color: GREEN, glow: 5, visible: 0, text: "", script: [] });
   objects.push({ id: "cw_st", name: "status", type: "text", x: W / 2, y: 352, size: 9, color: DIM, glow: 4, visible: 1, text: "", script: [] });
 

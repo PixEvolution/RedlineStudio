@@ -323,9 +323,9 @@ export function buildCombatExample() {
   objects.push({ id: "cb_big", name: "bigtitle", type: "text", x: 240, y: 130, size: 52, color: WHITE, glow: 18, visible: 1, text: "COMBAT", script: [] });
   objects.push({ id: "cb_sub", name: "subline", type: "text", x: 240, y: 165, size: 11, color: DIM, glow: 4, visible: 1, text: "ATARI 2600 · 1977 · THE PACK-IN CART", script: [] });
   objects.push({ id: "cb_coin", name: "coinline", type: "text", x: 240, y: 200, size: 13, color: WHITE, glow: 8, visible: 1, text: "◎ INSERT COIN — PICK A VARIATION ◎", script: [] });
-  objects.push({ id: "cb_m1", name: "m1btn", type: "text", x: 120, y: 268, size: 15, color: GREEN, glow: 12, visible: 1, text: "[ TANK ]", script: [] });
-  objects.push({ id: "cb_m2", name: "m2btn", type: "text", x: 240, y: 268, size: 15, color: ORANGE, glow: 12, visible: 1, text: "[ TANK MAZE ]", script: [] });
-  objects.push({ id: "cb_m3", name: "m3btn", type: "text", x: 366, y: 268, size: 15, color: "#2dd2ff", glow: 12, visible: 1, text: "[ BIPLANE ]", script: [] });
+  objects.push({ id: "cb_m1", name: "m1btn", type: "text", x: 85, y: 268, size: 15, color: GREEN, glow: 12, visible: 1, text: "[ TANK ]", script: [] });
+  objects.push({ id: "cb_m2", name: "m2btn", type: "text", x: 240, y: 268, size: 15, color: ORANGE, glow: 12, visible: 1, text: "[ MAZE ]", script: [] });
+  objects.push({ id: "cb_m3", name: "m3btn", type: "text", x: 390, y: 268, size: 15, color: "#2dd2ff", glow: 12, visible: 1, text: "[ BIPLANE ]", script: [] });
   objects.push({
     id: "cb_help", name: "help", type: "text",
     x: 240, y: 315, size: 9, color: DIM, glow: 3, visible: 1,

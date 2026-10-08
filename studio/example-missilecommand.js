@@ -56,7 +56,7 @@ export function buildMissilecommandExample() {
     push(`${pad}set nextcity to 10000`);
     for (let c = 0; c < 6; c++) push(`${pad}set cal[${c}] to 1`);
     dealWave(pad);
-    push(`${pad}set status.text to "THE BLAST DOES THE WORK. LEAD THEM."`);
+    push(`${pad}set status.text to "BLASTS DO THE WORK"`);
   };
 
   // ======== start
@@ -100,7 +100,7 @@ export function buildMissilecommandExample() {
   }
   push("    if bpick < 0 then");
   push("      beep 100 for 0.1");
-  push('      set status.text to "OUT OF INTERCEPTORS — HOLD ON"');
+  push('      set status.text to "NO SHOTS — HOLD ON"');
   push("    else");
   push("      set fired to 0");
   for (let j = 0; j < NSHOT; j++) {
@@ -230,7 +230,7 @@ export function buildMissilecommandExample() {
     push(`        if etg[i] == ${6 + b} and bal[${b}] == 1 then`);
     push(`          set bal[${b}] to 0`);
     push(`          set ammo[${b}] to 0`);
-    push(`          set status.text to "SILO DOWN — BACK NEXT WAVE"`);
+    push(`          set status.text to "SILO DOWN"`);
     push("        end");
   }
   push("      end");
@@ -314,7 +314,7 @@ export function buildMissilecommandExample() {
     push("      set rebuilt to 1");
     push("      beep 784 for 0.08");
     push("      beep 1047 for 0.12");
-    push('      set status.text to "BONUS CITY — ONE RUIN REBUILT"');
+    push('      set status.text to "BONUS CITY REBUILT"');
     push("    end");
   }
   push("  end");
@@ -325,13 +325,13 @@ export function buildMissilecommandExample() {
   push("  if alive == 0 then");
   push("    set game to 2");
   push("    set endplay to 1");
-  push('    set status.text to "CLICK TO DEFEND AGAIN"');
+  push('    set status.text to "CLICK TO DEFEND"');
   push("    beep 80 for 0.6");
   push("  end");
   push("  if game == 0 and tospawn == 0 and aloft == 0 then");
   push("    set bonus to alive * 100 * mult + (ammo[0] + ammo[1] + ammo[2]) * 5 * mult");
   push("    change score by bonus");
-  push('    set status.text to "WAVE " + wave + " HELD — BONUS " + bonus + " (" + alive + " CITIES, ×" + mult + ")"');
+  push('    set status.text to "BONUS " + bonus + " ×" + mult');
   push("    set wave to wave + 1");
   dealWave("    ");
   push("  end");

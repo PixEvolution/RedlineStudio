@@ -463,8 +463,8 @@ export function buildDefenderExample() {
 
   // ---- HUD
   push('  set scoretx.text to "" + score');
-  push('  set livestx.text to "SHIPS " + lives + " · BOMBS " + sbombs');
-  push('  set wavetx.text to "WAVE " + wave + " · HUMANOIDS " + humleft');
+  push('  set livestx.text to "SHIPS " + lives + " · B" + sbombs');
+  push('  set wavetx.text to "WAVE " + wave + " · " + humleft + " HUM"');
   push("end");
   push("set scoretx.visible to (game != 9)");
   push("set livestx.visible to (game != 9)");
@@ -618,8 +618,8 @@ end` }]
 
   // HUD
   objects.push({ id: "df_sc", name: "scoretx", type: "text", x: 58, y: 20, size: 18, color: WHITE, glow: 8, visible: 0, text: "0", script: [] });
-  objects.push({ id: "df_lv", name: "livestx", type: "text", x: 390, y: 18, size: 11, color: DIM, glow: 4, visible: 0, text: "SHIPS 3 · BOMBS 2", script: [] });
-  objects.push({ id: "df_wv", name: "wavetx", type: "text", x: 225, y: 18, size: 11, color: ORANGE, glow: 5, visible: 0, text: "WAVE 1 · HUMANOIDS 10", script: [] });
+  objects.push({ id: "df_lv", name: "livestx", type: "text", x: 390, y: 18, size: 11, color: DIM, glow: 4, visible: 0, text: "SHIPS 3 · B2", script: [] });
+  objects.push({ id: "df_wv", name: "wavetx", type: "text", x: 225, y: 18, size: 11, color: ORANGE, glow: 5, visible: 0, text: "WAVE 1 · 10 HUM", script: [] });
   objects.push({ id: "df_st", name: "status", type: "text", x: W / 2, y: 352, size: 9, color: DIM, glow: 4, visible: 1, text: "", script: [] });
 
   // attract

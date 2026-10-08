@@ -252,12 +252,12 @@ export function buildSpaceraceExample() {
   });
   objects.push({
     id: "sr_p1", name: "p1btn", type: "text",
-    x: 168, y: 268, size: 16, color: GREEN, glow: 12, visible: 1,
+    x: 130, y: 268, size: 16, color: GREEN, glow: 12, visible: 1,
     text: "[ 1 PLAYER ]", script: []
   });
   objects.push({
     id: "sr_p2", name: "p2btn", type: "text",
-    x: 315, y: 268, size: 16, color: AMBER, glow: 12, visible: 1,
+    x: 352, y: 268, size: 16, color: AMBER, glow: 12, visible: 1,
     text: "[ 2 PLAYERS ]", script: []
   });
 

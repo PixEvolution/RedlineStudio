@@ -28,7 +28,7 @@ const MINES = [[240, 90], [240, 150], [240, 220], [240, 280]];
 
 const TURN = 2.6, FWD = 1.5, REV = 0.6;            // REV is a fraction of FWD
 const SHELL = 5.5, AI_TURN = 2.2, AI_FWD = 1.3;
-const WHITE = "#ffffff", DIM = "#7a8894", GREEN = "#7dff9e", AMBER = "#ff9d4a", WALLC = "#dfe9ee";
+const WHITE = "#ffffff", DIM = "#7a8894", GREEN = "#7dff9e", AMBER = "#ff9d4a", WALLC = "#55606a";
 
 function brainCode() {
   const L = [];
@@ -423,15 +423,15 @@ export function buildTankExample() {
   // frame was unreadable)
   objects.push({
     id: "tk_p1", name: "p1tx", type: "text",
-    x: 100, y: 44, size: 13, color: "#14571f", glow: 0, visible: 0, text: "YOU 0", script: []
+    x: 100, y: 44, size: 13, color: "#b9d4c0", glow: 0, visible: 0, text: "YOU 0", script: []
   });
   objects.push({
     id: "tk_tm", name: "timetx", type: "text",
-    x: 240, y: 44, size: 13, color: "#22343c", glow: 0, visible: 0, text: "TIME 60", script: []
+    x: 240, y: 44, size: 13, color: "#9fb0b8", glow: 0, visible: 0, text: "TIME 60", script: []
   });
   objects.push({
     id: "tk_p2", name: "p2tx", type: "text",
-    x: 380, y: 44, size: 13, color: "#8a4a12", glow: 0, visible: 0, text: "DRONE 0", script: []
+    x: 380, y: 44, size: 13, color: "#d8a878", glow: 0, visible: 0, text: "DRONE 0", script: []
   });
 
   // the marquee
@@ -445,11 +445,11 @@ export function buildTankExample() {
   });
   objects.push({
     id: "tk_1p", name: "onep", type: "text",
-    x: 170, y: 232, size: 13, color: GREEN, glow: 12, visible: 1, text: "[ 1 PLAYER ]", script: []
+    x: 130, y: 232, size: 13, color: GREEN, glow: 12, visible: 1, text: "[ 1 PLAYER ]", script: []
   });
   objects.push({
     id: "tk_2p", name: "twop", type: "text",
-    x: 310, y: 232, size: 13, color: AMBER, glow: 12, visible: 1, text: "[ 2 PLAYERS ]", script: []
+    x: 352, y: 232, size: 13, color: AMBER, glow: 12, visible: 1, text: "[ 2 PLAYERS ]", script: []
   });
   objects.push({
     id: "tk_status", name: "statusline", type: "text",
@@ -459,7 +459,7 @@ export function buildTankExample() {
   // the controls, printed straight onto the cabinet's bottom rail
   objects.push({
     id: "tk_help", name: "help", type: "text",
-    x: 240, y: 334, size: 10, color: "#0e3018", glow: 0, visible: 1,
+    x: 240, y: 334, size: 10, color: "#7a9a84", glow: 0, visible: 1,
     text: "P1 WASD + SPACE · P2 ARROWS + ENTER",
     script: []
   });

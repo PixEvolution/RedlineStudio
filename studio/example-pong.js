@@ -268,12 +268,12 @@ export function buildPongExample() {
   });
   objects.push({
     id: "pg_p1", name: "p1btn", type: "text",
-    x: 168, y: 268, size: 16, color: "#7dff9e", glow: 12, visible: 1,
+    x: 130, y: 268, size: 16, color: "#7dff9e", glow: 12, visible: 1,
     text: "[ 1 PLAYER ]", script: []
   });
   objects.push({
     id: "pg_p2", name: "p2btn", type: "text",
-    x: 315, y: 268, size: 16, color: "#ff9d4a", glow: 12, visible: 1,
+    x: 352, y: 268, size: 16, color: "#ff9d4a", glow: 12, visible: 1,
     text: "[ 2 PLAYERS ]", script: []
   });
 

@@ -137,7 +137,7 @@ function brainCode() {
     push(`${pad}set chaser.y to ${CHY}`);
     push(`${pad}set runner.x to ${RNX}`);
     push(`${pad}set runner.y to ${RNY}`);
-    push(`${pad}set self.text to "THE BOX HUNTS THE RING"`);
+    push(`${pad}set self.text to "BOX HUNTS RING"`);
   };
 
   push("when start");
@@ -173,7 +173,7 @@ function brainCode() {
   push("    set game to 2");
   push("    set endplay to 1");        // the quarter is spent — arcade contract
   push("    beep 150 for 0.5");        // time-up buzzer
-  push('    set self.text to "" + catches + " CATCHES — CLICK FOR ATTRACT"');
+  push('    set self.text to "TIME UP — CLICK"');
   push("  end");
   push("end");
   push("end");
@@ -226,11 +226,11 @@ export function buildGotchaExample() {
   // HUD
   objects.push({
     id: "gt_sc", name: "scoretx", type: "text",
-    x: 100, y: 28, size: 14, color: AMBER, glow: 8, visible: 0, text: "CATCHES 0", script: []
+    x: 86, y: 28, size: 14, color: AMBER, glow: 8, visible: 0, text: "CATCHES 0", script: []
   });
   objects.push({
     id: "gt_tm", name: "timetx", type: "text",
-    x: 385, y: 28, size: 14, color: WHITE, glow: 8, visible: 0, text: "TIME 60", script: []
+    x: 400, y: 28, size: 14, color: WHITE, glow: 8, visible: 0, text: "TIME 60", script: []
   });
   // the brain doubles as the status line
   objects.push({
@@ -251,12 +251,12 @@ export function buildGotchaExample() {
   });
   objects.push({
     id: "gt_p1", name: "p1btn", type: "text",
-    x: 168, y: 268, size: 16, color: AMBER, glow: 12, visible: 1,
+    x: 130, y: 268, size: 16, color: AMBER, glow: 12, visible: 1,
     text: "[ 1 PLAYER ]", script: []
   });
   objects.push({
     id: "gt_p2", name: "p2btn", type: "text",
-    x: 315, y: 268, size: 16, color: GREEN, glow: 12, visible: 1,
+    x: 352, y: 268, size: 16, color: GREEN, glow: 12, visible: 1,
     text: "[ 2 PLAYERS ]", script: []
   });
 
