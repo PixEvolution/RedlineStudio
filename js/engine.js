@@ -830,24 +830,27 @@ function pixelText(ctx, str, cx, cy, size, align = "center", maxW = 0, kx = 1, k
   let p = size / 7;                   // one ROM pixel, in world units
   // ROM cells are wider than the smooth font: a line that would run off the
   // screen shrinks to fit instead — what cabinet makers did by hand
-  if (maxW > 0) {
-    const limit = align === "left" ? maxW - cx - 2 : 2 * Math.min(cx, maxW - cx) - 4;
+  const limit = maxW > 0 ? (align === "left" ? maxW - cx - 2 : 2 * Math.min(cx, maxW - cx) - 4) : 0;
+  if (limit > 0) {
     const total = S.length * 6 * p - p;
-    if (limit > 0 && total > limit) p = (p * limit) / total;
+    if (total > limit) p = (p * limit) / total;
   }
   // SNAP to the device grid, floored at ONE whole device pixel each way — a
   // fractional ROM pixel is exactly the anti-aliased halo this font exists
   // to kill. A line too long even at the floor clips at the edges instead
   // of mushing (and the era text audit keeps the games' lines shorter).
-  const pw = Math.max(1, Math.round(p * kx)) / kx;
-  const ph = Math.max(1, Math.round(p * ky)) / ky;
+  let pw = Math.max(1, Math.round(p * kx)) / kx;
+  let ph = Math.max(1, Math.round(p * ky)) / ky;
+  // the snap can round UP past the fit (a big title, say) — step down whole
+  // device pixels, keeping the pixels square-ish, so letters stay SPACED
+  while (limit > 0 && pw * kx > 1 && S.length * 6 * pw - pw > limit) {
+    pw = (Math.round(pw * kx) - 1) / kx;
+    ph = Math.max(1, Math.round(pw * ky)) / ky;
+  }
   // a cell is 5 columns + 1 gap; a line that overflows even at the floor
   // drops the gap first (cramped cabinet lettering) before it clips
   let cell = 6;
-  if (maxW > 0) {
-    const limit = align === "left" ? maxW - cx - 2 : 2 * Math.min(cx, maxW - cx) - 4;
-    if (limit > 0 && S.length * 6 * pw - pw > limit) cell = 5;
-  }
+  if (limit > 0 && S.length * 6 * pw - pw > limit) cell = 5;
   const cw = cell * pw;
   const lineW = S.length * cw - (cell === 6 ? pw : 0);   // no trailing gap
   let x = align === "left" ? cx : cx - lineW / 2;

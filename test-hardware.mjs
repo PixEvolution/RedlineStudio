@@ -187,6 +187,24 @@ console.log("The character ROM (5×7 — solid text, like the real boards):");
   const b = mkStub();
   drawFrame(b.stub, txt, { w: 480, h: 360, display: "modern" });
   check("on the CRT, text still uses the smooth font", b.calls.texts === 1);
+
+  // a BIG TITLE that overflows steps DOWN a device pixel and stays SPACED —
+  // it never falls into cramped lettering just because the snap rounded up
+  const xs = [];
+  const stub2 = new Proxy({}, {
+    get: (t, k) => {
+      if (k === "canvas") return undefined;
+      return (...a) => { if (k === "fillRect") xs.push(a[0]); };
+    },
+    set: () => true,
+  });
+  drawFrame(stub2, [{ id: "t2", type: "text", visible: 1, x: 240, y: 100, size: 40, color: "#fff", glow: 0, text: "MISSILE COMMAND" }],
+    { w: 480, h: 360, display: "arcade8" });
+  const ux = [...new Set(xs)].sort((a, b) => a - b);
+  const diffs = ux.slice(1).map((v, i) => v - ux[i]).filter(d => d > 0.01);
+  const minD = Math.min(...diffs), maxD = Math.max(...diffs);
+  check("a big title fits the screen AND keeps its letter gaps",
+    ux[0] >= 0 && ux[ux.length - 1] <= 478 && maxD >= 1.9 * minD);   // a gap column exists
 }
 
 console.log("The .rlgame carries its era:");

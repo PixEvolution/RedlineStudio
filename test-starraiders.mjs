@@ -110,6 +110,18 @@ console.log("Condition red:");
   check("a centred shot kills (+100) and clears the sector", e.vars.z1on === 0
     && e.vars.score === sc0 + 100 && e.vars.zleft === 7
     && String(e.byName.status.text).includes("SECTOR CLEARED"));
+  // the blast is pinned to the SPOT, not the screen (the Battlezone rule)
+  check("the wreck lights up where the fighter died",
+    e.vars.wkon > 0 && Math.abs(e.vars.wkx - 240) < 14 && Math.abs(e.vars.wky - 180) < 14
+    && Number(e.byName.wreck1.visible) === 1);
+  e.keys["d"] = true;                      // steer right: the world slides left
+  const wx0 = e.vars.wkx;
+  for (let i = 0; i < 10; i++) e.step();
+  e.keys["d"] = false;
+  check("steering drags the wreck across the window like everything else",
+    e.vars.wkx < wx0 - 5 && Math.abs(e.byName.wreck1.x - e.vars.wkx) < 1);
+  for (let i = 0; i < 40; i++) e.step();
+  check("…and it burns out after half a second", e.vars.wkon === 0 && Number(e.byName.wreck1.visible) === 0);
   // they shoot back
   const e2 = fresh();
   play(e2);

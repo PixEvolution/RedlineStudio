@@ -224,7 +224,12 @@ export function buildStarraidersExample() {
   for (let n = 1; n <= 3; n++) {
     push(`        if z${n}on == 1 and abs(zylon${n}.x - 240) < 14 + 600 / (z${n}z + 15) and abs(zylon${n}.y - 180) < 14 + 600 / (z${n}z + 15) then`);
     push(`          set z${n}on to 0`);
-    push(`          explode zylon${n}`);
+    // the blast stays WHERE THE FIGHTER DIED: a wreck anchored in the world,
+    // steered with the same parallax as everything else (the Battlezone rule)
+    push("          set wkon to 34");
+    push(`          set wkx to zylon${n}.x`);
+    push(`          set wky to zylon${n}.y`);
+    push(`          set wkz to z${n}z`);
     push("          change score by 100");
     push("          set zs[psec] to zs[psec] - 1");
     push("          set zleft to zleft - 1");
@@ -421,6 +426,41 @@ end` }]
     id: "sr_hf", name: "hitflash", type: "ring",
     x: 240, y: 180, size: 150, color: RED, glow: 18, visible: 0, text: "",
     script: [{ event: "code", source: "when tick\nset self.visible to (game == 0 and mode == 0 and hitt > 0)\nset self.size to 150 + hitt * 8\nend" }]
+  });
+  // the Zylon wreck: a blast pinned to the SPOT in space where the fighter
+  // died — it drifts with your steering at the fighter's own parallax, so
+  // turning away leaves the explosion behind, like the real sky would
+  objects.push({
+    id: "sr_wk1", name: "wreck1", type: "ring",
+    x: -80, y: -80, size: 10, color: "#ffffff", glow: 14, visible: 0, text: "",
+    script: [{
+      event: "code", source: `when tick
+if wkon > 0 then
+  set wkon to wkon - 1
+  set wkpar to 60 / (wkz + 20) + 0.4
+  set wkx to wkx - vvx * wkpar
+  set wky to wky - vvy * wkpar
+end
+set self.visible to (game == 0 and mode == 0 and warpt == 0 and wkon > 0)
+if self.visible == 1 then
+  set self.x to wkx
+  set self.y to wky
+  set self.size to (8 + 500 / (wkz + 15)) * (0.25 + (34 - wkon) / 34)
+end
+end` }]
+  });
+  objects.push({
+    id: "sr_wk2", name: "wreck2", type: "ring",
+    x: -80, y: -80, size: 6, color: RED, glow: 10, visible: 0, text: "",
+    script: [{
+      event: "code", source: `when tick
+set self.visible to (game == 0 and mode == 0 and warpt == 0 and wkon > 0)
+if self.visible == 1 then
+  set self.x to wkx
+  set self.y to wky
+  set self.size to (8 + 500 / (wkz + 15)) * (0.1 + (34 - wkon) / 34 * 0.5)
+end
+end` }]
   });
   objects.push({
     id: "sr_ch", name: "crosshair", type: "text",
