@@ -525,7 +525,7 @@ end`;
   objects.push({ id: "ad_sc", name: "scoretx", type: "text", x: 58, y: 42, size: 20, color: WHITE, glow: 8, visible: 0, text: "0", script: [] });
   objects.push({ id: "ad_lv", name: "livestx", type: "text", x: 422, y: 40, size: 12, color: DIM, glow: 4, visible: 0, text: "LIVES 3", script: [] });
   objects.push({ id: "ad_rm", name: "roomtx", type: "text", x: W / 2, y: 356, size: 10, color: DIM, glow: 4, visible: 0, text: "", script: [] });
-  objects.push({ id: "ad_cy", name: "carrytx", type: "text", x: W / 2, y: 10, size: 9, color: DIM, glow: 4, visible: 0, text: "", script: [] });
+  objects.push({ id: "ad_cy", name: "carrytx", type: "text", x: W / 2, y: 16, size: 9, color: DIM, glow: 4, visible: 0, text: "", script: [] });
   objects.push({ id: "ad_st", name: "status", type: "text", x: W / 2, y: 336, size: 10, color: GREEN, glow: 6, visible: 1, text: "", script: [] });
 
   // attract furniture

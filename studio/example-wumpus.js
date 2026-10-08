@@ -257,7 +257,7 @@ export function buildWumpusExample() {
   });
   objects.push({
     id: "wu_again", name: "againline", type: "text",
-    x: 386, y: 312, size: 10, color: DIM, glow: 4, visible: 0, text: "CLICK FOR A NEW HUNT", script: []
+    x: 386, y: 312, size: 10, color: DIM, glow: 4, visible: 0, text: "CLICK — NEW HUNT", script: []
   });
 
   // the brain rides on the title

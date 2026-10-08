@@ -398,11 +398,11 @@ export function buildWesterngunExample() {
   });
   objects.push({
     id: "wg_a1", name: "ammo1tx", type: "text",
-    x: 90, y: 30, size: 11, color: WHITE, glow: 6, visible: 0, text: "P1 SHOTS 6", script: []
+    x: 125, y: 30, size: 11, color: WHITE, glow: 6, visible: 0, text: "P1 SHOTS 6", script: []
   });
   objects.push({
     id: "wg_a2", name: "ammo2tx", type: "text",
-    x: 700, y: 30, size: 11, color: AMBER, glow: 6, visible: 0, text: "P2 SHOTS 6", script: []
+    x: 675, y: 30, size: 11, color: AMBER, glow: 6, visible: 0, text: "P2 SHOTS 6", script: []
   });
 
   objects.push({

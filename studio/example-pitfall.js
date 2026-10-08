@@ -414,7 +414,7 @@ export function buildPitfallExample() {
   push("      change score by 10000");
   push("      set game to 2");
   push("      set endplay to 1");
-  push('      set status.text to "ALL 32! PERFECT RUN +10000 — SCORE " + score');
+  push('      set status.text to "ALL 32! PERFECT +10000 — SCORE " + score');
   push("      beep 523 for 0.1");
   push("      beep 659 for 0.1");
   push("      beep 784 for 0.1");
@@ -499,7 +499,7 @@ export function buildPitfallExample() {
   push("  else");
   push('    set timetx.text to tmm + ":" + tss');
   push("  end");
-  push('  set livestx.text to "RUNNERS " + lives');
+  push('  set livestx.text to "LIVES " + lives');
   push('  set scenetx.text to "B" + scr + " · " + got + "/32"');
   push("end");
   push("set scoretx.visible to (game != 9)");
@@ -680,7 +680,7 @@ end` }]
   objects.push({ id: "pf_sc", name: "scoretx", type: "text", x: 58, y: 24, size: 20, color: WHITE, glow: 8, visible: 0, text: "2000", script: [] });
   objects.push({ id: "pf_tm", name: "timetx", type: "text", x: 170, y: 22, size: 13, color: GOLD, glow: 6, visible: 0, text: "3:00", script: [] });
   objects.push({ id: "pf_by", name: "scenetx", type: "text", x: 280, y: 22, size: 11, color: DIM, glow: 4, visible: 0, text: "B6 · 0/32", script: [] });
-  objects.push({ id: "pf_lv", name: "livestx", type: "text", x: 424, y: 22, size: 11, color: DIM, glow: 4, visible: 0, text: "RUNNERS 3", script: [] });
+  objects.push({ id: "pf_lv", name: "livestx", type: "text", x: 424, y: 22, size: 11, color: DIM, glow: 4, visible: 0, text: "LIVES 3", script: [] });
   objects.push({ id: "pf_st", name: "status", type: "text", x: W / 2, y: 354, size: 9, color: DIM, glow: 4, visible: 1, text: "", script: [] });
 
   // attract
