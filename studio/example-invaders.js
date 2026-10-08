@@ -407,9 +407,9 @@ end` }]
   });
 
   // HUD
-  objects.push({ id: "si_sc", name: "scoretx", type: "text", x: 48, y: 22, size: 22, color: WHITE, glow: 8, visible: 0, text: "0", script: [] });
-  objects.push({ id: "si_lv", name: "livestx", type: "text", x: 300, y: 18, size: 12, color: DIM, glow: 4, visible: 0, text: "LIVES 3", script: [] });
-  objects.push({ id: "si_wv", name: "wavetx", type: "text", x: 300, y: 32, size: 12, color: DIM, glow: 4, visible: 0, text: "WAVE 1", script: [] });
+  objects.push({ id: "si_sc", name: "scoretx", type: "text", x: 48, y: 26, size: 22, color: WHITE, glow: 8, visible: 0, text: "0", script: [] });
+  objects.push({ id: "si_lv", name: "livestx", type: "text", x: 300, y: 20, size: 12, color: DIM, glow: 4, visible: 0, text: "LIVES 3", script: [] });
+  objects.push({ id: "si_wv", name: "wavetx", type: "text", x: 300, y: 40, size: 12, color: DIM, glow: 4, visible: 0, text: "WAVE 1", script: [] });
   objects.push({ id: "si_st", name: "status", type: "text", x: W / 2, y: 478, size: 10, color: DIM, glow: 4, visible: 1, text: "", script: [] });
 
   // attract furniture

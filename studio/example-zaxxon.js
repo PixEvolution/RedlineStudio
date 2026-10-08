@@ -704,7 +704,7 @@ end` }]
   objects.push({ id: "zx_fu", name: "fueltx", type: "text", x: 180, y: 22, size: 12, color: GOLD, glow: 6, visible: 0, text: "FUEL 99", script: [] });
   objects.push({ id: "zx_le", name: "leveltx", type: "text", x: 300, y: 22, size: 11, color: CYAN, glow: 5, visible: 0, text: "FORTRESS 1", script: [] });
   objects.push({ id: "zx_lv", name: "livestx", type: "text", x: 420, y: 22, size: 11, color: DIM, glow: 4, visible: 0, text: "SHIPS 3", script: [] });
-  objects.push({ id: "zx_stx", name: "status", type: "text", x: W / 2, y: 352, size: 9, color: DIM, glow: 4, visible: 1, text: "", script: [] });
+  objects.push({ id: "zx_stx", name: "status", type: "text", x: W / 2, y: 358, size: 9, color: DIM, glow: 4, visible: 1, text: "", script: [] });
 
   // attract
   objects.push({ id: "zx_big", name: "bigtitle", type: "text", x: W / 2, y: 104, size: 42, color: CYAN, glow: 18, visible: 1, text: "ZAXXON", script: [] });
