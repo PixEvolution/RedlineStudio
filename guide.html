@@ -642,7 +642,8 @@ hits            how many times other players have hit YOU (respawn on change)</p
       toc.appendChild(head);
       const note = document.createElement("p");
       note.className = "hint";
-      note.textContent = "Click a section to jump in — click its heading to fold it away again. The ✓ is your own reading progress, kept in this browser.";
+      note.innerHTML = 'Click a section to jump in — click its heading to fold it away again. The ✓ is your own reading progress, kept in this browser. '
+        + 'Prefer being taught? <a href="courses.html" style="color:#ff8f8c">🎒 The Courses</a> walk you through all of this, machine by machine, starting at zero.';
       toc.appendChild(note);
 
       for (const [cls, title] of GROUPS) {

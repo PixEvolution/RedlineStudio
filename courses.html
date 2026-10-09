@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RedlineStudio — Courses: Learn Game Making, Machine by Machine</title>
+  <meta name="description" content="Free guided courses that teach game making from absolute zero, one museum machine at a time — starting with the 1947 CRT Amusement Device. Each course is history, how it works, and building your own, verified live in the Studio.">
+  <link rel="canonical" href="https://redlinestudio.dev/courses.html">
+  <meta property="og:site_name" content="RedlineStudio">
+  <meta property="og:title" content="Courses — learn game making, machine by machine">
+  <meta property="og:description" content="History, mechanics, then build your own — one course per museum machine, live-verified in the Studio, starting in 1947.">
+  <meta property="og:url" content="https://redlinestudio.dev/courses.html">
+  <meta property="og:type" content="website">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .course-row { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 8px; }
+    .course-row + .course-row { border-top: 1px solid rgba(255,255,255,.05); }
+    .course-row .n { flex: 0 0 2.2em; text-align: right; color: #8fa0b4; font-variant-numeric: tabular-nums; }
+    .course-row .t { flex: 1; }
+    .course-row .y { color: #8fa0b4; font-size: .85em; }
+    .course-row.locked { opacity: .55; }
+    .course-state { font-size: .85em; white-space: nowrap; }
+  </style>
+  <script>(window.adsbygoogle = window.adsbygoogle || []).requestNonPersonalizedAds = 1;</script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2208639648972390"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+  <main class="page guide">
+    <h1 class="page-title">🎒 Courses</h1>
+    <p class="page-sub">Learn to make games the way games learned to exist — one machine at a time,
+    starting in 1947, assuming you know absolutely nothing.</p>
+
+    <div class="panel">
+      <h2>How courses work</h2>
+      <p>Every course is one museum machine, taught in three movements: <b>the history</b> (what it was,
+      why it mattered), <b>the autopsy</b> (our rebuild opened up, its logic explained line by line), and
+      <b>the build</b> — you make <i>your own</i> game using what that machine taught, step by step.</p>
+      <p>A course opens in <b>its own Studio window</b> with the lesson docked as a panel — your normal
+      Studio draft is never touched. And the steps are <b>live-verified</b>: the lesson watches the real
+      workspace and ticks each step the moment you've actually done it. Finish every step and the course
+      is complete — <b>completing a course unlocks the next</b>, in museum order, so by the end of the
+      ladder you've rebuilt the history of game design with your own hands.</p>
+      <p class="hint">Progress saves to your account, so <a href="login.html" style="color:#ff8f8c">log
+      in</a> before you start. (Logged out, the course still runs — it just can't remember you finished.)
+      Each course ends with a machine you can publish to the Games page, high-score table included.</p>
+    </div>
+
+    <div class="panel">
+      <h2>The ladder</h2>
+      <p class="hint" id="course-note">Loading your progress…</p>
+      <div id="course-list"></div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { renderNav } from "./js/ui.js";
+    import { COURSES, isUnlocked, myProgress } from "./js/courses.js";
+    renderNav("");
+
+    const list = document.getElementById("course-list");
+    const note = document.getElementById("course-note");
+    const progress = await myProgress();   // null = logged out
+
+    note.textContent = progress === null
+      ? "You're not logged in — course 1 is open to everyone, but finishing only counts on an account."
+      : `${Object.keys(progress).length ? Object.keys(progress).length + " course(s) on your shelf." : "Nothing on the shelf yet — course 1 awaits."}`;
+
+    COURSES.forEach((c, i) => {
+      const row = document.createElement("div");
+      row.className = "course-row";
+      const unlocked = isUnlocked(c.id, progress || {});
+      const done = !!(progress && progress[c.id]);
+      const n = document.createElement("span"); n.className = "n"; n.textContent = String(i + 1);
+      const t = document.createElement("span"); t.className = "t";
+      t.innerHTML = `<b>${c.title}</b> <span class="y">· ${c.year}</span>`
+        + (c.teaches ? `<br><span class="y">${c.teaches}</span>` : "");
+      const state = document.createElement("span"); state.className = "course-state";
+      row.append(n, t, state);
+
+      if (done) {
+        state.textContent = "✅ complete";
+      } else if (!c.ready) {
+        row.classList.add("locked");
+        state.textContent = unlocked ? "🚧 being written" : "🔒";
+      } else if (unlocked) {
+        const go = document.createElement("button");
+        go.className = "btn btn-small";
+        go.textContent = i === 0 ? "▶ Start here" : "▶ Start";
+        go.addEventListener("click", () => {
+          const w = window.open("studio/studio.html?course=" + c.id, "rl_course_" + c.id,
+            "width=1380,height=900");
+          if (!w) window.location.href = "studio/studio.html?course=" + c.id;
+        });
+        state.replaceWith(go);
+      } else {
+        row.classList.add("locked");
+        state.textContent = "🔒 finish the one before";
+      }
+      list.appendChild(row);
+    });
+  </script>
+  <script type="module">import { footAd } from "./js/ads.js"; footAd();</script>
+</body>
+</html>

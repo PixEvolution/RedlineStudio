@@ -80,6 +80,8 @@
         <button class="btn btn-ghost" id="btn-redo" title="Redo (Ctrl+Y)">↷</button>
         <button class="btn btn-ghost" id="btn-tour" title="A guided walk through every panel — made for first-time game makers">🎓</button>
         <button class="btn btn-ghost" id="btn-keys" title="Every keyboard shortcut, on one card">⌨</button>
+        <a class="btn btn-ghost" id="btn-courses" href="../courses.html" target="_blank" rel="noopener"
+          title="Guided courses: learn to build games machine by machine, from 1947 up">🎒</a>
         <button class="btn btn-ghost" id="btn-new">New</button>
         <button class="btn btn-ghost" id="btn-import" title="Import a .rlgame file (or a downloaded game HTML) — the import verifies the file's seal">⬆ Import</button>
         <button class="btn btn-ghost" id="btn-download" title="Download this game as a standalone HTML file — runs offline, uploads to itch.io">⬇ Download</button>
@@ -565,6 +567,9 @@ Enter (in chat/answer boxes)   send</pre>
     // ---- mode: "game" (default) or "page" (the Page Studio — same editor
     // and same powers, but it saves to your profile page, not the games list) ----
     const pageMode = new URLSearchParams(location.search).get("mode") === "page";
+    // ---- course mode: studio.html?course=<id> is a SEPARATE studio with the
+    // lesson docked as a panel and its own draft — normal work stays untouched
+    const courseId = pageMode ? null : (new URLSearchParams(location.search).get("course") || null);
 
     // ------------------------------------------------------------ state
     // Two scenes: the game itself, and its arcade screen. The 🎮/📺 toggle
@@ -612,7 +617,7 @@ Enter (in chat/answer boxes)   send</pre>
     // Snapshot history (Ctrl+Z / Ctrl+Y) + a draft that survives a closed tab:
     // every change autosaves to this browser, and the Studio recovers it.
     const hist = createHistory(60);
-    const DRAFT_KEY = "rl_draft_v1";
+    const DRAFT_KEY = courseId ? "rl_draft_course_" + courseId : "rl_draft_v1";
     const snapState = () => JSON.stringify({ scenes, editTarget, selectedId });
     const settingsGet = () => pageMode ? null : {
       desc: $("#g-desc").value, type: $("#g-type").value, pub: $("#g-public").value,
@@ -1500,11 +1505,9 @@ Enter (in chat/answer boxes)   send</pre>
       wumpus2: { build: buildWumpus2Example, screen: "static", tip: "Hit ▶ Test. The 1973 original: type M or S, then a room number. Draw your map on paper!" },
       slots: { build: buildSlotsExample, screen: "live", casino: true, tip: "Hit ▶ Test for FREE PLAY. Publish to the Casino floor and fund the pool to open for business." }
     };
-    $("#sel-example").addEventListener("change", () => {
-      const pick = $("#sel-example").value;
-      $("#sel-example").value = "";
-      if (!pick) return;
-      if (scene.objects.length > 0 && !confirm(`Replace the current ${editTarget === "screen" ? "arcade screen" : "workspace"} with this example?`)) return;
+    function loadExampleScene(pick, { ask = true } = {}) {
+      if (!EXAMPLES[pick]) return;
+      if (ask && scene.objects.length > 0 && !confirm(`Replace the current ${editTarget === "screen" ? "arcade screen" : "workspace"} with this example?`)) return;
       const ex = EXAMPLES[pick].build();
       // loads into whichever target you're editing — an example makes a great arcade screen too
       scenes[editTarget] = { objects: ex.objects };
@@ -1541,7 +1544,147 @@ Enter (in chat/answer boxes)   send</pre>
       select(scene.objects[0].id);
       commit();
       toast(`${ex.title} loaded — ${EXAMPLES[pick].tip}`);
+    }
+    $("#sel-example").addEventListener("change", () => {
+      const pick = $("#sel-example").value;
+      $("#sel-example").value = "";
+      if (pick) loadExampleScene(pick);
     });
+
+    // ------------------------------------------------------------ 🎒 course mode
+    // The lesson lives as a panel INSIDE this studio; steps verify themselves
+    // against the real workspace, and completion lands on the account.
+    if (courseId) (async () => {
+      $("#btn-courses").style.display = "none";   // you're IN one
+      let courseMod = null, progApi = null;
+      try {
+        courseMod = await import("../js/course-" + courseId + ".js");
+        progApi = await import("../js/courses.js");
+      } catch {
+        toast("That course doesn't exist yet — the hub lists what's written.", true);
+        return;
+      }
+      const course = courseMod.course;
+      const FLAGS_KEY = "rl_course_flags_" + courseId;
+      let flags = { fresh: false, testCount: 0 };
+      try { flags = { ...flags, ...(JSON.parse(localStorage.getItem(FLAGS_KEY) || "{}")) }; } catch {}
+      const saveFlags = () => { try { localStorage.setItem(FLAGS_KEY, JSON.stringify(flags)); } catch {} };
+      $("#btn-test").addEventListener("click", () => {
+        if (scene.objects.length) { flags.testCount++; saveFlags(); }
+      });
+
+      // ---- the panel, docked above the Explorer
+      const panel = document.createElement("div");
+      panel.className = "panel course-panel";
+      panel.innerHTML = `
+        <h3>🎒 ${course.title}</h3>
+        <div class="course-nav" style="display:flex; gap:6px; align-items:center; margin:8px 0">
+          <button class="btn btn-small btn-ghost" id="course-prev">◂</button>
+          <span id="course-where" class="hint" style="flex:1; text-align:center"></span>
+          <button class="btn btn-small" id="course-next">Next ▸</button>
+        </div>
+        <div id="course-body" style="max-height:46vh; overflow:auto; font-size:.92em"></div>
+        <p class="hint" id="course-foot" style="margin:8px 0 0"></p>`;
+      const expl = document.querySelector(".explorer");
+      expl.parentNode.insertBefore(panel, expl);
+      setupPanel(panel, { key: "course" });
+
+      const body = panel.querySelector("#course-body");
+      const where = panel.querySelector("#course-where");
+      const foot = panel.querySelector("#course-foot");
+      let chapter = 0, done = false, savedToAccount = false;
+
+      const ctx = () => ({
+        objects: scenes.game.objects,
+        fresh: flags.fresh,
+        testCount: flags.testCount,
+        published: !!editingId
+      });
+      const buildChapter = () => course.chapters.find(c => c.steps);
+      const allStepsPass = () => {
+        const b = buildChapter();
+        return b ? b.steps.every(st => { try { return !!st.check(ctx()); } catch { return false; } }) : false;
+      };
+
+      const render = () => {
+        const ch = course.chapters[chapter];
+        where.textContent = `${chapter + 1} / ${course.chapters.length} — ${ch.title}`;
+        panel.querySelector("#course-prev").disabled = chapter === 0;
+        panel.querySelector("#course-next").disabled = chapter === course.chapters.length - 1;
+        let html = ch.html || "";
+        if (ch.steps) {
+          html += ch.steps.map((st, i) =>
+            `<div class="course-step" data-step="${i}" style="display:flex; gap:8px; padding:8px 0; border-top:1px solid rgba(255,255,255,.07)">
+               <span class="course-tick" style="flex:0 0 1.4em; font-size:1.05em">○</span>
+               <div style="flex:1">${st.text}</div>
+             </div>`).join("");
+        }
+        body.innerHTML = html;
+        body.scrollTop = 0;
+        verify();
+      };
+
+      const verify = () => {
+        const ch = course.chapters[chapter];
+        if (ch.steps) {
+          const c = ctx();
+          ch.steps.forEach((st, i) => {
+            let ok = false;
+            try { ok = !!st.check(c); } catch {}
+            const row = body.querySelector(`[data-step="${i}"]`);
+            if (!row) return;
+            const tick = row.querySelector(".course-tick");
+            tick.textContent = ok ? "✅" : "○";
+            row.style.opacity = ok ? ".75" : "1";
+          });
+        }
+        if (allStepsPass()) {
+          if (!done) {
+            done = true;
+            toast("🎓 Course complete — every step verified. The finish line chapter has your victory lap.");
+          }
+          foot.textContent = "✅ COURSE COMPLETE" + (savedToAccount ? " — saved to your account." : "");
+          if (!savedToAccount && user) {
+            savedToAccount = true;   // one attempt per render-cycle; retried on reload if it failed
+            progApi.markDone(courseId)
+              .then((ok) => { foot.textContent = ok ? "✅ COURSE COMPLETE — saved to your account. The next course is unlocked." : "✅ COURSE COMPLETE"; })
+              .catch(() => { savedToAccount = false; });
+          } else if (!user) {
+            foot.textContent = "✅ COURSE COMPLETE — log in and it saves to your account (and unlocks the next course).";
+          }
+        } else {
+          const b = buildChapter();
+          if (b) {
+            const c = ctx();
+            const passed = b.steps.filter(st => { try { return !!st.check(c); } catch { return false; } }).length;
+            foot.textContent = `Build progress: ${passed} / ${b.steps.length} steps`;
+          }
+        }
+      };
+
+      panel.querySelector("#course-prev").addEventListener("click", () => { chapter = Math.max(0, chapter - 1); render(); });
+      panel.querySelector("#course-next").addEventListener("click", () => { chapter = Math.min(course.chapters.length - 1, chapter + 1); render(); });
+      body.addEventListener("click", (e) => {
+        const act = e.target?.dataset?.act;
+        if (act === "load-example") {
+          loadExampleScene(courseId, { ask: scene.objects.length > 0 });
+          flags.fresh = false; saveFlags(); verify();
+        }
+        if (act === "start-fresh") {
+          if (scene.objects.length && !confirm("Clear the workspace? (The museum machine reloads any time from chapter 4.)")) return;
+          scenes.game = { objects: [] };   // fresh scene: default size and era too
+          scene = scenes[editTarget];
+          selectedId = null;
+          applyDims();
+          renderExplorer(); renderProps(); renderScriptEditor(); redraw(); commit();
+          flags.fresh = true; saveFlags(); verify();
+        }
+      });
+
+      setInterval(verify, 900);
+      render();
+      toast("🎒 Course loaded — this studio is the course's own workspace; your normal draft is safe.");
+    })();
 
     // ------------------------------------------------------------ behaviors + tutorial
     // ✨ Behaviors: one click drops WORKING blocks into the selected object —

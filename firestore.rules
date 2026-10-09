@@ -367,6 +367,18 @@ service cloud.firestore {
       allow delete: if isMod();   // resolving a report
     }
 
+    // ---------------------------------------------------------- course progress
+    // One doc per login (id = Firebase Auth uid): { courses: { crt: <ms>, … } }.
+    // Readable by anyone (it's a trophy shelf — future profile badges read it);
+    // writable only by its owner, and only in that one shape.
+    match /progress/{uid} {
+      allow read: if true;
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['courses'])
+        && request.resource.data.courses is map;
+      allow delete: if isMod() || (signedIn() && request.auth.uid == uid);
+    }
+
     // ------------------------------------------------------------- inbox
     // The contact form (contact.html): privacy requests, parent/guardian
     // requests, appeals, copyright notices. Anyone may write one — INCLUDING
