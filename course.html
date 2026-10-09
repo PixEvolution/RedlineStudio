@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RedlineStudio — Course</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* the lesson window: a compact companion that parks beside the Studio */
+    body { margin: 0; }
+    .lesson {
+      display: flex; flex-direction: column; height: 100vh; box-sizing: border-box;
+      padding: 12px 14px; max-width: 760px; margin: 0 auto;
+    }
+    .lesson h1 { font-size: 1.05em; margin: 0 0 8px; }
+    .lesson-nav { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
+    .lesson-nav .where { flex: 1; text-align: center; }
+    #lesson-body { flex: 1; overflow: auto; font-size: .95em; min-height: 0; }
+    #lesson-body pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+    .course-step { display: flex; gap: 8px; padding: 9px 0; border-top: 1px solid rgba(255,255,255,.08); }
+    .course-step .tick { flex: 0 0 1.4em; font-size: 1.05em; }
+    .course-step.done { opacity: .72; }
+    .lesson-foot { padding-top: 8px; border-top: 1px solid rgba(255,255,255,.1); }
+    .studio-row { margin: 0 0 10px; }
+  </style>
+</head>
+<body>
+  <main class="lesson">
+    <h1 id="lesson-title">🎒 Course</h1>
+    <p class="hint studio-row">
+      <button class="btn" id="open-studio">🎮 Open my course Studio</button>
+      <span>— park this window beside it. The steps tick themselves as you build over there.</span>
+    </p>
+    <div class="lesson-nav">
+      <button class="btn btn-small btn-ghost" id="les-prev">◂</button>
+      <span class="hint where" id="les-where"></span>
+      <button class="btn btn-small btn-ghost" id="les-speak" title="Listen to this chapter">🔊</button>
+      <button class="btn btn-small" id="les-next">Next ▸</button>
+    </div>
+    <div id="lesson-body"><p class="hint">Loading the lesson…</p></div>
+    <p class="hint lesson-foot" id="lesson-foot"></p>
+  </main>
+
+  <script type="module">
+    const id = new URLSearchParams(location.search).get("c") || "";
+    const $ = (s) => document.querySelector(s);
+    const body = $("#lesson-body"), foot = $("#lesson-foot"), where = $("#les-where");
+
+    let course = null, progApi = null;
+    try {
+      course = (await import("./js/course-" + id + ".js")).course;
+      progApi = await import("./js/courses.js");
+    } catch {
+      body.innerHTML = `<p class="hint">That course doesn't exist yet — the
+        <a href="courses.html" style="color:#ff8f8c">course hub</a> lists what's written.</p>`;
+      throw new Error("unknown course");
+    }
+    document.title = "RedlineStudio — " + course.title;
+    $("#lesson-title").textContent = "🎒 " + course.title;
+
+    // ---- the Studio this lesson teaches into: a named window, so the button
+    // focuses the existing one instead of opening twins
+    const STUDIO_URL = "studio/studio.html?course=" + encodeURIComponent(id);
+    const openStudio = () => {
+      const w = window.open(STUDIO_URL, "rl_course_studio_" + id, "width=1500,height=950");
+      if (w) w.focus();
+      return w;
+    };
+    $("#open-studio").addEventListener("click", openStudio);
+
+    // ---- watching the Studio: its course draft and flags live in the
+    // browser's shared storage, so this window reads the REAL workspace —
+    // instantly on every change (storage events), with a slow safety poll
+    const DRAFT_KEY = "rl_draft_course_" + id;
+    const FLAGS_KEY = "rl_course_flags_" + id;
+    const CMD_KEY = "rl_course_cmd_" + id;
+    const readJson = (k) => { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch { return null; } };
+    const ctx = () => {
+      const d = readJson(DRAFT_KEY), f = readJson(FLAGS_KEY) || {};
+      return {
+        objects: d?.scenes?.game?.objects || [],
+        fresh: !!f.fresh,
+        testCount: Number(f.testCount) || 0,
+        published: !!(d && d.editingId)
+      };
+    };
+    // lesson buttons steer the Studio: open/focus it (this click is the
+    // permission), queue the command, and the Studio runs it on arrival
+    const sendCmd = (act) => {
+      openStudio();
+      try { localStorage.setItem(CMD_KEY, JSON.stringify({ act, n: Date.now() })); } catch {}
+    };
+
+    let chapter = 0, done = false, savedToAccount = false;
+    const buildChapter = () => course.chapters.find(c => c.steps);
+    const allStepsPass = () => {
+      const b = buildChapter(), c = ctx();
+      return b ? b.steps.every(st => { try { return !!st.check(c); } catch { return false; } }) : false;
+    };
+
+    const render = () => {
+      const ch = course.chapters[chapter];
+      where.textContent = `${chapter + 1} / ${course.chapters.length} — ${ch.title}`;
+      $("#les-prev").disabled = chapter === 0;
+      $("#les-next").disabled = chapter === course.chapters.length - 1;
+      let html = ch.html || "";
+      if (ch.steps) {
+        html += ch.steps.map((st, i) =>
+          `<div class="course-step" data-step="${i}">
+             <span class="tick">○</span><div style="flex:1">${st.text}</div>
+           </div>`).join("");
+      }
+      body.innerHTML = html;
+      body.scrollTop = 0;
+      verify();
+    };
+
+    const verify = () => {
+      const ch = course.chapters[chapter];
+      const c = ctx();
+      if (ch.steps) {
+        ch.steps.forEach((st, i) => {
+          let ok = false;
+          try { ok = !!st.check(c); } catch {}
+          const row = body.querySelector(`[data-step="${i}"]`);
+          if (!row) return;
+          row.querySelector(".tick").textContent = ok ? "✅" : "○";
+          row.classList.toggle("done", ok);
+        });
+      }
+      if (allStepsPass()) {
+        if (!done) { done = true; }
+        foot.textContent = "✅ COURSE COMPLETE" + (savedToAccount ? " — saved to your account. The next course is unlocked." : "");
+        if (!savedToAccount) {
+          savedToAccount = true;
+          progApi.markDone(id).then((ok) => {
+            foot.textContent = ok
+              ? "✅ COURSE COMPLETE — saved to your account. The next course is unlocked."
+              : "✅ COURSE COMPLETE — log in (in the Studio window) and revisit to save it to your account.";
+          }).catch(() => { savedToAccount = false; });
+        }
+      } else {
+        const b = buildChapter();
+        if (b) {
+          const passed = b.steps.filter(st => { try { return !!st.check(c); } catch { return false; } }).length;
+          foot.textContent = `Build progress: ${passed} / ${b.steps.length} steps — verified live from your Studio workspace.`;
+        } else foot.textContent = "";
+      }
+    };
+
+    $("#les-prev").addEventListener("click", () => { chapter = Math.max(0, chapter - 1); render(); });
+    $("#les-next").addEventListener("click", () => { chapter = Math.min(course.chapters.length - 1, chapter + 1); render(); });
+    body.addEventListener("click", (e) => {
+      const act = e.target?.dataset?.act;
+      if (act === "load-example" || act === "start-fresh") sendCmd(act);
+    });
+    window.addEventListener("storage", (e) => {
+      if (e.key === DRAFT_KEY || e.key === FLAGS_KEY) verify();
+    });
+    setInterval(verify, 1200);   // safety poll, in case a storage event is missed
+
+    // 🔊 the chapter, read aloud — same voice settings as the whole site
+    try {
+      const sp = await import("./js/speech.js");
+      if (sp.canSpeak()) {
+        sp.wireSpeaker($("#les-speak"), () => sp.textOf(body));
+        const hush = () => sp.stopSpeaking();
+        $("#les-prev").addEventListener("click", hush);
+        $("#les-next").addEventListener("click", hush);
+      } else $("#les-speak").style.display = "none";
+    } catch {}
+
+    render();
+  </script>
+</body>
+</html>

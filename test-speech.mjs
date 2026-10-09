@@ -73,9 +73,9 @@ console.log("The wiring:");
     PAGES.every(p => src(p).includes("addPanelSpeakers()")));
   check("the Museum speaks per machine entry",
     src("museum.html").includes('addEntrySpeakers(".mus h3")'));
-  check("the course panel reads chapters aloud — and turning the page stops the voice",
-    src("studio/studio.html").includes('id="course-speak"')
-    && src("studio/studio.html").includes("sp.stopSpeaking()"));
+  check("the lesson window reads chapters aloud — and turning the page stops the voice",
+    src("course.html").includes('id="les-speak"')
+    && src("course.html").includes("sp.stopSpeaking()"));
   const sp = src("js/speech.js");
   check("one voice at a time, ⏹ to stop, and leaving the page goes quiet",
     sp.includes("stopSpeaking") && sp.includes('"pagehide"') && sp.includes('"⏹"'));

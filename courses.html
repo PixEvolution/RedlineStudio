@@ -36,9 +36,10 @@
       <p>Every course is one museum machine, taught in three movements: <b>the history</b> (what it was,
       why it mattered), <b>the autopsy</b> (our rebuild opened up, its logic explained line by line), and
       <b>the build</b> — you make <i>your own</i> game using what that machine taught, step by step.</p>
-      <p>A course opens in <b>its own Studio window</b> with the lesson docked as a panel — your normal
-      Studio draft is never touched. And the steps are <b>live-verified</b>: the lesson watches the real
-      workspace and ticks each step the moment you've actually done it. Finish every step and the course
+      <p>A course is <b>two windows side by side</b>: the lesson in its own little window, and a full-size
+      Studio of its own (the lesson's 🎮 button opens it) — your normal Studio draft is never touched. The
+      steps are <b>live-verified</b>: the lesson watches the real workspace and ticks each step the moment
+      you've actually done it. Finish every step and the course
       is complete — <b>completing a course unlocks the next</b>, in museum order, so by the end of the
       ladder you've rebuilt the history of game design with your own hands.</p>
       <p class="hint">Progress saves to your account, so <a href="login.html" style="color:#ff8f8c">log
@@ -90,9 +91,10 @@
         go.className = "btn btn-small";
         go.textContent = i === 0 ? "▶ Start here" : "▶ Start";
         go.addEventListener("click", () => {
-          const w = window.open("studio/studio.html?course=" + c.id, "rl_course_" + c.id,
-            "width=1380,height=900");
-          if (!w) window.location.href = "studio/studio.html?course=" + c.id;
+          // the LESSON opens as its own little window; its 🎮 button opens the
+          // course's full-size Studio beside it
+          const w = window.open("course.html?c=" + c.id, "rl_lesson_" + c.id, "width=470,height=940");
+          if (!w) window.location.href = "course.html?c=" + c.id;
         });
         state.replaceWith(go);
       } else {

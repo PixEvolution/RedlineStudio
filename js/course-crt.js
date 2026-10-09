@@ -31,11 +31,11 @@ exist yet. They had the same thing you have: an idea and a screen.</p>
 <p style="text-align:center"><b>a game = things on a screen + rules for how they act.</b></p>
 <p>That's it. Pong is two paddles, a ball, and rules. The biggest game you've ever played is a million
 things and a million rules — but it's the same sentence. This course teaches you the sentence.</p>
-<p><b>How this works:</b> this panel is the lesson; everything around it is a real, full Studio — yours.
-It's a separate workspace, so anything you were building in your normal Studio is safe. When the course
-asks you to do something, <b>it watches the workspace and ticks the step itself</b> the moment you've
-really done it. No skipping ahead by clicking checkboxes — when a step turns green, it's because you
-made it true.</p>
+<p><b>How this works:</b> this little window is the lesson. The <b>🎮 button</b> at the top opens the
+course's own full-size Studio — park the two side by side. The course Studio is a separate workspace, so
+anything you were building in your normal Studio is safe. When the lesson asks you to do something,
+<b>it watches that Studio and ticks the step itself</b> the moment you've really done it. No skipping
+ahead by clicking checkboxes — when a step turns green, it's because you made it true.</p>
 <p>By the end of this course you will have: read the oldest video game ever patented, understood exactly
 how it thinks, and <b>built and published a working machine of your own.</b> Press <b>Next ▸</b>.</p>`
     },

@@ -1552,153 +1552,58 @@ Enter (in chat/answer boxes)   send</pre>
     });
 
     // ------------------------------------------------------------ 🎒 course mode
-    // The lesson lives as a panel INSIDE this studio; steps verify themselves
-    // against the real workspace, and completion lands on the account.
-    if (courseId) (async () => {
+    // The LESSON lives in its own little window (course.html) — this Studio
+    // just runs on the course's separate draft, counts ▶ Tests, and obeys the
+    // lesson's two commands, which arrive over the browser's storage events.
+    if (courseId) {
       $("#btn-courses").style.display = "none";   // you're IN one
-      let courseMod = null, progApi = null;
-      try {
-        courseMod = await import("../js/course-" + courseId + ".js");
-        progApi = await import("../js/courses.js");
-      } catch {
-        toast("That course doesn't exist yet — the hub lists what's written.", true);
-        return;
-      }
-      const course = courseMod.course;
       const FLAGS_KEY = "rl_course_flags_" + courseId;
-      let flags = { fresh: false, testCount: 0 };
-      try { flags = { ...flags, ...(JSON.parse(localStorage.getItem(FLAGS_KEY) || "{}")) }; } catch {}
-      const saveFlags = () => { try { localStorage.setItem(FLAGS_KEY, JSON.stringify(flags)); } catch {} };
+      const CMD_KEY = "rl_course_cmd_" + courseId;
+      const flags = () => { try { return JSON.parse(localStorage.getItem(FLAGS_KEY) || "{}"); } catch { return {}; } };
+      const setFlags = (patch) => { try { localStorage.setItem(FLAGS_KEY, JSON.stringify({ ...flags(), ...patch })); } catch {} };
       $("#btn-test").addEventListener("click", () => {
-        if (scene.objects.length) { flags.testCount++; saveFlags(); }
+        if (scene.objects.length) setFlags({ testCount: (Number(flags().testCount) || 0) + 1 });
       });
 
-      // ---- the panel, docked above the Explorer
-      const panel = document.createElement("div");
-      panel.className = "panel course-panel";
-      panel.innerHTML = `
-        <h3>🎒 ${course.title}</h3>
-        <div class="course-nav" style="display:flex; gap:6px; align-items:center; margin:8px 0">
-          <button class="btn btn-small btn-ghost" id="course-prev">◂</button>
-          <span id="course-where" class="hint" style="flex:1; text-align:center"></span>
-          <button class="btn btn-small btn-ghost" id="course-speak" title="Listen to this chapter">🔊</button>
-          <button class="btn btn-small" id="course-next">Next ▸</button>
-        </div>
-        <div id="course-body" style="max-height:46vh; overflow:auto; font-size:.92em"></div>
-        <p class="hint" id="course-foot" style="margin:8px 0 0"></p>`;
-      const expl = document.querySelector(".explorer");
-      expl.parentNode.insertBefore(panel, expl);
-      setupPanel(panel, { key: "course" });
-
-      const body = panel.querySelector("#course-body");
-      const where = panel.querySelector("#course-where");
-      const foot = panel.querySelector("#course-foot");
-      let chapter = 0, done = false, savedToAccount = false;
-
-      const ctx = () => ({
-        objects: scenes.game.objects,
-        fresh: flags.fresh,
-        testCount: flags.testCount,
-        published: !!editingId
-      });
-      const buildChapter = () => course.chapters.find(c => c.steps);
-      const allStepsPass = () => {
-        const b = buildChapter();
-        return b ? b.steps.every(st => { try { return !!st.check(ctx()); } catch { return false; } }) : false;
-      };
-
-      const render = () => {
-        const ch = course.chapters[chapter];
-        where.textContent = `${chapter + 1} / ${course.chapters.length} — ${ch.title}`;
-        panel.querySelector("#course-prev").disabled = chapter === 0;
-        panel.querySelector("#course-next").disabled = chapter === course.chapters.length - 1;
-        let html = ch.html || "";
-        if (ch.steps) {
-          html += ch.steps.map((st, i) =>
-            `<div class="course-step" data-step="${i}" style="display:flex; gap:8px; padding:8px 0; border-top:1px solid rgba(255,255,255,.07)">
-               <span class="course-tick" style="flex:0 0 1.4em; font-size:1.05em">○</span>
-               <div style="flex:1">${st.text}</div>
-             </div>`).join("");
-        }
-        body.innerHTML = html;
-        body.scrollTop = 0;
-        verify();
-      };
-
-      const verify = () => {
-        const ch = course.chapters[chapter];
-        if (ch.steps) {
-          const c = ctx();
-          ch.steps.forEach((st, i) => {
-            let ok = false;
-            try { ok = !!st.check(c); } catch {}
-            const row = body.querySelector(`[data-step="${i}"]`);
-            if (!row) return;
-            const tick = row.querySelector(".course-tick");
-            tick.textContent = ok ? "✅" : "○";
-            row.style.opacity = ok ? ".75" : "1";
-          });
-        }
-        if (allStepsPass()) {
-          if (!done) {
-            done = true;
-            toast("🎓 Course complete — every step verified. The finish line chapter has your victory lap.");
-          }
-          foot.textContent = "✅ COURSE COMPLETE" + (savedToAccount ? " — saved to your account." : "");
-          if (!savedToAccount && user) {
-            savedToAccount = true;   // one attempt per render-cycle; retried on reload if it failed
-            progApi.markDone(courseId)
-              .then((ok) => { foot.textContent = ok ? "✅ COURSE COMPLETE — saved to your account. The next course is unlocked." : "✅ COURSE COMPLETE"; })
-              .catch(() => { savedToAccount = false; });
-          } else if (!user) {
-            foot.textContent = "✅ COURSE COMPLETE — log in and it saves to your account (and unlocks the next course).";
-          }
-        } else {
-          const b = buildChapter();
-          if (b) {
-            const c = ctx();
-            const passed = b.steps.filter(st => { try { return !!st.check(c); } catch { return false; } }).length;
-            foot.textContent = `Build progress: ${passed} / ${b.steps.length} steps`;
-          }
-        }
-      };
-
-      // 🔊 listen to the chapter — for learners who'd rather hear the lesson
-      try {
-        const sp = await import("../js/speech.js");
-        if (sp.canSpeak()) {
-          sp.wireSpeaker(panel.querySelector("#course-speak"), () => sp.textOf(body));
-          const hush = () => sp.stopSpeaking();   // turning the page stops the voice
-          panel.querySelector("#course-prev").addEventListener("click", hush);
-          panel.querySelector("#course-next").addEventListener("click", hush);
-        } else {
-          panel.querySelector("#course-speak").style.display = "none";
-        }
-      } catch {}
-
-      panel.querySelector("#course-prev").addEventListener("click", () => { chapter = Math.max(0, chapter - 1); render(); });
-      panel.querySelector("#course-next").addEventListener("click", () => { chapter = Math.min(course.chapters.length - 1, chapter + 1); render(); });
-      body.addEventListener("click", (e) => {
-        const act = e.target?.dataset?.act;
-        if (act === "load-example") {
+      const runCmd = (raw) => {
+        let c = null;
+        try { c = JSON.parse(raw || "null"); } catch {}
+        if (!c || !c.act) return;
+        try { localStorage.removeItem(CMD_KEY); } catch {}
+        if (c.act === "load-example") {
           loadExampleScene(courseId, { ask: scene.objects.length > 0 });
-          flags.fresh = false; saveFlags(); verify();
+          setFlags({ fresh: 0 });
         }
-        if (act === "start-fresh") {
-          if (scene.objects.length && !confirm("Clear the workspace? (The museum machine reloads any time from chapter 4.)")) return;
+        if (c.act === "start-fresh") {
+          if (scene.objects.length && !confirm("Clear the workspace? (The museum machine reloads any time from the lesson.)")) return;
           scenes.game = { objects: [] };   // fresh scene: default size and era too
           scene = scenes[editTarget];
           selectedId = null;
           applyDims();
           renderExplorer(); renderProps(); renderScriptEditor(); redraw(); commit();
-          flags.fresh = true; saveFlags(); verify();
+          setFlags({ fresh: 1 });
         }
-      });
+      };
+      window.addEventListener("storage", (e) => { if (e.key === CMD_KEY && e.newValue) runCmd(e.newValue); });
+      runCmd(localStorage.getItem(CMD_KEY));   // a command queued before this window opened
 
-      setInterval(verify, 900);
-      render();
-      toast("🎒 Course loaded — this studio is the course's own workspace; your normal draft is safe.");
-    })();
+      // a slim notice + the way back to the lesson window
+      const bar = document.createElement("div");
+      bar.className = "hint";
+      bar.style.cssText = "margin:6px 0 10px; display:flex; gap:10px; align-items:center; flex-wrap:wrap";
+      const note = document.createElement("span");
+      note.innerHTML = "🎒 <b>Course mode</b> — this Studio keeps the course's own draft; your normal work is untouched.";
+      const openBtn = document.createElement("button");
+      openBtn.className = "btn btn-small btn-ghost";
+      openBtn.textContent = "📖 Open the lesson window";
+      openBtn.addEventListener("click", () => {
+        const w = window.open("../course.html?c=" + encodeURIComponent(courseId), "rl_lesson_" + courseId, "width=470,height=940");
+        if (w) w.focus();
+      });
+      bar.append(note, openBtn);
+      const gs = $("#game-settings");
+      if (gs) gs.parentNode.insertBefore(bar, gs);
+    }
 
     // ------------------------------------------------------------ behaviors + tutorial
     // ✨ Behaviors: one click drops WORKING blocks into the selected object —

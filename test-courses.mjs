@@ -97,21 +97,34 @@ console.log("Course 1 — the checks, against a real finished workspace:");
     !steps[7].check({ objects: [codeCannon], fresh: true, testCount: 2 }));
 }
 
-console.log("The Studio's course mode:");
+console.log("The lesson window + the Studio's course mode:");
 {
   const studio = src("studio/studio.html");
-  check("?course= opens a separate studio on its OWN draft",
+  check("?course= runs the Studio on its OWN draft (normal work untouched)",
     studio.includes('get("course")') && studio.includes('"rl_draft_course_" + courseId'));
-  check("the lesson docks as a panel and verifies on a live loop",
-    studio.includes("course-panel") && studio.includes("setInterval(verify, 900)"));
-  check("steps tick against the real workspace (objects, fresh, testCount, published)",
-    studio.includes("objects: scenes.game.objects") && studio.includes("testCount: flags.testCount"));
-  check("the lesson's buttons work the workspace: load the museum machine, start fresh",
-    studio.includes('"load-example"') && studio.includes('"start-fresh"'));
-  check("completion lands on the account (markDone) and logged-out players are told",
-    studio.includes("progApi.markDone(courseId)") && studio.includes("log in and it saves"));
+  check("the Studio obeys the lesson's commands over storage events",
+    studio.includes('window.addEventListener("storage"')
+    && studio.includes('"load-example"') && studio.includes('"start-fresh"')
+    && studio.includes("runCmd(localStorage.getItem(CMD_KEY))"));
+  check("the Studio counts ▶ Tests into the shared flags",
+    studio.includes("testCount: (Number(flags().testCount) || 0) + 1"));
+  check("a slim bar reopens the lesson window — no docked panel anywhere",
+    studio.includes("Open the lesson window") && !studio.includes("course-panel"));
   check("the 🎒 button opens the hub from the normal studio (and hides in a course)",
     studio.includes('id="btn-courses"') && studio.includes('$("#btn-courses").style.display = "none"'));
+
+  const win = src("course.html");
+  check("course.html exists: compact, chapters, steps, its own scroll — not the Studio's",
+    win.includes("lesson-nav") && win.includes("course-step") && win.includes("#lesson-body"));
+  check("it verifies against the REAL workspace: the course draft + flags from storage",
+    win.includes('"rl_draft_course_" + id') && win.includes("d?.scenes?.game?.objects")
+    && win.includes('window.addEventListener("storage"'));
+  check("its buttons steer the Studio: open/focus the named window, then queue the command",
+    win.includes("rl_course_studio_") && win.includes("sendCmd") && win.includes("openStudio();"));
+  check("completion lands on the account from the lesson window",
+    win.includes("progApi.markDone(id)"));
+  check("the chapter reads aloud with the site's voice settings",
+    win.includes('wireSpeaker($("#les-speak")'));
 }
 
 console.log("The hub, the rules, the doors in:");
@@ -119,8 +132,8 @@ console.log("The hub, the rules, the doors in:");
   const hub = src("courses.html");
   check("the hub renders the ladder with the chain honest",
     hub.includes("isUnlocked") && hub.includes("finish the one before") && hub.includes("being written"));
-  check("Start opens the course's own Studio window",
-    hub.includes('window.open("studio/studio.html?course="'));
+  check("Start opens the lesson in its own little window",
+    hub.includes('window.open("course.html?c="'));
   const rules = src("firestore.rules");
   check("rules: /progress is owner-written, one shape, world-readable",
     rules.includes("match /progress/{uid}")
