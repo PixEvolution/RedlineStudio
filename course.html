@@ -62,10 +62,13 @@
     // ---- the Studio this lesson teaches into: a named window, so the button
     // focuses the existing one instead of opening twins
     const STUDIO_URL = "studio/studio.html?course=" + encodeURIComponent(id);
+    let studioWin = null;
     const openStudio = () => {
-      const w = window.open(STUDIO_URL, "rl_course_studio_" + id, "width=1500,height=950");
-      if (w) w.focus();
-      return w;
+      // keep the handle: focusing an open Studio must never RELOAD it
+      if (studioWin && !studioWin.closed) { studioWin.focus(); return studioWin; }
+      studioWin = window.open(STUDIO_URL, "rl_course_studio_" + id, "width=1500,height=950");
+      if (studioWin) studioWin.focus();
+      return studioWin;
     };
     $("#open-studio").addEventListener("click", openStudio);
 
@@ -92,11 +95,30 @@
       try { localStorage.setItem(CMD_KEY, JSON.stringify({ act, n: Date.now() })); } catch {}
     };
 
-    let chapter = 0, done = false, savedToAccount = false;
-    const buildChapter = () => course.chapters.find(c => c.steps);
+    const CH_KEY = "rl_course_ch_" + id;
+    const DONE_KEY = "rl_course_steps_" + id;
+    let chapter = 0;
+    try { chapter = Math.min(course.chapters.length - 1, Math.max(0, Number(localStorage.getItem(CH_KEY)) || 0)); } catch {}
+    let done = false, savedToAccount = false;
+    // LATCHED progress: a step that has passed STAYS passed — the lesson
+    // explores, clears the workspace, rebuilds, and nothing earned unticks
+    let latched = new Set();
+    try { latched = new Set(JSON.parse(localStorage.getItem(DONE_KEY) || "[]")); } catch {}
+    const saveLatched = () => { try { localStorage.setItem(DONE_KEY, JSON.stringify([...latched])); } catch {} };
+    const stepChapters = course.chapters.map((ch, ci) => ({ ch, ci })).filter(x => x.ch.steps);
+    const stepKey = (ci, i) => ci + ":" + i;
+    const passStep = (ci, st, i, c) => {
+      const k = stepKey(ci, i);
+      if (latched.has(k)) return true;
+      let ok = false;
+      try { ok = !!st.check(c); } catch {}
+      if (ok) { latched.add(k); saveLatched(); }
+      return ok;
+    };
+    const totalSteps = stepChapters.reduce((n, x) => n + x.ch.steps.length, 0);
     const allStepsPass = () => {
-      const b = buildChapter(), c = ctx();
-      return b ? b.steps.every(st => { try { return !!st.check(c); } catch { return false; } }) : false;
+      const c = ctx();
+      return stepChapters.every(x => x.ch.steps.every((st, i) => passStep(x.ci, st, i, c)));
     };
 
     const render = () => {
@@ -121,8 +143,7 @@
       const c = ctx();
       if (ch.steps) {
         ch.steps.forEach((st, i) => {
-          let ok = false;
-          try { ok = !!st.check(c); } catch {}
+          const ok = passStep(chapter, st, i, c);
           const row = body.querySelector(`[data-step="${i}"]`);
           if (!row) return;
           row.querySelector(".tick").textContent = ok ? "✅" : "○";
@@ -141,16 +162,20 @@
           }).catch(() => { savedToAccount = false; });
         }
       } else {
-        const b = buildChapter();
-        if (b) {
-          const passed = b.steps.filter(st => { try { return !!st.check(c); } catch { return false; } }).length;
-          foot.textContent = `Build progress: ${passed} / ${b.steps.length} steps — verified live from your Studio workspace.`;
-        } else foot.textContent = "";
+        const c2 = ctx();
+        let passed = 0;
+        for (const x of stepChapters) x.ch.steps.forEach((st, i) => { if (passStep(x.ci, st, i, c2)) passed++; });
+        foot.textContent = `Course progress: ${passed} / ${totalSteps} steps — verified live from your Studio workspace, and a passed step stays passed.`;
       }
     };
 
-    $("#les-prev").addEventListener("click", () => { chapter = Math.max(0, chapter - 1); render(); });
-    $("#les-next").addEventListener("click", () => { chapter = Math.min(course.chapters.length - 1, chapter + 1); render(); });
+    const goto = (n) => {
+      chapter = Math.min(course.chapters.length - 1, Math.max(0, n));
+      try { localStorage.setItem(CH_KEY, String(chapter)); } catch {}
+      render();
+    };
+    $("#les-prev").addEventListener("click", () => goto(chapter - 1));
+    $("#les-next").addEventListener("click", () => goto(chapter + 1));
     body.addEventListener("click", (e) => {
       const act = e.target?.dataset?.act;
       if (act === "load-example" || act === "start-fresh") sendCmd(act);

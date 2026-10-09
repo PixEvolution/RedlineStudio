@@ -26,75 +26,86 @@ console.log("The roadmap:");
   check("courseIndex finds by id", courseIndex("crt") === 0 && courseIndex("nope") === -1);
 }
 
-console.log("Course 1 — shape:");
+console.log("Course 1, second edition — shape:");
 {
-  check("six chapters: welcome → history → the real machine → ours → build → finish",
-    course.id === "crt" && course.chapters.length === 6
-    && course.chapters.filter(c => c.steps).length === 1);
-  const build = course.chapters.find(c => c.steps);
-  check("the build is 9 verified steps, each with text and a check",
-    build.steps.length === 9 && build.steps.every(s => s.text && typeof s.check === "function"));
-  const all = course.chapters.map(c => (c.html || "") + (c.steps || []).map(s => s.text).join("")).join("");
-  check("the history is in it: Goldsmith, Mann, overlays, the defocused beam, 'no computer'",
+  check("ten chapters, no cliffs: welcome → history → no-computer → studio tour → play → brain×2 → build×2 → finish",
+    course.id === "crt" && course.chapters.length === 10);
+  const sc = course.chapters.filter(c => c.steps);
+  check("THREE hands-on chapters (play, things, rules) with 4+4+6 verified steps",
+    sc.length === 3 && sc.map(c => c.steps.length).join(",") === "4,4,6"
+    && sc.every(c => c.steps.every(st => st.text && typeof st.check === "function")));
+  const all = course.chapters.map(c => (c.html || "") + (c.steps || []).map(st => st.text).join("")).join("");
+  check("the history is in it: Goldsmith, Mann, overlays, the defocus blast, 'no computer'",
     ["Goldsmith", "Mann", "plastic", "defocus", "no computer"].every(k => all.includes(k)));
-  check("it teaches the vocabulary: variable, property, event-ish 'when', if, dist, explode, rand",
-    ["VARIABLE", "Properties", "when key", "IF", "dist(", "explode", "rand("].every(k => all.includes(k)));
-  check("the lesson gives WHOLE scripts, with the why underneath",
-    all.includes("when start") && all.includes("when tick") && all.includes("Reading it:"));
-  check("the payoff is named: score + an ending earns the leaderboard",
-    all.includes("high-score table") && all.includes("endplay") === false   // the WORD endplay stays behind the behavior
-    || all.includes("high-score table"));
-  check("the finish line teaches the two-views flip and the publish lap",
-    all.includes("To blocks") && all.includes("Publish"));
+  check("every idea gets surface AND under-the-hood: variable=box, velocity, the mood/state pattern, dist circle",
+    ["Under the hood", "labeled box", "velocity", "state machine", "dist(self, target1)", "keydown"].every(k => all.includes(k)));
+  check("📚 Go deeper boxes link the guide and trusted outside sources",
+    all.includes("Go deeper") && all.includes("khanacademy.org") && all.includes("wikipedia.org")
+    && all.includes("guide.html#recipes"));
+  check("the build gives WHOLE program versions, never find-the-line snippets",
+    (all.match(/when start/g) || []).length >= 2 && all.includes("Replace the WHOLE Code section"));
+  check("the finish line: two-outfits flip, tune-one-number, the publish lap",
+    all.includes("To blocks") && all.includes("Publish it") && all.includes("Bertie the Brain"));
 }
 
-console.log("Course 1 — the checks, against a real finished workspace:");
+console.log("Course 1 — the checks, against real workspaces:");
 {
+  const steps = (i) => course.chapters[i].steps;
+  const PLAY = 4, THINGS = 7, RULES = 8;
+  // chapter 5 (play): the museum machine, poked like the lesson asks
+  const museum = {
+    fresh: false, testCount: 1, published: false,
+    objects: [
+      { name: "missile", type: "dot", x: 40, y: 300, size: 14, color: "#ff44aa", script: [] },
+      { name: "target1", type: "ring", x: 300, y: 120, script: [] }
+    ]
+  };
+  check("PLAY: load, test, recolor, resize — all four verify on the poked museum machine",
+    steps(PLAY).every(st => st.check(museum)));
+  check("PLAY: the untouched museum green doesn't count as 'you recolored it'",
+    !steps(PLAY)[2].check({ ...museum, objects: [{ name: "missile", type: "dot", size: 14, color: "#39ff5e" }, { name: "target1", type: "ring", y: 100 }] }));
+  // the finished build (v3 + timer), typed code
   const codeCannon = {
     name: "cannon", type: "dot", x: 240, y: 320,
-    script: [{ event: "code", source: 'when start\n set aim to 0\n set score to 0\nend\nwhen tick\n if keydown("a") then\n change aim by -0.2\n end\n if flying == 1 then\n if target1.visible == 1 and dist(self, target1) < 22 then\n explode target1\n change score by 1\n set target1.x to rand(60, 420)\n end\n end\nend' }]
+    script: [{ event: "code", source: 'when start\n set flying to 0\n set score to 0\nend\nwhen key "Space"\n if flying == 0 then\n set flying to 1\n end\nend\nwhen tick\n if keydown("a") then\n change self.x by -4\n end\n if flying == 1 then\n if dist(self, target1) < 22 then\n explode target1\n change score by 1\n set target1.x to rand(60, 420)\n end\n end\nend' }]
   };
-  // the same brain after 🧱 To blocks: keywords live in block fields now
+  // the same brain after 🧱 To blocks
   const blockCannon = {
     name: "cannon", type: "dot", x: 250, y: 300,
-    script: [
-      { event: "tick", body: [
-        { k: "if", cond: 'keydown("a") and flying == 0', then: [{ k: "change", lhs: "aim", by: "-0.2" }], else: [] },
-        { k: "if", cond: "dist(self, target1) < 22", then: [
-          { k: "explode", target: "target1" },
-          { k: "change", lhs: "score", by: "1" },
-          { k: "set", lhs: "target1.x", value: "rand(60, 420)" }
-        ], else: [] }
-      ] }
-    ]
+    script: [{ event: "tick", body: [
+      { k: "if", cond: 'keydown("a") and flying == 0', then: [{ k: "change", lhs: "self.x", by: "-4" }], else: [] },
+      { k: "if", cond: "dist(self, target1) < 22", then: [
+        { k: "explode", target: "target1" },
+        { k: "change", lhs: "score", by: "1" },
+        { k: "set", lhs: "target1.x", value: "rand(60, 420)" }
+      ], else: [] }
+    ] }]
   };
   const rest = [
     { name: "title", type: "text", text: "MOON SHOT", x: 240, y: 30,
       script: [{ event: "tick", body: [{ k: "set", lhs: "endplay", value: "1" }] }] },
     { name: "target1", type: "ring", x: 300, y: 120, script: [] }
   ];
-  const ctxOf = (cannon, extra = {}) => ({
-    objects: [...rest, cannon], fresh: true, testCount: 2, published: false, ...extra
-  });
-  const steps = course.chapters.find(c => c.steps).steps;
-
-  check("ALL 9 steps pass on the finished build (typed code)",
-    steps.every(s => s.check(ctxOf(codeCannon))));
-  check("ALL 9 steps still pass after 🧱 To blocks (block form)",
-    steps.every(s => s.check(ctxOf(blockCannon))));
+  const built = (cannon, extra = {}) => ({ objects: [...rest, cannon], fresh: true, testCount: 3, published: false, ...extra });
+  check("THINGS + RULES: all 10 build steps pass on the finished build (typed code)",
+    steps(THINGS).every(st => st.check(built(codeCannon)))
+    && steps(RULES).every(st => st.check(built(codeCannon))));
+  check("…and still pass after 🧱 To blocks (block form)",
+    steps(RULES).every(st => st.check(built(blockCannon))));
   check("an empty workspace passes nothing but 'start fresh'",
-    steps.filter(s => s.check({ objects: [], fresh: true, testCount: 0 })).length === 1);
-  check("a title hiding at the bottom of the screen doesn't count",
-    !steps[1].check({ objects: [{ name: "title", type: "text", text: "X", y: 300 }], fresh: true, testCount: 0 }));
-  check("naming matters: a ring called ring1 isn't target1",
-    !steps[2].check({ objects: [{ name: "ring1", type: "ring", y: 100 }], fresh: true, testCount: 0 }));
-  check("the brain step demands the real pieces (keydown, dist, explode, score)",
-    !steps[4].check(ctxOf({ name: "cannon", type: "dot", y: 320, x: 240,
+    steps(THINGS).filter(st => st.check({ objects: [], fresh: true, testCount: 0 })).length === 1
+    && steps(RULES).filter(st => st.check({ objects: [], fresh: true, testCount: 0 })).length === 0);
+  check("naming matters: ring1 isn't target1, and a bottom-dwelling title doesn't count",
+    !steps(THINGS)[2].check({ objects: [{ name: "ring1", type: "ring", y: 100 }], fresh: true, testCount: 0 })
+    && !steps(THINGS)[1].check({ objects: [{ name: "title", type: "text", text: "X", y: 300 }], fresh: true, testCount: 0 }));
+  check("version 2 demands the real pieces (dist, explode, score)",
+    !steps(RULES)[2].check(built({ name: "cannon", type: "dot", y: 320, x: 240,
       script: [{ event: "code", source: "when tick\n change self.x by 1\nend" }] })));
-  check("the tests steps count real ▶ Test runs",
-    !steps[5].check(ctxOf(codeCannon, { testCount: 0 })) && steps[8].check(ctxOf(codeCannon, { testCount: 2 })));
+  check("the test steps count real ▶ Test runs (1, 2, then 3)",
+    !steps(RULES)[1].check(built(codeCannon, { testCount: 1 }))
+    && steps(RULES)[5].check(built(codeCannon, { testCount: 3 })));
   check("the ending step looks for endplay on ANY object (the ⏱ behavior)",
-    !steps[7].check({ objects: [codeCannon], fresh: true, testCount: 2 }));
+    !steps(RULES)[4].check({ objects: [codeCannon], fresh: true, testCount: 3 }));
 }
 
 console.log("The lesson window + the Studio's course mode:");
@@ -121,6 +132,15 @@ console.log("The lesson window + the Studio's course mode:");
     && win.includes('window.addEventListener("storage"'));
   check("its buttons steer the Studio: open/focus the named window, then queue the command",
     win.includes("rl_course_studio_") && win.includes("sendCmd") && win.includes("openStudio();"));
+  check("focusing an open Studio never RELOADS it (the triple-click bug)",
+    win.includes("studioWin && !studioWin.closed"));
+  check("progress LATCHES (a passed step stays passed) and the chapter is remembered",
+    win.includes("rl_course_steps_") && win.includes("rl_course_ch_")
+    && win.includes("stays passed"));
+  check("completion spans every hands-on chapter, not just one",
+    win.includes("stepChapters.every"));
+  check("the Studio runs lesson commands without background confirm() popups",
+    src("studio/studio.html").includes("ask: false") && !src("studio/studio.html").includes("Clear the workspace? (The museum"));
   check("completion lands on the account from the lesson window",
     win.includes("progApi.markDone(id)"));
   check("the chapter reads aloud with the site's voice settings",

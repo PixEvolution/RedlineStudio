@@ -1571,11 +1571,10 @@ Enter (in chat/answer boxes)   send</pre>
         if (!c || !c.act) return;
         try { localStorage.removeItem(CMD_KEY); } catch {}
         if (c.act === "load-example") {
-          loadExampleScene(courseId, { ask: scene.objects.length > 0 });
+          loadExampleScene(courseId, { ask: false });   // the lesson's click IS the consent
           setFlags({ fresh: 0 });
         }
         if (c.act === "start-fresh") {
-          if (scene.objects.length && !confirm("Clear the workspace? (The museum machine reloads any time from the lesson.)")) return;
           scenes.game = { objects: [] };   // fresh scene: default size and era too
           scene = scenes[editTarget];
           selectedId = null;
