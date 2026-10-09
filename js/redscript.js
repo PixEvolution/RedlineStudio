@@ -341,3 +341,46 @@ export function compileProgram(source) {
   if (stack && stack.length > 1) throw new Error(`missing "end" at end of code`);
   return events;
 }
+
+// ---------------------------------------------------------------------------
+// errorHint(msg) — a plain-English hint for the classic beginner mistakes.
+// Purely additive: the compiler's message stays the truth, this is the
+// "here's probably what you meant" line the Studio prints under it.
+// Returns "" when the error isn't one of the classics.
+export function errorHint(msg) {
+  const m = String(msg || "");
+  const line = (/can't understand: "([^"]*)"/.exec(m) || [])[1];
+  if (line !== undefined) {
+    const l = line.trim();
+    if (/^set\b/i.test(l) && /=/.test(l) && !/\bto\b/i.test(l))
+      return 'RedScript writes it as  set x to 5  — the word "to", not "=".';
+    if (/^change\b/i.test(l) && !/\bby\b/i.test(l))
+      return 'change needs "by":  change self.x by 3';
+    if (/^if\b/i.test(l) && !/\bthen\b/i.test(l))
+      return 'an if needs "then" at the end of its line:  if score > 5 then';
+    if (/^(set|change)\b/i.test(l) && /[^=<>!]=(?!=)/.test(l))
+      return 'use  to / by  for assigning, and  ==  for comparing — a single = is neither.';
+    if (/^(wait|sleep|delay)\b/i.test(l))
+      return "there's no wait — count a timer instead:  change self.t by 1  in when tick, and act when it passes a number.";
+    if (/^(for|while)\b/i.test(l))
+      return 'loops here are  repeat 10 … end  — count with your own variable if you need the index.';
+    return 'check the 📖 Reference for the exact spelling — every action is listed with an example.';
+  }
+  if (/unexpected character "="/.test(m))
+    return "comparing two things is  ==  (double equals). A single = isn't an operator in RedScript.";
+  if (/unknown function/.test(m))
+    return "the 📖 Reference lists every function — this one may be misspelled, or it might be a property (self.x needs no parentheses).";
+  if (/missing "end"/.test(m))
+    return 'every  if  and every  repeat  closes with its own  end  — count the pairs from the top.';
+  if (/"end" with nothing to close/.test(m))
+    return "there's one end too many — each end closes exactly one if or repeat.";
+  if (/"else" without a matching if/.test(m))
+    return "else only lives between an  if … then  and its  end.";
+  if (/code must start with "when/.test(m))
+    return 'script lines live inside an event — start with  when start,  when tick,  when click,  when answer,  or  when key "w".';
+  if (/"when" isn't allowed inside/.test(m))
+    return "finish the current event with its ends first — a new  when  starts at the left edge, never inside another event.";
+  if (/isn't a variable, object\.property or list\[index\]/.test(m))
+    return "the left side of set/change must be a name:  score,  self.x,  or  board[i]  — not a number or an expression.";
+  return "";
+}

@@ -79,6 +79,7 @@
         <button class="btn btn-ghost" id="btn-undo" title="Undo (Ctrl+Z)">↶</button>
         <button class="btn btn-ghost" id="btn-redo" title="Redo (Ctrl+Y)">↷</button>
         <button class="btn btn-ghost" id="btn-tour" title="A guided walk through every panel — made for first-time game makers">🎓</button>
+        <button class="btn btn-ghost" id="btn-keys" title="Every keyboard shortcut, on one card">⌨</button>
         <button class="btn btn-ghost" id="btn-new">New</button>
         <button class="btn btn-ghost" id="btn-import" title="Import a .rlgame file (or a downloaded game HTML) — the import verifies the file's seal">⬆ Import</button>
         <button class="btn btn-ghost" id="btn-download" title="Download this game as a standalone HTML file — runs offline, uploads to itch.io">⬇ Download</button>
@@ -237,6 +238,8 @@
             title="Search EVERY object's script at once — click a hit to jump to it">🔍 Find</button>
           <button class="btn btn-small btn-ghost" id="btn-copy-scripts"
             title="Copy every script in the game as labeled RedScript — paste it to a friend or an AI for help">📋 Copy all scripts</button>
+          <button class="btn btn-small btn-ghost" id="btn-ref"
+            title="The whole RedScript language on one searchable card — events, actions, expressions, reserved variables">📖 Reference</button>
           <button class="btn btn-small btn-ghost" id="btn-toblocks"
             title="Unfold every 📜 Code section into real blocks — the best way to READ an example">🧱 To blocks</button>
           <button class="btn btn-small btn-ghost" id="btn-tocode"
@@ -302,6 +305,7 @@
     import { attachFullscreenButton } from "../js/fullscreen.js";
     import { sharpenCanvas, attachScreenSizeButton } from "../js/screen-size.js";
     import { setupPanel } from "../js/studio-panels.js";
+    import { errorHint } from "../js/redscript.js";
     import { downloadStandalone } from "../js/export.js";
     import { downloadOfflineStudio } from "../js/export-studio.js";
     import { unpackGame, extractFromHtml } from "../js/gamefile.js";
@@ -401,6 +405,162 @@
     setupPanel($("#props"), { key: "props" });
     setupPanel($("#script-panel"), { key: "script" });
     const debugPanelCtl = setupPanel($("#debug-panel"), { key: "debug" });
+
+    // ---- ⓘ: every panel header deep-links into its Coding Guide section
+    // (the guide opens that exact tab). Clicking ⓘ never collapses the panel.
+    const guideInfo = (host, anchor, tip) => {
+      if (!host) return;
+      const a = document.createElement("a");
+      a.textContent = "ⓘ";
+      a.href = "../guide.html#" + anchor;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.title = tip + " — opens that section of the Coding Guide";
+      a.style.cssText = "margin-left:8px; font-size:.8em; text-decoration:none; opacity:.6";
+      a.addEventListener("click", (e) => e.stopPropagation());
+      host.appendChild(a);
+    };
+    guideInfo(document.querySelector(".explorer h3"), "objects", "Objects, properties, and what each shape is for");
+    guideInfo($("#props")?.querySelector("h3"), "objects", "Every property, explained");
+    guideInfo($("#script-title"), "big-idea", "Events, actions, and why blocks and code are the same language");
+    guideInfo($("#sprite-panel")?.querySelector("h3"), "sprites", "Drawing and animating sprites");
+    guideInfo($("#debug-panel")?.querySelector("h3"), "studio", "The Studio's panels, shortcuts and Debug");
+    guideInfo($("#game-settings")?.querySelector("h3, h2"), "studio", "Every setting in this row, explained");
+    guideInfo(document.querySelector('label[for="g-display"]'), "era", "Era simulation: what each display does");
+    guideInfo(document.querySelector('label[for="g-hardware"]'), "era", "Era simulation: each chip's real limits");
+    guideInfo(document.querySelector('label[for="g-seats"]'), "online", "Multiplayer cabinets and the net contract");
+    guideInfo(document.querySelector('label[for="g-type"]'), "casino", "Casino machines and the required loop");
+
+    // ---- one overlay helper for the ⌨ and 📖 cards (same look as the
+    // rating-rules card; click outside or Close to dismiss)
+    const showCard = (title, html, { wide = false } = {}) => {
+      const overlay = document.createElement("div");
+      overlay.className = "ack-overlay";
+      const box = document.createElement("div");
+      box.className = "panel ack-box";
+      if (wide) box.style.maxWidth = "720px";
+      box.style.maxHeight = "84vh";
+      box.style.overflow = "auto";
+      box.innerHTML = `<h3 style="margin-top:0">${title}</h3>` + html
+        + `<div style="margin-top:14px"><button class="btn" data-card-close>Close</button></div>`;
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+      const close = () => overlay.remove();
+      box.querySelector("[data-card-close]").addEventListener("click", close);
+      overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+      return box;
+    };
+
+    // ---- ⌨ the shortcuts card
+    $("#btn-keys").addEventListener("click", () => {
+      showCard("⌨ Keyboard shortcuts", `
+        <pre class="codeblock">Ctrl+Z / Ctrl+Y      undo / redo — up to 60 steps
+Ctrl+D  (or ⧉)       duplicate the selected object, scripts and all
+Ctrl+C / Ctrl+V      copy / paste an object (works across games)
+Delete               remove the selected object
+↑ / ↓                previous / next object in the Explorer
+Ctrl + arrows        nudge the selected object 1px
+Ctrl+Shift + arrows  …10px
+⌗ snap               dragged objects land on a 20px grid
+▶ Test               play right here · ➕ Player adds local seats
+Enter (in chat/answer boxes)   send</pre>
+        <p class="hint">While a ▶ Test is running, the keyboard belongs to the game.
+        Panels float too: drag a panel's ⠿ handle anywhere, resize from its corner, ⟲ docks it back.</p>`);
+    });
+
+    // ---- 📖 the RedScript reference card: the whole language, filterable
+    const REF = [
+      ["EVENTS — a script is events filled with actions", [
+        ['when start', "runs once, when the game begins"],
+        ['when tick', "60 times a second, on every screen — physics lives here"],
+        ['when click', "every tap/click — read mousex() and mousey()"],
+        ['when key "ArrowUp"', "that key (or mapped gamepad button) was pressed"],
+        ['when answer', "the player typed into the teletype and hit Enter — read answer()"]
+      ]],
+      ["ACTIONS", [
+        ['set self.x to 240', "set a property, variable, or list slot"],
+        ['change self.y by -2', "add to it"],
+        ['if score > 5 then … else … end', "branch — else is optional, end is not"],
+        ['repeat 10 … end', "loop — count with your own variable if you need the index"],
+        ['say "HIT!" for 1.5', "big message on the screen"],
+        ['explode target1', "CRT blast at that object"],
+        ['beep 440 for 0.1', "square-wave tone: frequency (Hz) + seconds"],
+        ['print "ROOM " + pos', "a line on the teletype (gives your game one)"],
+        ['clear', "wipe the teletype"],
+        ['# or //', "a comment — the compiler ignores the rest of the line"]
+      ]],
+      ["EXPRESSIONS — every value field takes these", [
+        ['+ - * / %', "math (% is remainder) · unary minus works: -vy"],
+        ['< > <= >= == !=', "compare — combine with and, or, not"],
+        ['rand(10, 90)', "random number in a range"],
+        ['dist(a, b)', "distance between two objects, center to center"],
+        ['touching(a, b)', "1 while two objects overlap (knows each shape)"],
+        ['keydown("w")', "1 while that key or button is held"],
+        ['stickx(1) · sticky(1)', "joystick 1's axes, -1..1 — reading one SUMMONS the stick"],
+        ['mousex() · mousey()', "where the pointer is"],
+        ['abs min max floor round', "the usual math helpers"],
+        ['sin(deg) · cos(deg)', "trig in degrees — angles into motion"],
+        ['xor(a, b)', "binary XOR (NIMROD's whole brain)"],
+        ['time()', "seconds since the game started"],
+        ['answer() · upper(s) · len(s)', "the typed line · uppercase · length"],
+        ['word(s, n)', 'the nth word — word(answer(),1) is the VERB, (…,2) the NOUN']
+      ]],
+      ["PROPERTIES — read/write as self.x, ball.y, hud.text", [
+        ['x · y', "position (0,0 is top-left)"],
+        ['size · angle', "how big · heading in degrees (ships point along it)"],
+        ['color · glow · visible', 'any color like "#ff9d4a" · CRT glow · 1 shows, 0 hides'],
+        ['text', "what a Text object says"],
+        ['frame · fps', "sprites: which frame · self-play speed (0 = scripts drive)"],
+        ['self.anything', "invent your own — unset reads 0, other objects can read it"]
+      ]],
+      ["VARIABLES & LISTS", [
+        ['set score to 0', "variables are SHARED by every object"],
+        ['set board[r * 8 + c] to 1', "lists take any expression as the index"],
+        ['self.vy vs vy', "a property is the object's own; a variable is everyone's"]
+      ]],
+      ["RESERVED — the platform responds to these names", [
+        ['arcade · endplay', "coin slot: 1 = paid play underway · set 1 to end the play"],
+        ['score (+ endplay)', "points with a real end → automatic ★ leaderboard"],
+        ['bet · spin · result · win · coins · pool · casino', "the casino loop (required on the floor)"],
+        ['net1…net6 · foe1…foe6', "duels: your numbers out · theirs in, live"],
+        ['netev / foeev · duel · netslot', "event pulse · opponent connected · your seat"],
+        ['fon[s] · f1[s]…f6[s] · fev[s] · pcount', "multi-seat: who's live, their state, head count"],
+        ['set nettgt to s + change netev by 1', "targeted hit → seat s's `hits` goes up"],
+        ['hits', "times YOU'VE been hit — react when it changes"]
+      ]]
+    ];
+    $("#btn-ref").addEventListener("click", () => {
+      const rows = REF.map(([grp, items]) => `
+        <div class="ref-grp">
+          <p style="margin:14px 0 4px; font-size:.78em; letter-spacing:.1em; color:#8fa0b4">${grp}</p>
+          ${items.map(([syn, desc]) => `
+            <div class="ref-row" style="display:flex; gap:12px; padding:3px 0; border-bottom:1px solid rgba(255,255,255,.04)">
+              <span class="code" style="flex:0 0 46%; overflow-wrap:anywhere">${syn.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</span>
+              <span style="color:#b9c4d2">${desc.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</span>
+            </div>`).join("")}
+        </div>`).join("");
+      const box = showCard("📖 RedScript — the whole language on one card", `
+        <input type="search" id="ref-q" placeholder="Filter… try: touching, repeat, net, casino" style="width:100%">
+        <div id="ref-list">${rows}</div>
+        <p class="hint" style="margin-top:12px">Blocks and code are the SAME language — 🧱 To blocks / 📜 To code flip any script
+        both ways. The deep dives (recipes, text adventures, the net contract) live in the
+        <a href="../guide.html" target="_blank" rel="noopener" style="color:#ff8f8c">Coding Guide</a>.</p>`,
+        { wide: true });
+      const q = box.querySelector("#ref-q");
+      q.addEventListener("input", () => {
+        const needle = q.value.trim().toLowerCase();
+        for (const grp of box.querySelectorAll(".ref-grp")) {
+          let any = false;
+          for (const row of grp.querySelectorAll(".ref-row")) {
+            const hit = !needle || row.textContent.toLowerCase().includes(needle);
+            row.style.display = hit ? "" : "none";
+            any = any || hit;
+          }
+          grp.style.display = any ? "" : "none";
+        }
+      });
+      q.focus();
+    });
 
     // ---- mode: "game" (default) or "page" (the Page Studio — same editor
     // and same powers, but it saves to your profile page, not the games list) ----
@@ -914,6 +1074,11 @@
       debugMount.textContent = "Hit ▶ Test — anything your scripts do wrong shows up here, named: which object, which event, what went wrong.";
     };
     const debugLog = (kind, msg) => {
+      // the classic beginner mistakes get a plain-English hint under the error
+      if (kind === "error") {
+        const h = errorHint(msg);
+        if (h) msg += "   💡 " + h;
+      }
       if (debugCount === 0) { debugMount.className = ""; debugMount.innerHTML = ""; }
       const known = debugRows.get(msg);
       if (known) {
@@ -1124,6 +1289,10 @@
     }
 
     // ------------------------------------------------------------ publish / new / example
+    // compile errors in toasts carry the same 💡 hints as the Debug panel
+    const errsWithHint = (errs) => errs.slice(0, 3)
+      .map(e => { const h = errorHint(e); return h ? e + "\n   💡 " + h : e; }).join("\n");
+
     $("#btn-publish").addEventListener("click", async () => {
       const btn = $("#btn-publish");
       btn.disabled = true;
@@ -1146,7 +1315,7 @@
         if (pageMode) {
           await savePageScene(user, JSON.parse(JSON.stringify(scene)));
           toast(check.errors.length
-            ? "Page saved, but check scripts:\n" + check.errors.slice(0, 3).join("\n")
+            ? "Page saved, but check scripts:\n" + errsWithHint(check.errors)
             : "Page saved! It's live on your profile.", check.errors.length > 0);
         } else {
           const payload = {
@@ -1168,7 +1337,7 @@
           const thumbSrc = payload.screen.mode !== "none" && payload.screen.objects.length
             ? payload.screen.objects : scenes.game.objects;
           payload.thumb = renderThumb(thumbSrc, dims.w, dims.h, 240, scenes.game.display || "modern");
-          if (check.errors.length) toast("Published, but check scripts:\n" + check.errors.slice(0, 3).join("\n"), true);
+          if (check.errors.length) toast("Published, but check scripts:\n" + errsWithHint(check.errors), true);
           if (editingId) {
             await updateGame(editingId, payload);
             if (check.errors.length === 0) toast("Game updated!");

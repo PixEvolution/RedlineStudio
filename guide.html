@@ -12,6 +12,31 @@
   <meta property="og:url" content="https://redlinestudio.dev/guide.html">
   <meta property="og:type" content="website">
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* the guide's clickable contents + collapsible sections (guide.html only) */
+    .guide .panel[id] > h2 { cursor: pointer; user-select: none; }
+    .guide .panel[id].closed > h2 { margin-bottom: 0; }
+    .guide .panel[id].closed .panel-body { display: none; }
+    .g-chev { display: inline-block; width: 1em; opacity: .7; font-size: .8em; transform: translateY(-1px); }
+    .g-read {
+      float: right; border: 1px solid #3a4452; background: transparent; color: #8fa0b4;
+      border-radius: 6px; font: inherit; font-size: .62em; padding: 2px 9px; cursor: pointer;
+      letter-spacing: .04em;
+    }
+    .g-read.on { color: #7dff9e; border-color: #2f6a44; }
+    .g-toc-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .g-toc-head h2 { margin: 0; flex: 1; }
+    .g-progress { color: #8fa0b4; font-size: .85em; }
+    .g-toc-grp { margin: 12px 0 2px; font-size: .78em; letter-spacing: .12em; color: #8fa0b4; }
+    .g-toc a {
+      display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 7px;
+      color: inherit; text-decoration: none;
+    }
+    .g-toc a:hover { background: rgba(255, 255, 255, .05); }
+    .g-toc .tick { width: 1.1em; color: #7dff9e; }
+    .g-toc .lvl { margin-left: auto; }
+    .g-flash { outline: 2px solid #ff9d4a; outline-offset: 3px; transition: outline-color 1.2s; }
+  </style>
   <script>(window.adsbygoogle = window.adsbygoogle || []).requestNonPersonalizedAds = 1;</script>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2208639648972390"
      crossorigin="anonymous"></script>
@@ -21,7 +46,7 @@
     <h1 class="page-title">Coding Guide</h1>
     <p class="page-sub">Starts at absolute zero and ends at online 3D — the badges (EASY → MEDIUM → ADVANCED) mark the climb. Read until you have enough, build something, come back for more.</p>
 
-    <div class="panel">
+    <div class="panel" id="start">
       <h2>🌱 Start here — your first game in five minutes <span class="lvl l1">EASY</span></h2>
       <p>Never made a game? Never written code? Perfect — you won't need either. A game here is just
       <b>things on a screen</b> plus <b>rules for how they act</b>, and the Studio hands you both.
@@ -42,7 +67,7 @@
       difficulty badges on each section tell you when the water gets deep.</p>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="big-idea">
       <h2>The big idea <span class="lvl l1">EASY</span></h2>
       <p>A game is a set of <b>objects</b> (dots, rings, boxes, lines, text, ships). Each object can carry a <b>script</b>:
       a list of <b>events</b> ("when the game starts", "every frame", "when clicked", "when a key is pressed") filled with
@@ -60,7 +85,7 @@
       Every one is built from the pieces on this page.</p>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="objects">
       <h2>Objects &amp; properties <span class="lvl l1">EASY</span></h2>
       <p>Add objects from the Explorer: <b>Dot</b>, <b>Ring</b>, <b>Box</b>, <b>Line</b> (a vector segment: starts at
       x/y and runs along its angle for <span class="code">size</span> length — Maze War's whole first-person view is
@@ -81,7 +106,7 @@ text        what a Text object says</pre>
       so <span class="code">set self.velx to self.velx + 1</span> is safe on the very first frame.</p>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="sprites">
       <h2>🎨 Sprites <span class="lvl l1">EASY</span></h2>
       <p>A <b>Sprite</b> is pixel art you draw yourself: pick <b>+ Sprite</b> in the Explorer and the
       <b>🎨 Sprite panel</b> opens under the script editor. Left mouse paints, right mouse erases, 🪣 fills an
@@ -97,7 +122,7 @@ set self.fps to 0       stop; scripts own self.frame again</pre>
       The 57 museum machines stay primitives on purpose; sprites are for <i>your</i> games.</p>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="era">
       <h2>🕹 Era simulation — display &amp; engine hardware <span class="lvl l1">EASY</span></h2>
       <p>Two selects in the publish panel let any game run on OLD machines — and you can mix and match them,
       upgrade, or revert anytime, because both are enforced at the <b>picture-and-sound edge only</b>: your
@@ -124,7 +149,7 @@ set self.fps to 0       stop; scripts own self.frame again</pre>
       selects to feel exactly what forty years of hardware bought.</p>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="events">
       <h2>Events <span class="lvl l1">EASY</span></h2>
       <pre class="codeblock">when start          runs once, when the game begins
 when tick           runs exactly 60 times a second on EVERY screen — physics lives here
@@ -134,7 +159,7 @@ when answer         runs when the player types into the terminal and hits
                     Enter — read what they typed with answer()</pre>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="actions">
       <h2>Actions <span class="lvl l1">EASY</span></h2>
       <pre class="codeblock">set self.x to 240            set a property, variable, or list slot
 change self.y by -2          add to it
@@ -148,7 +173,7 @@ print "YOU ARE IN ROOM " + pos   a line on the on-screen teletype
 clear                        wipe the teletype</pre>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="behaviors">
       <h2>✨ Behaviors — game logic without code <span class="lvl l1">EASY</span></h2>
       <p>Select an object, open <b>✨ Add behavior…</b> in the Script panel, pick one — done. Each behavior
       drops ready-made, working blocks into that object's script:</p>
@@ -177,7 +202,7 @@ clear                        wipe the teletype</pre>
       keep the game.</p>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="expressions">
       <h2>Expressions — the same everywhere <span class="lvl l2">MEDIUM</span></h2>
       <p>Every value field in every block accepts a full expression:</p>
       <pre class="codeblock">Math        + - * / %   (% is remainder) · unary minus works: -vy
@@ -202,7 +227,7 @@ word(s, n)            the nth word of a sentence ("" past the end) —
                       the NOUN: a two-word parser in two expressions</pre>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="variables">
       <h2>Variables &amp; lists <span class="lvl l2">MEDIUM</span></h2>
       <pre class="codeblock">set score to 0            variables are shared by every object
 change score by 1
@@ -213,7 +238,7 @@ set board[r * 8 + c] to 1</pre>
       <span class="code">lines[]</span> table. Open those examples and read them.</p>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="recipes">
       <h2>Recipes <span class="lvl l2">MEDIUM</span></h2>
       <p><b>Move with keys</b> (put on the player object):</p>
       <pre class="codeblock">when tick
@@ -267,7 +292,7 @@ end
 end</pre>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="text-adventures">
       <h2>Text adventures <span class="lvl l2">MEDIUM</span></h2>
       <p>Any game that uses <span class="code">print</span> gets a <b>teletype</b>: lines appear on the screen,
       and a text input shows up under it. When the player types and hits Enter, every
@@ -289,7 +314,7 @@ end</pre>
       is how it actually shipped.</p>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="studio">
       <h2>The Studio itself <span class="lvl l2">MEDIUM</span></h2>
       <p><b>Explorer</b> — add and pick objects; checkboxes select several (<b>☑ All / ☐ None</b> check
       everything at once — and with a search active, "All" means all MATCHES, so you can check every
@@ -374,7 +399,7 @@ end</pre>
       own engine. Publishing, Models and the arcade floor stay online; the offline file is the workshop.</p>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="coins">
       <h2>Coins <span class="lvl l2">MEDIUM</span></h2>
       <p>◎ Coins are the platform's play money — they can't be bought and can't be cashed out, and the database
       itself guarantees no one can create them from nothing. How they move:</p>
@@ -388,7 +413,7 @@ SPEND  playing coin games · buying Models · betting at the casino ·
        funding your own machine's pool</pre>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="floor">
       <h2>The arcade floor <span class="lvl l2">MEDIUM</span></h2>
       <p>Machines are physical, and every game declares how many <b>seats</b> it has (1–8, set in the Studio).
       A one-seat game is the classic cabinet; a multi-seat game is a little server in arcade clothes — walk up
@@ -413,7 +438,7 @@ SPEND  playing coin games · buying Models · betting at the casino ·
       no vote — hogging an empty machine bothers nobody.</p>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="casino">
       <h2>Casino machines <span class="lvl l3">ADVANCED</span></h2>
       <p>The Casino floor runs on one rule: <b>machines do the show, the platform does the math.</b>
       The odds are locked in the engine — no owner can make a machine pay better or worse. They're public:</p>
@@ -448,7 +473,7 @@ casino                    1 on the floor, 0 in Studio test (free play)</pre>
       rights and pool-sized jackpots, not for keeps.</p>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="online">
       <h2>Arcade cabinets &amp; going online <span class="lvl l3">ADVANCED</span></h2>
       <p>This is the deep end — the reserved-variable contracts that wire a game into the platform's
       coin slot, leaderboards and live wire. Everything here is still just <b>set</b> and <b>if</b> on
@@ -506,7 +531,7 @@ hits            how many times other players have hit YOU (respawn on change)</p
       real PLATO machine.</p>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="reserved">
       <h2>Every reserved variable (the cheat sheet) <span class="lvl l3">ADVANCED</span></h2>
       <p>Ordinary variables are all yours. These names are the platform's — set or read them and the machine
       around your game responds. Everything here is explained in the sections above; this is the one-glance list:</p>
@@ -524,7 +549,7 @@ hits            how many times other players have hit YOU (respawn on change)</p
       it's yours forever.</p>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="rules">
       <h2>Rules of thumb</h2>
       <p>One object, one job — a ball owns its physics, a referee object owns scoring. Use a variable like
       <span class="code">game</span> for state (0 = playing, 1 = won…) and gate your <span class="code">when tick</span>
@@ -536,6 +561,143 @@ hits            how many times other players have hit YOU (respawn on change)</p
   <script type="module">
     import { renderNav } from "./js/ui.js";
     renderNav("");
+  </script>
+  <script>
+    // ---- the clickable guide: contents, collapsible sections, ✓ read marks.
+    // Everything here is per-browser convenience (localStorage, best-effort);
+    // with storage blocked or scripts off, the guide is simply all open.
+    (() => {
+      const KEY_OPEN = "rl_guide_open", KEY_READ = "rl_guide_read";
+      const loadSet = (k) => { try { return new Set(JSON.parse(localStorage.getItem(k) || "null") || []); } catch { return new Set(); } };
+      const saveSet = (k, s) => { try { localStorage.setItem(k, JSON.stringify([...s])); } catch {} };
+      let hasOpenSaved = false;
+      try { hasOpenSaved = localStorage.getItem(KEY_OPEN) !== null; } catch {}
+      const open = hasOpenSaved ? loadSet(KEY_OPEN) : new Set(["start"]);   // first visit: Start here
+      const read = loadSet(KEY_READ);
+
+      const panels = [...document.querySelectorAll(".guide .panel[id]")];
+      const rows = new Map();   // id → the TOC row's ✓ cell
+
+      // fold each panel: everything after the <h2> becomes its collapsible body
+      for (const p of panels) {
+        const h2 = p.querySelector("h2");
+        const body = document.createElement("div");
+        body.className = "panel-body";
+        while (h2.nextSibling) body.appendChild(h2.nextSibling);
+        p.appendChild(body);
+
+        const chev = document.createElement("span");
+        chev.className = "g-chev";
+        h2.prepend(chev);
+
+        const tick = document.createElement("button");
+        tick.className = "g-read";
+        tick.title = "Mark this section read — your own progress, saved in this browser";
+        h2.appendChild(tick);
+        tick.addEventListener("click", (e) => {
+          e.stopPropagation();
+          read.has(p.id) ? read.delete(p.id) : read.add(p.id);
+          saveSet(KEY_READ, read);
+          paint();
+        });
+
+        h2.addEventListener("click", () => toggle(p.id, !open.has(p.id)));
+      }
+
+      const toggle = (id, want) => {
+        want ? open.add(id) : open.delete(id);
+        saveSet(KEY_OPEN, open);
+        paint();
+      };
+
+      // ---- the contents panel, grouped the way the climb goes
+      const GROUPS = [["l1", "🌱 EASY — start to finish, no code"],
+                      ["l2", "🔧 MEDIUM — expressions, recipes, the Studio"],
+                      ["l3", "🚀 ADVANCED — casino, online, the contracts"],
+                      ["",   "ALWAYS"]];
+      const groupOf = (p) => (p.querySelector(".lvl.l1") && "l1") || (p.querySelector(".lvl.l2") && "l2")
+        || (p.querySelector(".lvl.l3") && "l3") || "";
+      const labelOf = (p) => {
+        const c = p.querySelector("h2").cloneNode(true);
+        c.querySelectorAll(".lvl, .g-read, .g-chev").forEach(x => x.remove());
+        return c.textContent.trim();
+      };
+
+      const toc = document.createElement("div");
+      toc.className = "panel g-toc";
+      const head = document.createElement("div");
+      head.className = "g-toc-head";
+      head.innerHTML = "<h2>📖 Contents</h2>";
+      const prog = document.createElement("span");
+      prog.className = "g-progress";
+      const btnAll = document.createElement("button");
+      btnAll.className = "btn btn-small btn-ghost";
+      btnAll.textContent = "Open all";
+      btnAll.addEventListener("click", () => { panels.forEach(p => open.add(p.id)); saveSet(KEY_OPEN, open); paint(); });
+      const btnNone = document.createElement("button");
+      btnNone.className = "btn btn-small btn-ghost";
+      btnNone.textContent = "Close all";
+      btnNone.addEventListener("click", () => { open.clear(); saveSet(KEY_OPEN, open); paint(); });
+      head.append(prog, btnAll, btnNone);
+      toc.appendChild(head);
+      const note = document.createElement("p");
+      note.className = "hint";
+      note.textContent = "Click a section to jump in — click its heading to fold it away again. The ✓ is your own reading progress, kept in this browser.";
+      toc.appendChild(note);
+
+      for (const [cls, title] of GROUPS) {
+        const members = panels.filter(p => groupOf(p) === cls);
+        if (!members.length) continue;
+        const g = document.createElement("div");
+        g.className = "g-toc-grp";
+        g.textContent = title;
+        toc.appendChild(g);
+        for (const p of members) {
+          const a = document.createElement("a");
+          a.href = "#" + p.id;
+          const t = document.createElement("span");
+          t.className = "tick";
+          const lab = document.createElement("span");
+          lab.textContent = labelOf(p);
+          a.append(t, lab);
+          const lvl = p.querySelector(".lvl");
+          if (lvl) a.appendChild(lvl.cloneNode(true));
+          toc.appendChild(a);
+          rows.set(p.id, t);
+        }
+      }
+      document.querySelector(".guide .page-sub").after(toc);
+
+      const paint = () => {
+        for (const p of panels) {
+          const isOpen = open.has(p.id);
+          p.classList.toggle("closed", !isOpen);
+          p.querySelector(".g-chev").textContent = isOpen ? "▾" : "▸";
+          const tick = p.querySelector(".g-read");
+          tick.classList.toggle("on", read.has(p.id));
+          tick.textContent = read.has(p.id) ? "✓ READ" : "MARK READ";
+          const cell = rows.get(p.id);
+          if (cell) cell.textContent = read.has(p.id) ? "✓" : "";
+        }
+        prog.textContent = `${[...read].filter(id => rows.has(id)).length} of ${panels.length} read`;
+      };
+
+      // deep links: #casino opens that section — from the TOC, the Studio's ⓘ
+      // buttons, or anyone's pasted link
+      const goHash = () => {
+        const id = decodeURIComponent(location.hash.slice(1));
+        const p = panels.find(x => x.id === id);
+        if (!p) return;
+        open.add(id); saveSet(KEY_OPEN, open); paint();
+        p.scrollIntoView({ behavior: "smooth", block: "start" });
+        p.classList.add("g-flash");
+        setTimeout(() => p.classList.remove("g-flash"), 1300);
+      };
+      window.addEventListener("hashchange", goHash);
+
+      paint();
+      if (location.hash) goHash();
+    })();
   </script>
   <script type="module">import { footAd } from "./js/ads.js"; footAd();</script>
 </body>
