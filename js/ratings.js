@@ -82,27 +82,11 @@ export function canUseFreeText(bracket) {
   return age !== null && age >= 13;
 }
 
-// THE PLAY-ONLY TIER: an account with a declared under-13 bracket plays games
-// and browses the museum, and that's the whole account until it turns 13 —
-// no publishing, no Market listing or buying, no custom profile page, and the
-// social layer (machine chat, comments, forums) isn't shown to it at all.
-// The account GROWS OUT of the tier by itself: an under-13 declaration also
-// stores the MONTH the account turns 13 (an integer like 203902 — never the
-// birth date), and when that month arrives the private bracket upgrades to
-// "13" on its own (age.js does it; the database rules verify the month
-// against the server clock). Undeclared accounts are not play-only: the
-// platform can't treat everyone as a child, so the tier applies exactly
-// where the site actually knows.
-export function isPlayOnly(bracket) {
-  return bracket === "u13";
-}
-
-// Publishing to the public arcade, listing or buying on the Market, and
-// editing the custom profile page all sit above the play-only tier.
-export function canPublish(bracket) {
-  return !isPlayOnly(bracket);
-}
-
+// GROWING UP: an under-13 declaration also stores the MONTH the account
+// turns 13 (an integer like 203902 — never the birth date), and when that
+// month arrives the private bracket upgrades to "13" on its own (age.js does
+// it; the database rules verify the month against the server clock). So a
+// kid's account becomes a teen account on time, with nothing to re-enter.
 // For an under-13 birth date: the first YYYYMM month in which the account is
 // 13 for the WHOLE month (never unlocks early; at most a few weeks late).
 // Returns null for dates that aren't under 13.

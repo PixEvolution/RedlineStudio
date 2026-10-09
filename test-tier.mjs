@@ -1,22 +1,15 @@
-// Headless test: the under-13 PLAY-ONLY TIER, the grow-up month, the bracket
-// migration, the contact form, and the October 2026 policy pass (dates,
-// honest 18+ wording, rating names, realism guidance, response times).
+// Headless test: the October 2026 policy round — the ALL-AGES model (Victor's
+// call: kids use the same open platform, Roblox-style, with quick-chat as the
+// child filter and reactive moderation), the grow-up month, the bracket
+// migration, the contact form, no ads for declared children, and the policy
+// wording pass (dates, honest 18+ wording, rating names, realism guidance,
+// response times).
 import { readFileSync } from "node:fs";
-import {
-  isPlayOnly, canPublish, growsFromBirthdate, growsDue, bracketFromBirthdate
-} from "./js/ratings.js";
+import { growsFromBirthdate, growsDue, bracketFromBirthdate, canUseFreeText } from "./js/ratings.js";
 
 let pass = 0, fail = 0;
 const check = (n, c) => { if (c) { pass++; console.log("  ✓", n); } else { fail++; console.log("  ✗ FAIL:", n); } };
 const src = (p) => readFileSync(p, "utf8");
-
-console.log("The play-only tier, as pure logic:");
-{
-  check("u13 is the play-only tier — and the ONLY one",
-    isPlayOnly("u13") && !isPlayOnly("13") && !isPlayOnly("16") && !isPlayOnly("18") && !isPlayOnly(null));
-  check("publishing is above the tier (undeclared still publishes)",
-    !canPublish("u13") && canPublish("13") && canPublish(null));
-}
 
 console.log("Growing up — the turns-13 month, never the date:");
 {
@@ -34,50 +27,38 @@ console.log("Growing up — the turns-13 month, never the date:");
   check("growsDue: arrived months fire, future ones wait, junk never does",
     growsDue(202610, now) && growsDue(202501, now)
     && !growsDue(202611, now) && !growsDue(undefined, now) && !growsDue("202610", now));
-}
-
-console.log("The browser side carries the tier:");
-{
   const age = src("js/age.js");
   check("age.js stores the grows month on u13 declarations only",
     age.includes('bracket === "u13" && Number.isFinite(grows)')
     && age.includes("{ ageBracket: bracket }"));
   check("age.js upgrades u13 → 13 by itself when the month arrives",
     age.includes("growsDue(a.data().grows)") && age.includes('ageBracket: "13"'));
-  const live = src("js/live.js");
-  check("live.js: an under-13 screen never hits the live wire",
-    live.includes("isPlayOnly") && live.includes("quietFeed().then")
-    && live.includes("nothing leaves the browser"));
+}
+
+console.log("The all-ages model — open floor, quick-chat as the child filter:");
+{
+  check("typed text is 13+; under-13 and undeclared use quick-chat",
+    !canUseFreeText("u13") && !canUseFreeText(null) && canUseFreeText("13"));
+  check("live.js broadcasts every seated player the same way (no age gate)",
+    !src("js/live.js").includes("myBracket"));
   const floor = src("js/floor.js");
-  check("floor.js: the slow seat snapshot is suppressed too",
-    floor.includes("playOnlyHere") && floor.includes("next.snap = null"));
-  check("floor.js: no machine chat at all for the tier (read or write)",
-    floor.includes("chatBox.replaceWith(hint)") && floor.includes("await playOnlyHere()) return;"));
-  check("social.js: comments aren't shown to the tier",
-    src("js/social.js").includes("isPlayOnly(b)"));
-  check("the Forums and the Market close politely for the tier",
-    src("forums.html").includes("unlock the month you turn 13")
-    && src("market.html").includes("unlocks the month you turn 13"));
-  check("the Studio blocks publish AND the custom page with a reason",
-    src("studio/studio.html").includes("Publishing to the arcade unlocks the month you turn 13")
-    && src("studio/studio.html").includes("Your custom page unlocks the month you turn 13"));
-  check("profile.html hides the page editor from the tier",
-    src("profile.html").includes('b !== "u13"'));
-  check("ads.js: a declared child sees no ads at all",
+  check("floor.js: the chat panel and seat snapshot have no age gate beyond quick-chat",
+    !floor.includes("playOnly") && floor.includes("freeTextAllowed"));
+  check("comments, forums, market and profile pages carry no under-13 locks",
+    !src("js/social.js").includes("isPlayOnly")
+    && !src("forums.html").includes("play-only")
+    && !src("market.html").includes("play-only")
+    && !src("profile.html").includes("u13"));
+  check("the Studio publishes for every account (rules too)",
+    !src("studio/studio.html").includes("canPublish")
+    && !src("firestore.rules").includes("isU13"));
+  check("…but a declared child still sees NO ads at all",
     src("js/ads.js").includes('!== "u13"') && src("js/ads.js").includes("setAdGate"));
 }
 
-console.log("The database rules enforce it (needles):");
+console.log("The database rules (needles):");
 {
   const rules = src("firestore.rules");
-  check("isU13() exists and reads the private bracket",
-    rules.includes("function isU13()") && rules.includes("== 'u13'"));
-  check("games: publishing requires !isU13()", rules.includes("signedIn() && !isU13()"));
-  check("models: the tier can't flip a listing on",
-    rules.includes("request.resource.data.get('listed', false) == true")
-    && rules.includes("resource.data.get('listed', false) != true"));
-  check("users: the tier can't write a custom page",
-    rules.includes("hasAny(['pageScene']) || !isU13()"));
   check("ages: u13 declarations may carry the grows month (int)",
     rules.includes("hasOnly(['ageBracket', 'grows'])") && rules.includes("grows is int"));
   check("ages: the ONE allowed update is u13 → 13, on the SERVER clock",
@@ -134,10 +115,15 @@ console.log("The policy pass (October 2026):");
     terms.includes("E · 13+ · 16+ · 18+") && !terms.includes("M (Mature") && !terms.includes("A (Adult"));
   check("the Terms admit parental permission can't be checked — and route parents somewhere real",
     terms.includes("no way to check that permission") && terms.includes("contact.html"));
-  check("the play-only tier is in both documents",
-    terms.includes("play-only tier") && priv.includes("play-only account"));
-  check("the privacy policy discloses the grows month, the no-broadcast rule, and no-ads-for-kids",
-    priv.includes("month") && priv.includes("never broadcast") && priv.includes("no ads at all"));
+  check("the policies describe the OPEN model, not locks: no play-only tier anywhere",
+    !priv.includes("play-only") && !terms.includes("play-only"));
+  check("the privacy policy keeps the real safeguards: no child email, quick-chat, no child ads, grows month",
+    priv.includes("cannot link an email")
+    && priv.includes("fixed list of phrases")
+    && priv.includes("no ads at all")
+    && priv.includes("upgrades itself at 13"));
+  check("…and says plainly that a child's account is public by design",
+    priv.includes("a child's account is public by design"));
   check("watchers-can-be-minors is said where players read it",
     terms.includes("watchers can be any age, including minors")
     && priv.includes("watchers can be any age, including minors"));
@@ -161,8 +147,8 @@ console.log("The policy pass (October 2026):");
     rat.includes("See a misrated game") && rat.includes("contact.html"));
   check("protected characters are on the always-banned list",
     rat.includes("protected characters, names and logos"));
-  check("both policies and the account page disclose the under-13 unlock month",
-    priv.includes("turns 13") && terms.includes("turns 13") && src("account.html").includes("month you turn 13"));
+  check("the account page discloses the under-13 unlock month",
+    src("account.html").includes("month you turn 13"));
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

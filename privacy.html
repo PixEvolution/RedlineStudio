@@ -90,14 +90,12 @@
         currently at (or none), whether you're seated or in line, and when that last changed. This enforces
         "one account, one machine."</li>
         <li><b>Machine chat.</b> Messages (up to 120 characters) are stored with your username and a
-        timestamp. Each machine keeps its most recent 50 messages. Undeclared accounts send only fixed
-        quick-chat phrases; under-13 accounts have no machine chat at all (section 7).</li>
+        timestamp. Each machine keeps its most recent 50 messages. Accounts without a declared 13+ bracket
+        send only fixed quick-chat phrases.</li>
         <li><b>Watch window.</b> While you're the main player at a machine, your browser publishes images
         of your game screen with your username: about 5 per second to a live feed, plus a slower snapshot
         stored with the machine's seat record. These show <b>only the game canvas</b>, never your camera,
-        desktop or other tabs. Anyone can watch, and watchers can be any age, including minors.
-        <b>Under-13 accounts' screens are never broadcast</b> — their browsers don't publish either feed
-        (section 7).</li>
+        desktop or other tabs. Anyone can watch, and watchers can be any age, including minors.</li>
         <li><b>Online multiplayer.</b> In duels and multi-seat rooms, your browser exchanges game state
         (positions, inputs, events) with other players through Firebase Realtime Database, tagged with your
         uid and a timestamp.</li>
@@ -137,7 +135,7 @@
         <li>your published games, listed models, profile and profile page, comments, forum posts, likes,
         and high scores;</li>
         <li>which machine you're at, seat and line activity, machine chat, and the watch-window images of
-        your game screen (under-13 accounts' screens are never broadcast — section 7);</li>
+        your game screen;</li>
         <li>multiplayer game data you send during online play.</li>
       </ul>
       <p>Your password, your linked email address, your age bracket, and your reports are <b>not</b> public.
@@ -194,34 +192,32 @@
 
     <div class="panel">
       <h2>7. Children's privacy</h2>
-      <p>The Service is open to all ages and is built to collect as little as possible from children. An
-      account with a declared <b>under-13</b> bracket is a <b>play-only account</b>: it plays games, and the
-      parts of the Service that would put a child's content or activity in front of other people are switched
-      off until the account turns 13 (which it does by itself — section 2.3):</p>
+      <p>The Service is open to all ages. Children use the same public platform as everyone — they can play,
+      publish games, and use the Market like any player — and the Service is built to collect as little as
+      possible from them and to give them no way to leak more:</p>
       <ul>
         <li>no account requires a real name, email, phone number, address or birth date;</li>
-        <li>age brackets are private, so no one can look up which players are children;</li>
+        <li>age brackets are private, so no one can look up which players are children — and an under-13
+        bracket upgrades itself at 13 (section 2.3);</li>
         <li>under-13 accounts <b>cannot link an email</b> and so have no way to be contacted off the Service;</li>
-        <li>under-13 accounts <b>cannot publish games, list or buy on the Market, or build a custom profile
-        page</b> — nothing they make is shown to other players;</li>
-        <li>under-13 accounts have <b>no chat, comments or Forums at all</b> — they neither write nor see
-        them. Undeclared accounts can read, and chat at the machines only by picking from a fixed list of
-        phrases, so they can't type personal information into chat; typing freely requires a declared 13+;</li>
-        <li>under-13 accounts' <b>game screens are never broadcast</b> to the watch window — their browsers
-        simply don't publish the feed;</li>
+        <li><b>typing messages other players can read</b> (comments, forum threads and posts, and typed machine
+        chat) requires a declared 13+ bracket. Under-13 and undeclared accounts chat at the machines only by
+        picking from a fixed list of phrases, so they can't type personal information into chat;</li>
         <li>16+ and 18+ content and the Casino are locked for under-13 players, and for anyone who hasn't
         declared an age;</li>
-        <li>under-13 accounts see <b>no ads</b>; ads are non-personalized for everyone else (section 6).</li>
+        <li>under-13 accounts see <b>no ads at all</b>; ads are non-personalized for everyone else (section 6).</li>
       </ul>
-      <p>What remains visible about an under-13 account is what every account shows: the username (never a
-      real name — the site says so at signup), uid, coin balance, join date, and high-score rows.</p>
-      <p>Children should never put personal information in usernames or anything else on the Service.
-      Moderators remove content that does. <b>Parents and guardians:</b> an account's footprint is
+      <p>Like every account, a child's account is public by design (section 3): its username (never a real
+      name — the site says so at signup), published games, high scores, and its game screen while playing at
+      a machine. We moderate reported content and behavior rather than pre-restricting accounts.</p>
+      <p>Children should never put personal information in usernames, games, profile pages, or anything else
+      they publish. Moderators remove content that does. <b>Parents and guardians:</b> an account's footprint is
       what's described in this policy. You can delete your child's account with ⚙ Account → Delete (you'll
       need the password), or use the <a href="contact.html" style="color:#ff8f8c">contact form</a> or email
       <b>RedlineDigitalGames@proton.me</b> and we will review your child's account and delete it and its
-      content. <b>We answer parent and guardian requests within 30 days.</b> If we learn we've collected
-      personal information from a child under 13 beyond what's described here, we will delete it.</p>
+      content, or restrict it at your request. <b>We answer parent and guardian requests within 30 days.</b>
+      If we learn we've collected personal information from a child under 13 beyond what's described here, we
+      will delete it.</p>
     </div>
 
     <div class="panel">

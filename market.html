@@ -54,21 +54,6 @@
     const PAGE_SIZE = 24;
     const user = currentUser();
 
-    // THE PLAY-ONLY TIER: for a logged-in under-13 account the Market isn't
-    // part of the site yet (listing is blocked by the database rules too).
-    if (user) {
-      const { myBracket } = await import("./js/age.js");
-      const { isPlayOnly } = await import("./js/ratings.js");
-      if (isPlayOnly(await myBracket().catch(() => null))) {
-        document.querySelector("main").innerHTML = `
-          <h1 class="page-title">Market</h1>
-          <p class="page-sub">The Market unlocks the month you turn 13 — your account does it on its own,
-          nothing to re-enter. Your coins keep piling up in the meantime.</p>
-          <p><a class="btn" href="index.html">← Back to the games</a></p>`;
-        throw new Error("play-only tier");
-      }
-    }
-
     // ---------------- coins ----------------
     async function refreshCoins() {
       if (!user) { $("#coins-box").innerHTML = `<a class="btn btn-small" href="login.html">Log in</a>`; return; }
