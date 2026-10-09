@@ -3,7 +3,7 @@
 // long text), then pins the wiring: every content page grows speakers, the
 // Museum speaks per entry, and the course panel reads its chapters aloud.
 import { readFileSync } from "node:fs";
-import { toChunks } from "./js/speech.js";
+import { toChunks, getVoicePrefs, setVoicePrefs, listVoices, canSpeak } from "./js/speech.js";
 
 let pass = 0, fail = 0;
 const check = (n, c) => { if (c) { pass++; console.log("  ✓", n); } else { fail++; console.log("  ✗ FAIL:", n); } };
@@ -22,6 +22,22 @@ console.log("The chunker (what keeps long reads alive):");
     chunks.join(" ").split(" ").length === long.replace(/\s+/g, " ").trim().split(" ").length);
   check("a code table's column spacing collapses to speech",
     JSON.stringify(toChunks("x  y        position (the screen)")) === JSON.stringify(["x y position (the screen)"]));
+}
+
+console.log("The voice picker:");
+{
+  check("no browser engine: canSpeak false, listVoices resolves empty",
+    canSpeak() === false && (await listVoices()).length === 0);
+  check("prefs survive a storage-less world (defaults, no crash)",
+    JSON.stringify(getVoicePrefs()) === JSON.stringify({ voice: "", rate: 1 }));
+  check("the speed clamps to the sane band (0.7–1.4)",
+    setVoicePrefs({ rate: 99 }).rate === 1.4 && setVoicePrefs({ rate: 0 }).rate === 0.7);
+  const acct = src("account.html");
+  check("⚙ Account grew the Listening voice panel: any language, speed, preview",
+    acct.includes("Listening voice") && acct.includes('id="voice-sel"')
+    && acct.includes('id="voice-rate"') && acct.includes('id="voice-try"'));
+  check("every 🔊 obeys the chosen voice and speed",
+    src("js/speech.js").includes("chosenVoice()") && src("js/speech.js").includes("u.rate = rate"));
 }
 
 console.log("The wiring:");

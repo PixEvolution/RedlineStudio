@@ -40,6 +40,44 @@ export function textOf(node) {
   return ghost.textContent || "";
 }
 
+// ---- the chosen voice + speed, per DEVICE (voices differ machine to
+// machine, so this lives in the browser, not on the account). Set from the
+// ⚙ Account page; every 🔊 on the site obeys it.
+const PREFS_KEY = "rl_voice_prefs";
+export function getVoicePrefs() {
+  try { return { voice: "", rate: 1, ...(JSON.parse(localStorage.getItem(PREFS_KEY) || "{}")) }; }
+  catch { return { voice: "", rate: 1 }; }
+}
+export function setVoicePrefs({ voice = "", rate = 1 } = {}) {
+  rate = Number(rate);
+  if (!Number.isFinite(rate)) rate = 1;
+  rate = Math.min(1.4, Math.max(0.7, rate));
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify({ voice: String(voice), rate })); } catch {}
+  return { voice, rate };
+}
+
+// Every voice the DEVICE offers (they load async in some browsers — this
+// resolves once the list is real, or empty if the API is missing).
+export function listVoices() {
+  return new Promise((resolve) => {
+    if (!canSpeak()) { resolve([]); return; }
+    const got = () => {
+      const v = window.speechSynthesis.getVoices();
+      if (v.length) { resolve([...v].sort((a, b) => (a.lang + a.name).localeCompare(b.lang + b.name))); return true; }
+      return false;
+    };
+    if (got()) return;
+    window.speechSynthesis.onvoiceschanged = got;
+    setTimeout(() => { if (!got()) resolve([]); }, 2000);
+  });
+}
+
+function chosenVoice() {
+  const { voice } = getVoicePrefs();
+  if (!voice) return null;
+  try { return window.speechSynthesis.getVoices().find(v => v.name === voice) || null; } catch { return null; }
+}
+
 let current = null;   // { btn, stop } — the one voice allowed at a time
 
 export function stopSpeaking() {
@@ -54,10 +92,13 @@ function speakChunks(chunks, onDone) {
   const synth = window.speechSynthesis;
   synth.cancel();
   let i = 0, dead = false;
+  const v = chosenVoice();
+  const { rate } = getVoicePrefs();
   const next = () => {
     if (dead || i >= chunks.length) { onDone(); return; }
     const u = new SpeechSynthesisUtterance(chunks[i++]);
-    u.rate = 1;
+    if (v) u.voice = v;
+    u.rate = rate;
     u.onend = next;
     u.onerror = next;
     synth.speak(u);

@@ -80,6 +80,22 @@
       recovery and everything rated 18+ only work through an inbox you've proven is yours.</p>
     </div>
 
+    <div class="panel">
+      <h2>🔊 Listening voice</h2>
+      <p class="hint" id="voice-note">Every chunk of text on the site has a 🔊 button. Pick which of your
+      device's voices reads it — any language your device offers — and how fast. Saved on this device
+      (voices differ computer to computer), applies everywhere, including the course lessons.</p>
+      <div id="voice-ui" style="display:none">
+        <label for="voice-sel">Voice</label>
+        <select id="voice-sel" style="max-width:360px"></select>
+        <label for="voice-rate">Speed: <span id="voice-rate-tx">1.0×</span></label>
+        <input type="range" id="voice-rate" min="0.7" max="1.4" step="0.05" style="max-width:360px">
+        <br><br>
+        <button class="btn btn-small" id="voice-try">▶ Preview</button>
+        <span class="hint" id="voice-count" style="margin-left:10px"></span>
+      </div>
+    </div>
+
     <div class="panel" style="border-color:#8a2f2d">
       <h2 style="color:#ff8f8c">Danger zone — delete this account</h2>
       <p>Deletion is <b>immediate and forever</b>: your login, coins, age record, published games, models and
@@ -115,6 +131,46 @@
     import { listMyModels, deleteModel } from "./js/models.js";
 
     renderNav("");
+
+    // ---- 🔊 the listening voice: pick any voice the device offers ----
+    (async () => {
+      const sp = await import("./js/speech.js");
+      if (!sp.canSpeak()) {
+        $("#voice-note").textContent = "This browser has no built-in text-to-speech, so the site's 🔊 buttons stay hidden here.";
+        return;
+      }
+      const voices = await sp.listVoices();
+      const prefs = sp.getVoicePrefs();
+      const sel = $("#voice-sel"), rate = $("#voice-rate"), rateTx = $("#voice-rate-tx");
+      const def = document.createElement("option");
+      def.value = "";
+      def.textContent = "Device default";
+      sel.appendChild(def);
+      for (const v of voices) {
+        const o = document.createElement("option");
+        o.value = v.name;
+        o.textContent = `${v.lang} — ${v.name}`;
+        sel.appendChild(o);
+      }
+      sel.value = voices.some(v => v.name === prefs.voice) ? prefs.voice : "";
+      rate.value = String(prefs.rate);
+      const paint = () => { rateTx.textContent = Number(rate.value).toFixed(2).replace(/0$/, "") + "×"; };
+      paint();
+      $("#voice-count").textContent = voices.length
+        ? `${voices.length} voice(s) on this device.`
+        : "No voices reported yet — some browsers only list them after the first spoken word.";
+      const save = () => {
+        sp.setVoicePrefs({ voice: sel.value, rate: rate.value });
+        paint();
+      };
+      sel.addEventListener("change", save);
+      rate.addEventListener("input", save);
+      const tryBtn = $("#voice-try");
+      sp.wireSpeaker(tryBtn, () =>
+        "Welcome to RedlineStudio. Every machine in the museum can tell you its story in this voice.");
+      tryBtn.textContent = "▶ Preview";   // wireSpeaker toggles it to ⏹ while speaking
+      $("#voice-ui").style.display = "";
+    })();
     const user = requireLogin("login.html");
     if (!user) throw new Error("redirecting");
     await authReady;
