@@ -126,6 +126,7 @@
 
   <script type="module">
     import { renderNav, toast, $ } from "./js/ui.js";
+    import { addPanelSpeakers } from "./js/speech.js";
     import {
       requireLogin, userDocId, authReady, changePassword, linkEmail,
       resendVerification, emailStatus, deleteLogin, verifyPassword
@@ -138,6 +139,7 @@
     import { listMyModels, deleteModel } from "./js/models.js";
 
     renderNav("");
+    addPanelSpeakers();
 
     // ---- 🔊 the listening voice: pick any voice the device offers ----
     (async () => {

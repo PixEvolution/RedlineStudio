@@ -68,7 +68,8 @@ console.log("▶ Play all — the audiobook mode:");
 console.log("The wiring:");
 {
   const PAGES = ["index.html", "guide.html", "museum.html", "ratings.html", "privacy.html",
-    "terms.html", "about.html", "contact.html", "othergames.html", "courses.html"];
+    "terms.html", "about.html", "contact.html", "othergames.html", "courses.html",
+    "account.html", "casino.html"];
   check("every content page grows 🔊 speakers (" + PAGES.length + " pages)",
     PAGES.every(p => src(p).includes("addPanelSpeakers()")));
   check("the Museum speaks per machine entry",

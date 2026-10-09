@@ -43,6 +43,7 @@
 
   <script type="module">
     import { renderNav, toast, adultCleared } from "./js/ui.js";
+    import { addPanelSpeakers } from "./js/speech.js";
     import { currentUser } from "./js/auth.js";
     import { listCasino, ROOM_SIZE } from "./js/games.js";
     import { gameCard, resetLiveCardBudget } from "./js/cards.js";
@@ -50,6 +51,7 @@
     import { createPager } from "./js/rooms.js";
 
     renderNav("");
+    addPanelSpeakers();
 
     // THE DOOR: not signed in → the login page. Signed in but not a verified
     // adult → a wall, deliberately without a map to the age switch. Adults
