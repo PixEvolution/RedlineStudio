@@ -20,6 +20,7 @@ export function renderNav(rootPath = "") {
     </a>
     <div class="nav-links">
       <a href="${rootPath}index.html">Games</a>
+      <a href="${rootPath}museum.html">Museum</a>
       <a href="${rootPath}studio/studio.html">Studio</a>
       <a href="${rootPath}market.html">Market</a>
       <a href="${rootPath}casino.html" class="nav-casino" style="display:none">Casino</a>

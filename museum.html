@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RedlineStudio — The Museum: Video Game History 1947–1982, Playable</title>
+  <meta name="description" content="Fifty-seven playable machines covering video game history from the 1947 CRT Amusement Device to 1982's golden-age arcades — every one rebuilt in RedlineStudio's engine with its real hardware limits, open source in the Studio, free to play.">
+  <link rel="canonical" href="https://redlinestudio.dev/museum.html">
+  <meta property="og:site_name" content="RedlineStudio">
+  <meta property="og:title" content="The Museum — video game history 1947–1982, playable">
+  <meta property="og:description" content="Fifty-seven playable machines from the whole prehistory of video games, rebuilt with their real hardware limits — and every script is open to read.">
+  <meta property="og:url" content="https://redlinestudio.dev/museum.html">
+  <meta property="og:type" content="website">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .mus h3 { margin: 20px 0 4px; }
+    .mus h3 .code { font-size: .68em; font-weight: normal; margin-left: 8px; opacity: .85; }
+    .mus p { margin: 4px 0 0; }
+    .mus-era { display: inline-block; font-size: .62em; letter-spacing: .06em; border: 1px solid #3a4452;
+      border-radius: 6px; padding: 1px 7px; margin-left: 8px; color: #8fa0b4; vertical-align: 2px; }
+    .mus-toc a { color: #ff8f8c; text-decoration: none; margin-right: 14px; white-space: nowrap; }
+  </style>
+  <script>(window.adsbygoogle = window.adsbygoogle || []).requestNonPersonalizedAds = 1;</script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2208639648972390"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+  <main class="page guide mus">
+    <h1 class="page-title">The Museum</h1>
+    <p class="page-sub">Video game history, 1947–1982 — fifty-seven machines you can actually play.</p>
+
+    <div class="panel">
+      <p>Every machine below is a <b>playable remake, rebuilt from scratch in RedlineStudio's own engine</b> —
+      the same block-and-script Studio anyone on this site can use. They run with their <b>real hardware
+      limits</b>: Pong wears a 1972 black-and-white TV, Asteroids draws on a vector monitor whose beam dims
+      when a frame asks too much, the 2600 games flicker when a scan line holds more than five moving things,
+      because the real chips did. Where a game's characters or words still belong to someone (a certain
+      carpenter's ape, a mouth that eats dots, a movie studio's film), our remake keeps the <i>mechanics</i> and
+      wears <b>original art and names</b> — the museum teaches the design, not the trademark. And every
+      machine is <b>open source in the Studio</b>: load it, click its brain object, and read how a 1979
+      arcade board actually thought. Play them free on the <a href="index.html" style="color:#ff8f8c">Games
+      page</a>; open any of them with <b>Load example…</b> in the
+      <a href="studio/studio.html" style="color:#ff8f8c">Studio</a>.</p>
+      <p class="mus-toc"><b>Jump to:</b>
+        <a href="#before">1947–1962 · Before the arcade</a>
+        <a href="#coinop">1971–1974 · The coin-op is born</a>
+        <a href="#cpu">1975–1977 · The CPU arrives</a>
+        <a href="#golden">1978–1980 · The golden age begins</a>
+        <a href="#peak">1981–1982 · The peak</a>
+        <a href="#casino">The Casino</a></p>
+    </div>
+
+    <div class="panel" id="before">
+      <h2>1947–1962 · Before the arcade</h2>
+      <p>For fifteen years, video games were experiments — built by physicists, shown at fairs, played on
+      oscilloscopes and room-sized computers, then usually dismantled. Almost nobody thought they were a
+      product. These nine are the proof that the idea came long before the industry.</p>
+
+      <h3>CRT Amusement Device <span class="code">1947 · Goldsmith &amp; Mann</span><span class="mus-era">VECTOR</span></h3>
+      <p>The oldest patent for an electronic game: a missile-aiming device played on a cathode-ray tube, filed
+      in 1947 by two television engineers. Targets were printed on plastic overlays taped to the glass, because
+      the machine could draw only the beam. It was patented, demonstrated — and never manufactured. Ours puts
+      the targets on screen and keeps the feel: aim the arc, time the burst.</p>
+
+      <h3>Bertie the Brain <span class="code">1950 · Josef Kates</span><span class="mus-era">B&amp;W</span></h3>
+      <p>A four-meter-tall tic-tac-toe computer built for the Canadian National Exhibition in Toronto, running
+      on Kates' own miniature "additron" tubes. Crowds queued all summer to lose to it; comedian Danny Kaye
+      famously demanded games until it let him win. When the fair closed, Bertie was taken apart and forgotten.
+      Ours plays the same confident game — beatable only when it chooses kindness.</p>
+
+      <h3>NIMROD <span class="code">1951 · Ferranti</span><span class="mus-era">B&amp;W</span></h3>
+      <p>Built for the Festival of Britain: a wall of lights that played the mathematical game of Nim —
+      perfectly, because Nim has a known winning strategy built on binary XOR. It was meant to advertise
+      computers, but visitors just wanted to beat it. Our remake's entire brain is one
+      <span class="code">xor()</span> expression, which is the whole history lesson: the first "AI" was one
+      line of math.</p>
+
+      <h3>Draughts <span class="code">1951 · Christopher Strachey</span><span class="mus-era">B&amp;W</span></h3>
+      <p>Strachey's checkers program for the Ferranti Mark I was among the first games on a general-purpose
+      computer — and among the first programs to use a screen at all, drawing its board on a CRT of glowing
+      dots. Ours keeps mandatory captures, kings, and a board held in one 64-slot list, the way every board
+      game since has secretly worked.</p>
+
+      <h3>OXO <span class="code">1952 · Sandy Douglas, EDSAC</span><span class="mus-era">B&amp;W</span></h3>
+      <p>Written at Cambridge for the EDSAC as part of a PhD on human–computer interaction, OXO drew
+      noughts-and-crosses on the machine's dot-matrix memory display — arguably the first graphical computer
+      game. It played perfectly, so the only way to not lose was to also play perfectly. Ours renders the
+      hollow EDSAC dots and keeps the perfect brain: a loop over a table of winning lines.</p>
+
+      <h3>Tennis for Two <span class="code">1958 · William Higinbotham</span><span class="mus-era">VECTOR</span></h3>
+      <p>A Brookhaven National Laboratory physicist built a two-player tennis game on an oscilloscope for the
+      lab's public visitors' day — side view, a net, a glowing ball with real gravity. Visitors loved it; the
+      lab dismantled it after two years because the parts were needed. It's the strongest claim to "first video
+      game made purely for fun." Two players, two controls each: angle and hit.</p>
+
+      <h3>Mouse in the Maze <span class="code">1959 · MIT TX-0</span><span class="mus-era">VECTOR</span></h3>
+      <p>On MIT's TX-0, you drew a maze with a light pen, placed the cheese, and a mouse solved it — and here's
+      the famous part: run it again and the mouse <i>remembers</i>, taking the solved route directly. One of
+      the first programs where the fun was watching a machine learn. Ours keeps the two-run trick; draw cruel
+      mazes and give it a second chance.</p>
+
+      <h3>Tic-Tac-Toe on TX-0 <span class="code">1959 · MIT</span><span class="mus-era">VECTOR</span></h3>
+      <p>The TX-0's other game habit: students pitting strategies against the machine. Ours makes the
+      experiment the game — pick which opponent program to run and watch strategies collide, the 1959 hacker
+      pastime of making computers play each other.</p>
+
+      <h3>Spacewar! <span class="code">1962 · Steve Russell &amp; MIT</span><span class="mus-era">VECTOR</span></h3>
+      <p>The one that spread. Written for the PDP-1 by MIT students, Spacewar! had two ships, torpedoes, a
+      star whose gravity bends every trajectory, and a hyperspace panic button that might kill you. It traveled
+      to every lab with a PDP-1 and directly inspired the first two arcade games ever sold. Ours keeps the
+      gravity, the drift, and the dangerous hyperspace — fly it with a friend, like 1962 did.</p>
+    </div>
+
+    <div class="panel" id="coinop">
+      <h2>1971–1974 · The coin-op is born</h2>
+      <p>In 1971 someone finally put a coin slot on the idea. What follows is the first arcade generation:
+      no microprocessors anywhere — these machines were <b>wired logic</b>, circuits that were the game — plus
+      the first home console, and, on university networks, multiplayer games a decade ahead of schedule.</p>
+
+      <h3>Computer Space <span class="code">1971 · Nutting Associates</span><span class="mus-era">B&amp;W</span></h3>
+      <p>The first commercial coin-operated video game, built by Nolan Bushnell and Ted Dabney before they
+      founded Atari — Spacewar! squeezed into a fiberglass cabinet. It confused bar patrons and sold modestly,
+      which taught Bushnell the lesson that built Pong: make it simpler. Ours keeps the saucers, the drift,
+      and the coin-buys-time economy of the original.</p>
+
+      <h3>Odyssey Table Tennis <span class="code">1972 · Magnavox / Ralph Baer</span><span class="mus-era">B&amp;W</span></h3>
+      <p>The Magnavox Odyssey was the first home video game console, designed by Ralph Baer — "the father of
+      video games," whose patents Atari later paid for. Its table tennis game had a trick lost to history:
+      holding your controls <i>after</i> the hit curved the ball ("english"). Ours keeps the english. Bring a
+      second player; 1972 homes had no computer opponents.</p>
+
+      <h3>Pong <span class="code">1972 · Atari</span><span class="mus-era">B&amp;W</span></h3>
+      <p>Allan Alcorn's "training exercise" became the game that started the industry. Its genius is in the
+      paddle: the ball's angle depends on <i>where</i> you hit it, turning two knobs into a sport. The
+      prototype jammed in a Sunnyvale bar because its coin box filled with quarters — the founding legend of
+      the arcade. Ours is tuned to the original's segments, speed-up and serve rhythm, on a 1972 TV.</p>
+
+      <h3>Space Race <span class="code">1973 · Atari</span><span class="mus-era">B&amp;W</span></h3>
+      <p>Atari's second game: two rockets race upward through drifting debris, and the coin buys <b>time</b> —
+      the center bar is your credit literally draining. Simple, fast, and the first game where dying only costs
+      position. Ours keeps the one-stick-per-rocket controls of the real cabinet.</p>
+
+      <h3>Gotcha <span class="code">1973 · Atari</span><span class="mus-era">B&amp;W</span></h3>
+      <p>The first maze-chase game — square hunts ring through a maze that constantly rearranges itself. Every
+      later chase game (including 1980's famous one) descends from this loop. Ours keeps the shifting maze and
+      the pursuit; it was a joystick game in 1973, so the on-screen stick is period-correct.</p>
+
+      <h3>Hunt the Wumpus <span class="code">1973 · Gregory Yob</span><span class="mus-era">TELETYPE + MAP</span></h3>
+      <p>Written in BASIC and spread by listing — you typed it in from a magazine. You hunt a monster through
+      a cave of twenty rooms connected like a dodecahedron, navigating by senses alone: a smell, a draft, the
+      flap of bats. The museum has it <b>twice</b>: the teletype original (type M or S and a room number, draw
+      your map on paper, exactly as 1973 played it) and a map version that draws the cave for you.</p>
+
+      <h3>Gran Trak 10 <span class="code">1974 · Atari</span><span class="mus-era">B&amp;W</span></h3>
+      <p>The first racing game with a steering wheel, gearshift and pedals, and the first game to store its
+      graphics in ROM. Famously, an accounting error meant Atari sold each cabinet at a loss — the hit that
+      nearly killed the company. Ours keeps the four-speed box that punishes you for launching in high gear.</p>
+
+      <h3>Tank <span class="code">1974 · Kee Games</span><span class="mus-era">B&amp;W</span></h3>
+      <p>Built by Kee Games — secretly Atari's own fake competitor, founded to sell to distributors who
+      demanded exclusives. Two tanks, a maze, and mines that score for your <i>enemy</i>, driven by dual
+      sticks. It was the hit that bailed out Gran Trak's losses and reunited the two companies. Ours keeps
+      the mines, the ricochet-free shells, and the all-stick cabinet feel.</p>
+
+      <h3>Maze War <span class="code">1974 · Colley &amp; Thompson, NASA Ames</span><span class="mus-era">VECTOR</span></h3>
+      <p>The first first-person shooter, full stop: eyeballs stalking each other through a wireframe maze,
+      written by high-school interns at NASA Ames. It invented the first-person view, the avatar, and being
+      shot from behind by someone you never saw. Our remake builds the corridor view entirely from line
+      objects — and when the enemy's pupil turns red, it's aiming at you.</p>
+
+      <h3>Maze War Arena <span class="code">1974 · the networked version</span><span class="mus-era">VECTOR</span></h3>
+      <p>Within months, Maze War machines were cabled together — then put on the ARPANET, making it the first
+      online deathmatch, complete with the first complaints about lag. Our Arena is the museum's 4-player
+      online cabinet: real humans only, one life per round, last eye standing — and it demonstrates the
+      platform's whole multiplayer contract in one readable script.</p>
+
+      <h3>Spasim <span class="code">1974 · Jim Bowery, PLATO</span><span class="mus-era">VECTOR</span></h3>
+      <p>On the PLATO educational network, Spasim put up to 32 players in one 3D solar system — in 1974,
+      updating about once a second. It's the ancestor of every space MMO. Ours seats eight pilots online, and
+      its projection script is a complete 3D renderer in twenty lines of RedScript — the museum's best proof
+      that "advanced" is just arithmetic.</p>
+    </div>
+
+    <div class="panel" id="cpu">
+      <h2>1975–1977 · The CPU arrives</h2>
+      <p>The microprocessor reached the arcade in 1975 and changed what a game could be — and the same years
+      produced the first moral panic, the first movie-license dodge, and the birth of the text adventure.
+      Where a 1976-style adventure's famous words still belong to their authors, the museum's text games are
+      <b>our own caves written in that style</b> — the parser tricks are the history; the prose is ours.</p>
+
+      <h3>Western Gun <span class="code">1975 · Taito, Tomohiro Nishikado</span><span class="mus-era">B&amp;W</span></h3>
+      <p>The original Japanese release: two cowboys, cacti that shoot apart (cover is a budget), and rocks
+      that ricochet — a ricochet can drop the man who fired it. All of it hardwired, no CPU, by the designer
+      who would later make Space Invaders. Roam anywhere, shoot the way you face.</p>
+
+      <h3>Gun Fight <span class="code">1975 · Midway</span><span class="mus-era">B&amp;W</span></h3>
+      <p>Midway licensed Western Gun for America and handed it to Dave Nutting, who rebuilt it around an Intel
+      8080 — making Gun Fight <b>the first arcade game to run on a microprocessor</b>. Same duel, new brain:
+      smoother movement, six shots and a long reload. The real cabinet gave each cowboy <i>two</i> joysticks —
+      one walks, one tilts the gun — and so does ours, on a big 800-wide world.</p>
+
+      <h3>Shark <span class="code">1975 · Atari ("Horror Games")</span><span class="mus-era">B&amp;W</span></h3>
+      <p>Weeks after a certain shark movie ruled the summer, Atari shipped a shark game — through a shell
+      company called Horror Games, invented so any lawsuit would hit an empty box. The design flip is the
+      lesson: the shark is <b>faster than you</b>, so survival is cornering, not speed. Grab fish, turn hard,
+      never swim straight.</p>
+
+      <h3>Breakout <span class="code">1976 · Atari</span><span class="mus-era">B&amp;W</span></h3>
+      <p>Pong turned single-player: knock a wall down brick by brick. The prototype is Silicon Valley legend —
+      Steve Jobs took the job, Steve Wozniak built the board. The red rows pay seven points, the ball speeds up
+      at milestones, and touching the top wall halves your paddle. A perfect game is exactly 896, and ours
+      honors the number.</p>
+
+      <h3>Death Race <span class="code">1976 · Exidy</span><span class="mus-era">B&amp;W</span></h3>
+      <p>The first video game moral panic: drive into fleeing "gremlins," and each one caught plants a solid
+      cross that becomes an obstacle. It made 60 Minutes and the National Safety Council, and sold better for
+      it. The museum rates it 13+ — which, by modern standards for blocky, bloodless stick figures, is already
+      generous, and that's the lesson it teaches about rating realism.</p>
+
+      <h3>Echo Cave <span class="code">1976 style · a RedlineStudio original</span><span class="mus-era">TELETYPE</span></h3>
+      <p>1976 is the year a cave exploration program named the text-adventure genre. Its words belong to its
+      authors, so the museum built <b>its own cave in that style</b>: a lantern, a bear, five treasures to
+      carry back to the cabin, and a two-word parser (<span class="code">GET LAMP</span>) built from one
+      expression. Load it in the Studio and read how a whole world fits in one brain object.</p>
+
+      <h3>Night Driver <span class="code">1976 · Atari</span><span class="mus-era">B&amp;W</span></h3>
+      <p>First-person driving at night: the road is pairs of posts rushing out of the dark, and your car is a
+      plastic decal glued to the cabinet glass — the machine never draws it. Ours keeps the decal trick and the
+      physics that shove you outward through curves. The whole 3D renderer is one loop; distance is the score.</p>
+
+      <h3>Combat <span class="code">1977 · Atari 2600</span><span class="mus-era">HOME TV '77</span></h3>
+      <p>The cartridge that came <i>with</i> the Atari 2600 — for millions of households, the first video game
+      they owned. Tanks, tank-maze with ricochets, biplanes with clouds to hide in — and <b>no computer
+      opponent anywhere</b>, exactly like 1977: bring a friend. Ours runs on the simulated 2600, flicker and
+      all, with 2:16 on the clock.</p>
+
+      <h3>Undervault <span class="code">1977 style · a RedlineStudio original</span><span class="mus-era">TELETYPE</span></h3>
+      <p>By 1977 the mainframe adventures were getting smarter, and this original teaches their tricks: a
+      parser that skips articles (<span class="code">TAKE THE OLD LAMP</span> works),
+      <span class="code">TAKE ALL</span>, a lamp that eats battery, and a thief who walks the dark lifting your
+      treasures — his den holds everything he stole, and the sword settles it. Every trick is a dozen readable
+      lines.</p>
+    </div>
+
+    <div class="panel" id="golden">
+      <h2>1978–1980 · The golden age begins</h2>
+      <p>Space Invaders made video games an economy; color, vector monitors and synthesized speech made them a
+      spectacle. By 1980 the arcade had its icons — and where an icon's characters are still someone's
+      property, the museum honors the year with an <b>original machine built on the same design lessons</b>.</p>
+
+      <h3>Space Invaders <span class="code">1978 · Taito, Nishikado</span><span class="mus-era">ARCADE 8-BIT</span></h3>
+      <p>Nishikado spent a year building it — including designing his own hardware. Fifty-five invaders march
+      as one body, and the famous accelerating heartbeat was an accident: fewer aliens meant less for the CPU
+      to draw, so the survivors sped up. He kept the bug; it became game design. Eroding bunkers, the mystery
+      saucer, 10/20/30 by row — and if they land, it's simply over.</p>
+
+      <h3>Galaxian <span class="code">1979 · Namco</span><span class="mus-era">ARCADE 8-BIT</span></h3>
+      <p>The Invaders killer, and the first arcade game with true full-color RGB graphics. Its convoy never
+      descends — it sends <b>divers</b> swooping down in arcs, and only divers fire. Everything pays double
+      mid-dive, there are no bunkers, and the flagship escort run is the arcade's first set-piece. Ours keeps
+      the live attract reel and the diving math.</p>
+
+      <h3>Lunar Lander <span class="code">1979 · Atari</span><span class="mus-era">VECTOR</span></h3>
+      <p>Atari's first vector-monitor game — and a remake even then, of a 1969 text game where you typed burn
+      amounts into a teletype. The coin bought <b>fuel</b>, not lives: run dry mid-descent and physics
+      finishes the play. Land slow, level, and on a pad; the 5× mesa is for the brave. The analog stick is the
+      1979 thrust lever: half a push is half a burn.</p>
+
+      <h3>Asteroids <span class="code">1979 · Atari</span><span class="mus-era">VECTOR</span></h3>
+      <p>Atari's best-selling arcade game ever: Spacewar!'s physics with a coin slot. Momentum is the law,
+      rocks split 1→2→4 with the children faster, your four shots inherit your drift, and hyperspace sometimes
+      kills you — a 1962 idea, intact. The small saucer <i>aims</i>. Ours even respawns you the way the real
+      ROM did: only when the center of the screen is safe.</p>
+
+      <h3>Adventure <span class="code">1979 · Atari 2600, Warren Robinett</span><span class="mus-era">HOME TV '77</span></h3>
+      <p>The first console action-adventure: castles, keys, three dragons, a magnet, a bat with opinions — and
+      one pair of hands, so choosing what to carry <i>is</i> the game. Robinett, denied a credit, hid his name
+      in a secret room: the first famous <b>easter egg</b>. Ours keeps the invisible-dot ritual and hides its
+      own secret the same way. Somewhere there's a wall that remembers.</p>
+
+      <h3>Star Raiders <span class="code">1979 · Atari 8-bit, Doug Neubauer</span><span class="mus-era">ARCADE 8-BIT</span></h3>
+      <p>The killer app of Atari's home computers and the first first-person space <i>war</i>: a cockpit, a
+      galactic chart, hyperwarp that costs energy, and Zylon squadrons that advance on your starbases while
+      you're busy fighting. Dock to refuel, protect the bases, and at the end the computer grades your whole
+      career with a rank — down to GALACTIC COOK.</p>
+
+      <h3>Rally-X <span class="code">1980 · Namco</span><span class="mus-era">ARCADE 8-BIT</span></h3>
+      <p>Shown beside 1980's maze-chase icon and expected by the industry to outsell it. It didn't — but it
+      gave arcades the scrolling world bigger than the screen, the radar, the smoke screen, and the
+      CHALLENGING STAGE: the bonus round that started bonus rounds. Your car never stops; you only point it.</p>
+
+      <h3>Sweeper <span class="code">1980 style · a RedlineStudio original</span><span class="mus-era">ARCADE 8-BIT</span></h3>
+      <p>Our original maze-chase, honoring 1980's icon — whose characters remain its maker's. The design
+      lessons are all here and all real: four hunters with four genuine personalities (one chases, one aims
+      ahead of you, one cuts you off, one wanders), power cells that flip the hunt, buffered cornering, and the
+      rhythm the masters called "breathing": press, scatter, press again.</p>
+
+      <h3>Missile Command <span class="code">1980 · Atari</span><span class="mus-era">ARCADE 8-BIT</span></h3>
+      <p>Designer Dave Theurer had nightmares about it. You don't shoot missiles — you detonate a blast where
+      they're <i>going</i> to be. Six cities, thirty shots a wave, warheads that fork, and no way to win:
+      when the last city falls the screen doesn't say GAME OVER, it says THE END. The Cold War, playable.</p>
+
+      <h3>Battlezone <span class="code">1980 · Atari</span><span class="mus-era">VECTOR</span></h3>
+      <p>The first 3D world anyone stood inside: wireframe tanks on an endless plain, every object projected
+      from your tank's point of view each frame. The U.S. Army commissioned a training version — the first
+      serious "serious game." Geometry is cover: the pyramids stop their shells and yours. Every third kill
+      sends the missile, which doesn't shoot. It rams.</p>
+
+      <h3>Berzerk <span class="code">1980 · Stern</span><span class="mus-era">ARCADE 8-BIT</span></h3>
+      <p>The machine that talked — at a reported thousand dollars a word of synthesized speech. Its robots are
+      deadly but clumsy: they shoot each other and walk into the electrified walls, and every self-inflicted
+      robot death pays <i>you</i>. Linger too long and the indestructible smiling enforcer comes through the
+      walls — ours is called THE WARDEN, and it cannot be killed either.</p>
+
+      <h3>Rogue <span class="code">1980 · Toy &amp; Wichman</span><span class="mus-era">TELETYPE</span></h3>
+      <p>The game that named the roguelike, played in pure text on university UNIX terminals: a new dungeon
+      diced on every run, letters for monsters, and <b>permadeath</b> — hp 0 deletes the character, forever.
+      Ours deals six rooms and stitches corridors in one readable when-tick: the whole dungeon generator,
+      open source in the Studio.</p>
+
+      <h3>Defender <span class="code">1980 · Williams</span><span class="mus-era">ARCADE 8-BIT</span></h3>
+      <p>Eugene Jarvis' side-scroller was the most complex game of its day — five buttons and a stick, a
+      planet four screens wide, and humanoids to protect, not just aliens to shoot. Lose a humanoid to a
+      lander and it returns as a mutant hunting you. Brutally hard, and the all-time top-grossing arcade game
+      anyway. Catch a falling humanoid for the best +500 in the museum.</p>
+
+      <h3>Emberhall <span class="code">1980 style · a RedlineStudio original</span><span class="mus-era">TELETYPE</span></h3>
+      <p>1980 is when text adventures became a business, sold in zip-lock bags and then in boxes. Our original
+      teaches the commercial generation's polish: a real two-object parser
+      (<span class="code">PUT THE OIL IN THE LAMP</span>), containers that must be opened, a kiln that turns
+      sand into glass, and treasures that score twice — taken, then displayed. SCORE grades you by rank;
+      400 is perfect.</p>
+    </div>
+
+    <div class="panel" id="peak">
+      <h2>1981–1982 · The peak</h2>
+      <p>The golden age at full temperature: the arcade's best year ever, the home console's first
+      million-sellers, and the designs — twin-stick, stealth, the CRPG, isometric 3D — that every modern genre
+      still stands on. Tributes here follow the museum's one rule: the mechanics are history, the trademarks
+      are not ours to use.</p>
+
+      <h3>Scrapyard Climb <span class="code">1981 style · a RedlineStudio original</span><span class="mus-era">ARCADE 8-BIT</span></h3>
+      <p>1981's breakout hit invented the platformer: climb, dodge what's thrown, rescue, repeat. Its carpenter
+      and his ape are Nintendo's, so our machine climbs a scrapyard instead: six girders, nine ladders, a
+      haywire crusher hurling tires down the zigzag, a wrench power-up, and a bonus counter that drains until
+      you hit the OFF switch. A fall is a fall.</p>
+
+      <h3>Galaga <span class="code">1981 · Namco</span><span class="mus-era">ARCADE 8-BIT</span></h3>
+      <p>The sequel that beat its original: enemies fly in formation <i>before</i> they fight, bosses take two
+      hits, and the tractor beam steals your ship — shoot its captor and it returns to fight beside you as a
+      double-gunned dual fighter, the arcade's first comeback mechanic. Every third wave is a challenging
+      stage; all 24 is a PERFECT 10000.</p>
+
+      <h3>Frogger <span class="code">1981 · Konami</span><span class="mus-era">ARCADE 8-BIT</span></h3>
+      <p>The sharpest design flip of its year: on the road, everything that moves kills you; on the river,
+      everything that moves is the only thing keeping you alive. Grid hops, turtles that blink before they
+      dive, home bays with real walls (a filled bay is a wall too), and a clock on every crossing. All five
+      home pays 1000.</p>
+
+      <h3>Sweeper II <span class="code">1981 style · a mod of our own Sweeper</span><span class="mus-era">ARCADE 8-BIT</span></h3>
+      <p>1981's best-selling arcade game began life as an unauthorized <i>mod</i> of 1980's icon — new mazes,
+      a wandering bonus, smarter randomness — built by outsiders and later made official. The museum reenacts
+      the history on itself: Sweeper II is a mod of our own Sweeper, with four rotating mazes, a bonus that
+      wanders the corridors, and hunters whose every fifth turn is random so no route is ever safe twice.</p>
+
+      <h3>Castle Wolfenstein <span class="code">1981 · Muse Software, Silas Warner</span><span class="mus-era">ARCADE 8-BIT</span></h3>
+      <p>The ancestor of the stealth genre, on the Apple II: guards see only where they face, so the game is
+      reading cones and slipping behind. Hold up an unsuspecting guard and frisk him; wear the uniform and
+      regular guards walk past — armored sentries see through it. Find the war plans and walk out the great
+      door. Escape without firing a shot for the museum's classiest +500.</p>
+
+      <h3>Ultima I <span class="code">1981 · Richard Garriott</span><span class="mus-era">ARCADE 8-BIT</span></h3>
+      <p>The first chapter of the longest-running RPG saga: a scrolling tile overworld where the world only
+      moves when you do, danger scaling with distance from the castle, towns for food and steel, and three
+      dark dungeons lit three tiles deep. Garriott's tile trick — the world as a redefined character set — is
+      exactly how ours draws it: every tree is a glyph from the engine's character ROM.</p>
+
+      <h3>Pitfall! <span class="code">1982 · Activision, David Crane</span><span class="mus-era">HOME TV '77</span></h3>
+      <p>255 jungle screens in a 4-kilobyte cartridge — because Crane stored <i>none</i> of them. Each screen
+      is computed from an 8-bit polynomial counter, and our remake runs the same machine: the HUD shows you
+      the byte, and running left literally runs the world's math backward. Vines, croc heads, the underground
+      shortcut, 32 treasures, 3:00 on the clock — a million-seller that proved consoles could do wonders.</p>
+
+      <h3>Dig Dug <span class="code">1982 · Namco</span><span class="mus-era">ARCADE 8-BIT</span></h3>
+      <p>The screen is solid earth and the maze is whatever you carve — your tunnels are also your weapon.
+      Pump the burrowers until they pop (deeper strata pay more), drop rocks for 1000, and mind the ghosting:
+      they drift through dirt straight at you. Namco's creatures stay Namco's; ours wear the museum's own
+      glyphs and keep every mechanic.</p>
+
+      <h3>Robotron: 2084 <span class="code">1982 · Williams</span><span class="mus-era">ARCADE 8-BIT</span></h3>
+      <p>Jarvis again, inventing the twin-stick shooter: one stick runs, one fires, and the two never agree.
+      Waves pour in from all sides; the hulks cannot be killed, only pushed, and they are walking straight at
+      the last human family. Saving humans pays 1000, then 2000, up to 5000 a touch — the arcade's purest
+      risk-for-score loop.</p>
+
+      <h3>Cubit <span class="code">1982 style · a RedlineStudio original</span><span class="mus-era">ARCADE 8-BIT</span></h3>
+      <p>1982's pyramid phenomenon made isometric space and diagonal controls a craze — its orange hero is
+      still Gottlieb's, so ours is an original hopper named with the same kind of pun. Every hop is diagonal
+      (the stick feels turned 45°), the coil climbs after you with real pathfinding, and baiting it off the
+      edge with a flying disc is worth +500, exactly the dance 1982 fell in love with.</p>
+
+      <h3>Pole Position <span class="code">1982 · Namco</span><span class="mus-era">ARCADE 8-BIT</span></h3>
+      <p>You have to <i>earn</i> the race: one flying qualifying lap, and the machine sends you home if
+      you're slow. Then four laps of a Fuji-style circuit — the long straight, the hairpin that demands real
+      braking, traffic that wrecks you from behind. It was 1983's top-grossing arcade game and the template
+      for every racer since. LO launches; HI pulls 306 km/h.</p>
+
+      <h3>Zaxxon <span class="code">1982 · Sega</span><span class="mus-era">ARCADE 8-BIT</span></h3>
+      <p>The first axonometric 3D arcade game — and the first shooter with <b>altitude</b>. The isometric
+      angle lies to your eyes, so Sega gave you instruments: your shadow on the deck and an altimeter, the
+      only two things that never lie. Thread the lit window in the walls, dodge turret fire that leads your
+      height, and refuel by shooting your own fuel dumps. Famously, authentically hard.</p>
+
+      <h3>Tron <span class="code">1982 · Bally Midway</span><span class="mus-era">ARCADE 8-BIT</span></h3>
+      <p>Four duels on one credit — light cycles, tanks with banking shells, the tower, the cone — and the
+      rare licensed game that out-earned its own film at the box office. The film is Disney's, so our four
+      duels wear the museum's own glyphs; the mechanics, which is what the cabinet actually sold, are intact.
+      Then all four again, faster.</p>
+    </div>
+
+    <div class="panel" id="casino">
+      <h2>The Casino</h2>
+      <h3>Redline Slots <span class="code">the reference machine</span><span class="mus-era">ARCADE 8-BIT</span></h3>
+      <p>Not history — plumbing. Redline Slots is the open-source reference for the platform's player-built
+      Casino floor: machines do the show, the platform does the math, with one fixed public paytable (92%
+      return) no owner can touch. Coins can't be bought and can't be cashed out — the floor is 18+ and the
+      pools are for bragging rights. Load it in the Studio to see the whole casino loop in one script.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Why a museum?</h2>
+      <p>Because these 57 machines are a complete course in game design, and they're small enough to actually
+      read. Every one was rebuilt here from the original's documented behavior — hardware quirks included,
+      since half the famous mechanics (Invaders' speed-up, the 2600's flicker, the vector beam's dimming)
+      <i>were</i> hardware quirks. Open any of them in the
+      <a href="studio/studio.html" style="color:#ff8f8c">Studio</a>, press <b>🧱 To blocks</b>, and read how
+      it thinks — then change a number and make it yours. That's what the museum is for. The
+      <a href="guide.html" style="color:#ff8f8c">Coding Guide</a> starts at zero and ends at online 3D.</p>
+    </div>
+  </main>
+
+  <script type="module">
+    import { renderNav } from "./js/ui.js";
+    renderNav("museum");
+  </script>
+  <script type="module">import { footAd } from "./js/ads.js"; footAd();</script>
+</body>
+</html>
