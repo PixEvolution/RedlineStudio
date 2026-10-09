@@ -56,19 +56,31 @@ export function setVoicePrefs({ voice = "", rate = 1 } = {}) {
   return { voice, rate };
 }
 
-// Every voice the DEVICE offers (they load async in some browsers — this
-// resolves once the list is real, or empty if the API is missing).
-export function listVoices() {
+// Every voice the DEVICE offers. Browsers deliver this list LATE and in
+// PIECES — Chrome often hands over local voices first and its network voices
+// a beat later — so this collects for a moment and returns the biggest list
+// seen, instead of trusting the first answer. (The browser can still only
+// list INSTALLED voices: each OS offers more behind Settings → Speech /
+// Spoken Content / Text-to-speech — once installed, they show up here.)
+export function listVoices({ wait = 700 } = {}) {
   return new Promise((resolve) => {
     if (!canSpeak()) { resolve([]); return; }
-    const got = () => {
-      const v = window.speechSynthesis.getVoices();
-      if (v.length) { resolve([...v].sort((a, b) => (a.lang + a.name).localeCompare(b.lang + b.name))); return true; }
-      return false;
+    const synth = window.speechSynthesis;
+    let best = synth.getVoices() || [];
+    const take = () => {
+      const v = synth.getVoices() || [];
+      if (v.length > best.length) best = v;
     };
-    if (got()) return;
-    window.speechSynthesis.onvoiceschanged = got;
-    setTimeout(() => { if (!got()) resolve([]); }, 2000);
+    synth.addEventListener?.("voiceschanged", take);
+    synth.onvoiceschanged = take;
+    const finish = () => {
+      take();
+      try { synth.removeEventListener?.("voiceschanged", take); } catch {}
+      resolve([...best].sort((a, b) => (a.lang + a.name).localeCompare(b.lang + b.name)));
+    };
+    // resolve quickly when something is already there, but give the late
+    // deliveries their beat; an empty start waits the full window
+    setTimeout(finish, best.length ? wait : wait * 3);
   });
 }
 

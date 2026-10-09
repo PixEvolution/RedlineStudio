@@ -92,7 +92,14 @@
         <input type="range" id="voice-rate" min="0.7" max="1.4" step="0.05" style="max-width:360px">
         <br><br>
         <button class="btn btn-small" id="voice-try">▶ Preview</button>
+        <button class="btn btn-small btn-ghost" id="voice-refresh" title="Ask the browser for the voice list again — some deliver it late, and newly installed voices appear here">↻ Refresh list</button>
         <span class="hint" id="voice-count" style="margin-left:10px"></span>
+        <p class="hint" style="margin-top:10px"><b>Want more voices?</b> The browser can only list what's
+        <i>installed on this device</i> — and every system hides more behind a free download:
+        <b>Windows</b>: Settings → Time &amp; Language → Speech → "Add voices" (Edge users: Edge already
+        ships its big "Natural" set) · <b>Mac / iPhone</b>: Settings → Accessibility → Spoken Content →
+        Voices · <b>Android</b>: Settings → Accessibility → Text-to-speech → Google TTS → install voice
+        data. Install one, press ↻, and it's in the list.</p>
       </div>
     </div>
 
@@ -139,26 +146,38 @@
         $("#voice-note").textContent = "This browser has no built-in text-to-speech, so the site's 🔊 buttons stay hidden here.";
         return;
       }
-      const voices = await sp.listVoices();
-      const prefs = sp.getVoicePrefs();
       const sel = $("#voice-sel"), rate = $("#voice-rate"), rateTx = $("#voice-rate-tx");
-      const def = document.createElement("option");
-      def.value = "";
-      def.textContent = "Device default";
-      sel.appendChild(def);
-      for (const v of voices) {
-        const o = document.createElement("option");
-        o.value = v.name;
-        o.textContent = `${v.lang} — ${v.name}`;
-        sel.appendChild(o);
-      }
-      sel.value = voices.some(v => v.name === prefs.voice) ? prefs.voice : "";
+      // browsers deliver the voice list late and in pieces — populate now,
+      // and let ↻ re-ask any time (newly installed OS voices appear there too)
+      const populate = async () => {
+        const voices = await sp.listVoices();
+        const want = sel.value || sp.getVoicePrefs().voice;
+        sel.innerHTML = "";
+        const def = document.createElement("option");
+        def.value = "";
+        def.textContent = "Device default";
+        sel.appendChild(def);
+        for (const v of voices) {
+          const o = document.createElement("option");
+          o.value = v.name;
+          o.textContent = `${v.lang} — ${v.name}${v.localService === false ? " (online)" : ""}`;
+          sel.appendChild(o);
+        }
+        sel.value = voices.some(v => v.name === want) ? want : "";
+        const langs = new Set(voices.map(v => String(v.lang).split("-")[0]));
+        $("#voice-count").textContent = voices.length
+          ? `${voices.length} voice(s) in ${langs.size} language(s) on this device.`
+          : "No voices reported yet — try ↻ in a second; some browsers only wake the list up late.";
+      };
+      await populate();
+      $("#voice-refresh").addEventListener("click", async () => {
+        $("#voice-count").textContent = "Asking the browser again…";
+        await populate();
+      });
+      const prefs = sp.getVoicePrefs();
       rate.value = String(prefs.rate);
       const paint = () => { rateTx.textContent = Number(rate.value).toFixed(2).replace(/0$/, "") + "×"; };
       paint();
-      $("#voice-count").textContent = voices.length
-        ? `${voices.length} voice(s) on this device.`
-        : "No voices reported yet — some browsers only list them after the first spoken word.";
       const save = () => {
         sp.setVoicePrefs({ voice: sel.value, rate: rate.value });
         paint();

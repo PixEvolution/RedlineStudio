@@ -28,6 +28,12 @@ console.log("The voice picker:");
 {
   check("no browser engine: canSpeak false, listVoices resolves empty",
     canSpeak() === false && (await listVoices()).length === 0);
+  check("listVoices collects the LATE deliveries and keeps the biggest list",
+    src("js/speech.js").includes("v.length > best.length")
+    && src("js/speech.js").includes('"voiceschanged"'));
+  check("the panel can re-ask (↻) and points at each OS's install path",
+    src("account.html").includes('id="voice-refresh"')
+    && ["Add voices", "Spoken Content", "Text-to-speech"].every(k => src("account.html").includes(k)));
   check("prefs survive a storage-less world (defaults, no crash)",
     JSON.stringify(getVoicePrefs()) === JSON.stringify({ voice: "", rate: 1 }));
   check("the speed clamps to the sane band (0.7–1.4)",
