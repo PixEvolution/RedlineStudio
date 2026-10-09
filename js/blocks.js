@@ -155,6 +155,12 @@ export function createBlockEditor(container, script, { onChange = () => {} } = {
         ta.rows = Math.max(3, ta.value.split("\n").length + 1);
         changed();
       });
+      wireCodeKeys(ta, () => ta.value, (v) => {
+        ta.value = v;
+        s.source = v;
+        ta.rows = Math.max(3, v.split("\n").length + 1);
+        changed();
+      });
       row.appendChild(ta);
     }
 
@@ -223,6 +229,12 @@ export function createBlockEditor(container, script, { onChange = () => {} } = {
         ta.rows = Math.max(5, ta.value.split("\n").length + 1);
         changed();
       });
+      wireCodeKeys(ta, () => ta.value, (v) => {
+        ta.value = v;
+        ev.source = v;
+        ta.rows = Math.max(5, v.split("\n").length + 1);
+        changed();
+      });
       panel.appendChild(ta);
     } else {
       ev.body = ev.body || [];
@@ -258,4 +270,31 @@ export function createBlockEditor(container, script, { onChange = () => {} } = {
 
   render();
   return { render };
+}
+
+// ---- code-editor comfort: Enter keeps the line's indentation (and goes one
+// level deeper after "then" / "else" / "when …" / "repeat …"), Tab indents
+// two spaces instead of leaving the box. Small, but it's the difference
+// between typing code and fighting it.
+export function wireCodeKeys(ta, getValue, setValue) {
+  ta.addEventListener("keydown", (e) => {
+    if (e.key === "Tab") {
+      e.preventDefault();
+      const a = ta.selectionStart, b = ta.selectionEnd;
+      setValue(ta.value.slice(0, a) + "  " + ta.value.slice(b));
+      ta.selectionStart = ta.selectionEnd = a + 2;
+      return;
+    }
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    const a = ta.selectionStart, b = ta.selectionEnd;
+    const before = ta.value.slice(0, a);
+    const line = before.slice(before.lastIndexOf("\n") + 1);
+    let indent = (line.match(/^[ ]*/) || [""])[0];
+    const t = line.trim();
+    if (/\bthen$/.test(t) || t === "else" || /^when\b/.test(t) || /^repeat\b/.test(t)) indent += "  ";
+    const ins = "\n" + indent;
+    setValue(before + ins + ta.value.slice(b));
+    ta.selectionStart = ta.selectionEnd = a + ins.length;
+  });
 }

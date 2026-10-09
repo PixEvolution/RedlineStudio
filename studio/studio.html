@@ -213,6 +213,11 @@
         </button>
         <h3 style="margin-top:18px">My Models</h3>
         <div id="model-list" class="hint">Loading…</div>
+        <button class="btn btn-small btn-ghost" id="btn-import-model" style="width:100%;margin-top:10px"
+          title="Bring in a .rlmodel saved by the OFFLINE Studio — it lands in your inventory, ready to insert or sell">
+          ⬆ Import .rlmodel
+        </button>
+        <input type="file" id="model-file" accept=".rlmodel,.json" style="display:none">
       </div>
 
       <!-- WORKSPACE -->
@@ -310,7 +315,7 @@
     import { errorHint } from "../js/redscript.js";
     import { downloadStandalone } from "../js/export.js";
     import { downloadOfflineStudio } from "../js/export-studio.js";
-    import { unpackGame, extractFromHtml } from "../js/gamefile.js";
+    import { unpackGame, unpackModel, extractFromHtml } from "../js/gamefile.js";
     import { scriptToBlocks, scriptToCode, compiledEqual, blocksToCode } from "../js/convert.js";
     import { attachTerminalInput } from "../js/terminal.js";
     import { attachCasinoLoop, localWallet } from "../js/casino-odds.js";
@@ -1188,6 +1193,7 @@ Enter (in chat/answer boxes)   send</pre>
       const def = key === "display" ? "modern" : "arcade8";   // the current defaults
       if (v === def) delete scenes.game[key]; else scenes.game[key] = v;
       commit();
+      redraw();   // the workspace previews the new era RIGHT NOW, not on the next Test
       toast(!scenes.game.display && !scenes.game.hardware
         ? "Back to the defaults — CRT monitor, ARCADE 8-BIT board."
         : "Era set — the workspace previews the display now; ▶ Test adds the chip's limits. Picture and sound only; your logic never changes, and the defaults revert everything.");
@@ -1859,22 +1865,45 @@ Enter (in chat/answer boxes)   send</pre>
       if (name == null) return;
       const description = prompt("Describe it for the Market (buyers only see the picture + this):") || "";
       try {
-        // snapshot the model — this image is all the Market ever shows of it
-        const { w: fw, h: fh } = gameDims();
-        const full = document.createElement("canvas");
-        full.width = fw; full.height = fh;
-        drawFrame(full.getContext("2d"), objs, { w: fw, h: fh });
-        const small = document.createElement("canvas");
-        small.width = 240; small.height = 180;
-        const sctx = small.getContext("2d");
-        sctx.fillStyle = "#03110a"; sctx.fillRect(0, 0, 240, 180);
-        const sc = Math.min(240 / fw, 180 / fh);
-        sctx.drawImage(full, (240 - fw * sc) / 2, (180 - fh * sc) / 2, fw * sc, fh * sc);
-        const thumb = small.toDataURL("image/jpeg", 0.75);
-        await saveModel({ name, owner: user, objects: objs, description, thumb });
+        await saveModel({ name, owner: user, objects: objs, description, thumb: modelThumb(objs) });
         toast(`Model "${name}" saved to your inventory.`);
         loadModels();
       } catch (err) { toast(err.message, true); }
+    });
+
+    // snapshot a model — this image is all the Market ever shows of it
+    function modelThumb(objs) {
+      const { w: fw, h: fh } = gameDims();
+      const full = document.createElement("canvas");
+      full.width = fw; full.height = fh;
+      drawFrame(full.getContext("2d"), objs, { w: fw, h: fh });
+      const small = document.createElement("canvas");
+      small.width = 240; small.height = 180;
+      const sctx = small.getContext("2d");
+      sctx.fillStyle = "#03110a"; sctx.fillRect(0, 0, 240, 180);
+      const sc = Math.min(240 / fw, 180 / fh);
+      sctx.drawImage(full, (240 - fw * sc) / 2, (180 - fh * sc) / 2, fw * sc, fh * sc);
+      return small.toDataURL("image/jpeg", 0.75);
+    }
+
+    // ⬆ Import a .rlmodel the OFFLINE Studio saved: the seal is checked, every
+    // object is rebuilt from the schema whitelist, and it lands in the normal
+    // inventory — insertable here, sellable on the Market like any model.
+    $("#btn-import-model").addEventListener("click", () => $("#model-file").click());
+    $("#model-file").addEventListener("change", () => {
+      const f = $("#model-file").files[0];
+      $("#model-file").value = "";
+      if (!f) return;
+      const rd = new FileReader();
+      rd.onload = async () => {
+        try {
+          const m = unpackModel(String(rd.result));
+          await saveModel({ name: m.name, owner: user, objects: m.objects, description: m.description, thumb: modelThumb(m.objects) });
+          toast(`Model "${m.name}" imported — ${m.objects.length} object(s), in your inventory now.`);
+          loadModels();
+        } catch (err) { toast(err.message, true); }
+      };
+      rd.readAsText(f);
     });
 
     async function loadModels() {

@@ -1,9 +1,12 @@
 // export-studio.js — "📦 Offline Studio": bundles the EDITOR into one HTML
 // file that runs from a double-click with no internet at all. Same engine,
-// same blocks, same behaviors, same undo — build on a plane, save a signed
-// .rlgame file, then ⬆ Import it in the online Studio to publish.
-// (Publishing, models, the arcade floor and the example museum stay online —
-// they need the site. The offline file is the WORKSHOP, not the arcade.)
+// same blocks, same behaviors, same sprites, same undo — build on a plane,
+// save a signed .rlgame file, then ⬆ Import it in the online Studio to
+// publish. Models work offline too: a 📦 shelf in the browser's storage plus
+// sealed .rlmodel files that ⬆ Import into the online inventory — so a
+// LARGE project can be built in pieces, anywhere, and brought home.
+// (Publishing, the Market, the arcade floor and the example museum stay
+// online — they need the site. The offline file is the WORKSHOP, not the arcade.)
 
 import { stripModules } from "./export.js";
 
@@ -152,8 +155,17 @@ export async function buildOfflineStudioHtml({ rootPath = "", fetchText } = {}) 
       <button class="mini" data-add="dot">+ Dot</button><button class="mini" data-add="ring">+ Ring</button>
       <button class="mini" data-add="box">+ Box</button><button class="mini" data-add="line">+ Line</button>
       <button class="mini" data-add="text">+ Text</button><button class="mini" data-add="tri">+ Ship</button>
+      <button class="mini" data-add="sprite" title="Pixel art you draw yourself in the 🎨 Sprite panel below — frames make animation">+ Sprite</button>
     </div>
     <div id="objlist" style="margin-top:8px"></div>
+    <h3 style="margin-top:14px">📦 Models</h3>
+    <p class="hint" style="margin:0 0 6px">Check objects, save them as a model, insert it anywhere —
+    ⬇ saves a <b>.rlmodel</b> file you can ⬆ Import in the online Studio (and sell on the Market).</p>
+    <div class="addrow">
+      <button class="mini" id="modelsave">💾 Save checked</button>
+      <button class="mini" id="modelimport">⬆ Import</button>
+    </div>
+    <div id="modellist" style="margin-top:8px"></div>
   </div>
   <div class="stagewrap">
     <div class="zoomrow">
@@ -170,6 +182,13 @@ export async function buildOfflineStudioHtml({ rootPath = "", fetchText } = {}) 
     <div id="props" class="hint">Select an object.</div>
   </div>
 </div>
+<!-- 🎨 SPRITE: the pixel editor — shows itself when a sprite object is selected -->
+<div class="panel" id="spritepanel" style="margin-top:12px;display:none">
+  <h3>🎨 Sprite</h3>
+  <p class="hint" style="margin:0 0 8px">Left mouse paints, right mouse erases. Frames animate — set FPS, or drive
+  <b>self.frame</b> from scripts. 🎨 retunes a slot to give THIS sprite its own 16 colors; 👻 ghosts the previous frame.</p>
+  <div id="spritebody"></div>
+</div>
 <div class="panel" id="blocks">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
     <h3 id="scripttitle">Script</h3>
@@ -179,10 +198,11 @@ export async function buildOfflineStudioHtml({ rootPath = "", fetchText } = {}) 
 </div>
 <p class="credit">The offline workshop — casino machines test in FREE PLAY (pretend coins, the real odds), and
 with 2+ players set, <b>➕ Player</b> opens real extra seats in their own windows.
-Save a <b>.rlgame</b> file, then ⬆ Import it in the online Studio at
-<a href="https://redlinestudio.dev/studio/studio.html" target="_blank" rel="noopener">redlinestudio.dev</a> to publish —
-the import verifies the file's seal, so save with 💾 here rather than editing the file by hand.</p>
+Save a <b>.rlgame</b> file (or 📦 models as <b>.rlmodel</b> files), then ⬆ Import them in the online Studio at
+<a href="https://redlinestudio.dev/studio/studio.html" target="_blank" rel="noopener">redlinestudio.dev</a> to publish and sell —
+the imports verify each file's seal, so save with 💾 here rather than editing the files by hand.</p>
 <input type="file" id="filein" accept=".rlgame,.json,.html" style="display:none">
+<input type="file" id="modelfilein" accept=".rlmodel,.json" style="display:none">
 <!-- the LIBRARY script carries an id: ➕ Player windows get this exact text
      injected, so every extra seat runs its own engine on its own keyboard -->
 <script id="rl-lib">
@@ -250,11 +270,20 @@ ${sources.join("\n\n")}
       ctx.restore();
     }
   }
+  var checkedIds = {};   // ☑ in the Explorer — what 💾 Save checked bundles into a model
   function renderExplorer() {
     var list = $("#objlist"); list.innerHTML = "";
+    var live = {}; game.objects.forEach(function (o) { live[o.id] = 1; });
+    for (var cid in checkedIds) if (!live[cid]) delete checkedIds[cid];
     game.objects.forEach(function (o) {
       var row = document.createElement("div");
       row.className = "row" + (o.id === selectedId ? " sel" : "");
+      var cb = document.createElement("input");
+      cb.type = "checkbox"; cb.checked = !!checkedIds[o.id]; cb.title = "Check objects to 💾 save them as a model";
+      cb.style.cssText = "width:auto;margin:0";
+      cb.addEventListener("click", function (e) { e.stopPropagation(); });
+      cb.addEventListener("change", function () { if (cb.checked) checkedIds[o.id] = 1; else delete checkedIds[o.id]; });
+      row.appendChild(cb);
       var nm = document.createElement("span"); nm.className = "nm"; nm.textContent = o.name;
       var ty = document.createElement("span"); ty.className = "ty"; ty.textContent = o.type;
       var dup = document.createElement("button"); dup.className = "blk-mini"; dup.textContent = "⧉";
@@ -267,8 +296,19 @@ ${sources.join("\n\n")}
     });
     if (!game.objects.length) list.innerHTML = '<p class="hint">No objects yet.</p>';
   }
+  // the 🎨 Sprite panel follows the selection — same editor as the online Studio
+  var spriteEd = mountSpriteEditor($("#spritebody"), {
+    onEdit: function () { redraw(); commitSoon(); },
+    onStructure: function () { redraw(); commit(); }
+  });
+  function syncSpritePanel(o) {
+    var show = !!(o && o.type === "sprite");
+    $("#spritepanel").style.display = show ? "" : "none";
+    spriteEd.setObject(show ? o : null);
+  }
   function renderProps() {
     var body = $("#props"); var o = selObj();
+    syncSpritePanel(o);
     if (!o) { body.className = "hint"; body.textContent = "Select an object."; return; }
     body.className = ""; body.innerHTML = "";
     function field(lab, input) { var l = document.createElement("label"); l.textContent = lab; body.appendChild(l); body.appendChild(input); }
@@ -293,6 +333,7 @@ ${sources.join("\n\n")}
     field("Color", cr);
     field("Glow", num("glow"));
     if (o.type === "text") field("Text", txt("text"));
+    if (o.type === "sprite") { field("Frame", num("frame")); field("FPS", num("fps")); }
     var lr = document.createElement("div"); lr.className = "layerrow";
     function mv(lab, fn) {
       var b = document.createElement("button"); b.className = "mini"; b.textContent = lab;
@@ -338,6 +379,111 @@ ${sources.join("\n\n")}
       game.objects.push(o); select(o.id); commit();
     });
   });
+
+  // ---- 📦 MODELS, offline: a shelf in the browser's storage plus sealed
+  // .rlmodel files. Build a big project in pieces — save a character here,
+  // insert it into any game, and ⬇ the .rlmodel file travels: ⬆ Import in the
+  // online Studio puts it in your real inventory (Market and all), and
+  // ⬆ Import here brings it back to this shelf.
+  var MODELS_KEY = "rl_off_models";
+  function readModels() { try { var m = JSON.parse(localStorage.getItem(MODELS_KEY) || "[]"); return Array.isArray(m) ? m : []; } catch (e) { return []; } }
+  function writeModels(list) {
+    try { localStorage.setItem(MODELS_KEY, JSON.stringify(list)); return true; }
+    catch (e) { alert("The browser's storage is full — ⬇ download your models as .rlmodel files, then remove some from the shelf."); return false; }
+  }
+  // insert = fresh ids, de-clashed names, name references inside scripts kept wired
+  function insertObjects(objs) {
+    var existing = {}; game.objects.forEach(function (o) { existing[o.name] = 1; });
+    var renames = {};
+    var copies = JSON.parse(JSON.stringify(objs));
+    copies.forEach(function (o) {
+      o.id = "o" + Date.now().toString(36) + Math.floor(Math.random() * 1e6);
+      if (existing[o.name]) {
+        var n = 2; while (existing[o.name + n]) n++;
+        renames[o.name] = o.name + n; o.name = o.name + n;
+      }
+      existing[o.name] = 1;
+    });
+    var names = Object.keys(renames);
+    if (names.length) {
+      var fix = function (str) {
+        var out = String(str);
+        names.forEach(function (oldN) {
+          out = out.replace(new RegExp("\\\\b" + oldN.replace(/[.*+?^\${}()|[\\]\\\\]/g, "\\\\$&") + "\\\\b", "g"), renames[oldN]);
+        });
+        return out;
+      };
+      var fixStmts = function (list) { (list || []).forEach(function (s) {
+        ["lhs", "value", "by", "cond", "times", "seconds", "target", "source"].forEach(function (f) { if (typeof s[f] === "string") s[f] = fix(s[f]); });
+        fixStmts(s.then); fixStmts(s.else); fixStmts(s.body);
+      }); };
+      copies.forEach(function (o) { (o.script || []).forEach(function (ev) {
+        if (typeof ev.source === "string") ev.source = fix(ev.source);
+        fixStmts(ev.body);
+      }); });
+    }
+    copies.forEach(function (o) { game.objects.push(o); });
+    return copies;
+  }
+  function renderModels() {
+    var mount = $("#modellist"); mount.innerHTML = "";
+    var models = readModels();
+    if (!models.length) { mount.innerHTML = '<p class="hint">No models yet — check objects and 💾.</p>'; return; }
+    models.forEach(function (m, mi) {
+      var row = document.createElement("div"); row.className = "row";
+      var nm = document.createElement("span"); nm.className = "nm"; nm.textContent = m.name;
+      var ty = document.createElement("span"); ty.className = "ty"; ty.textContent = (m.n || "?") + " obj";
+      var ins = document.createElement("button"); ins.className = "blk-mini"; ins.textContent = "Insert"; ins.title = "Add this model's objects to the game";
+      ins.addEventListener("click", function () {
+        try {
+          var added = insertObjects(unpackModel(m.data).objects);
+          select(added[0] ? added[0].id : null); commit();
+        } catch (err) { alert(err.message); }
+      });
+      var dl = document.createElement("button"); dl.className = "blk-mini"; dl.textContent = "⬇"; dl.title = "Download as a .rlmodel file — ⬆ Import it in the online Studio to use or sell it";
+      dl.addEventListener("click", function () {
+        var blob = new Blob([m.data], { type: "application/json" });
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = (String(m.name).replace(/[^\\w\\- ]+/g, "").trim() || "model") + ".rlmodel";
+        a.click(); URL.revokeObjectURL(a.href);
+      });
+      var del = document.createElement("button"); del.className = "blk-mini blk-del"; del.textContent = "✕"; del.title = "Remove from this shelf (downloaded files are untouched)";
+      del.addEventListener("click", function () {
+        if (!confirm('Remove "' + m.name + '" from the shelf?')) return;
+        var list = readModels(); list.splice(mi, 1); writeModels(list); renderModels();
+      });
+      row.appendChild(nm); row.appendChild(ty); row.appendChild(ins); row.appendChild(dl); row.appendChild(del);
+      mount.appendChild(row);
+    });
+  }
+  $("#modelsave").addEventListener("click", function () {
+    var objs = game.objects.filter(function (o) { return checkedIds[o.id]; });
+    if (!objs.length && selObj()) objs = [selObj()];
+    if (!objs.length) { alert("Check some objects in the Explorer first (or select one)."); return; }
+    var name = prompt("Model name for " + objs.length + " object(s):");
+    if (name == null || !name.trim()) return;
+    var list = readModels();
+    list.unshift({ name: name.trim().slice(0, 30), n: objs.length, ts: Date.now(), data: packModel({ name: name.trim(), objects: objs }) });
+    if (writeModels(list)) renderModels();
+  });
+  $("#modelimport").addEventListener("click", function () { $("#modelfilein").click(); });
+  $("#modelfilein").addEventListener("change", function () {
+    var f = $("#modelfilein").files[0];
+    $("#modelfilein").value = "";
+    if (!f) return;
+    var rd = new FileReader();
+    rd.onload = function () {
+      try {
+        var m = unpackModel(String(rd.result));
+        var list = readModels();
+        list.unshift({ name: m.name, n: m.objects.length, ts: Date.now(), data: packModel(m) });
+        if (writeModels(list)) renderModels();
+      } catch (err) { alert(err.message); }
+    };
+    rd.readAsText(f);
+  });
+  renderModels();
 
   // canvas: click-select + drag (with snap)
   function canvasPos(e) {
@@ -450,10 +596,12 @@ ${sources.join("\n\n")}
   $("#eradisplay").addEventListener("change", function () {
     if (engine) { applyDims(); return; }
     game.display = $("#eradisplay").value; commit();
+    redraw();   // the workspace previews the new era RIGHT NOW, not on the next Test
   });
   $("#erahw").addEventListener("change", function () {
     if (engine) { applyDims(); return; }
     game.hardware = $("#erahw").value; commit();
+    redraw();
   });
 
   // ---- multiplayer on the LOCAL wire, file:// edition. BroadcastChannel

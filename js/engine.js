@@ -26,8 +26,12 @@ export const OBJECT_TYPES = ["dot", "ring", "box", "line", "text", "tri", "sprit
 // A sprite object carries { s, frames:[...] } — s×s pixels per frame, one hex
 // character per pixel: "0" is transparent, "1".."f" index the palette below.
 // `self.frame` picks the frame from scripts; `self.fps` > 0 auto-plays them.
-export const SPRITE_SIZES = [8, 16, 24];
-export const SPRITE_MAX_FRAMES = 8;
+// The caps stop at the TRON line (1982, the museum's newest machine): 32×32
+// grids, 16 frames, 16 colors — all real arcade numbers by '82. A sprite may
+// also carry its own 16-entry `pal` (its color PROM); real boards swapped
+// those per character, and the engine has always honored it (sp.pal below).
+export const SPRITE_SIZES = [8, 16, 24, 32];
+export const SPRITE_MAX_FRAMES = 16;
 export const SPRITE_PAL = [
   "transparent", // 0 — never drawn
   "#1a1c2c",     // 1 ink

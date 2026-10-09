@@ -102,7 +102,17 @@ export function paintFrame(ctx, frame, s, px, pal = SPRITE_PAL) {
 const EDIT_W = 264;
 
 export function mountSpriteEditor(container, { onEdit = () => {}, onStructure = () => {} } = {}) {
-  const st = { o: null, fi: 0, tool: "pen", color: 8, down: false, erasing: false };
+  const st = { o: null, fi: 0, tool: "pen", color: 8, down: false, erasing: false, onion: false };
+  // THIS sprite's palette — its own color PROM if it swapped one in, else the stock 16
+  const palNow = () =>
+    (st.o && Array.isArray(st.o.sprite.pal) && st.o.sprite.pal.length === 16 ? st.o.sprite.pal : SPRITE_PAL);
+  // run a whole-frame operation (flip, nudge, clear) on the current frame
+  const edit = (fn) => {
+    if (!st.o) return;
+    st.o.sprite.frames[st.fi] = fn(st.o.sprite.frames[st.fi], st.o.sprite.s);
+    drawGrid(); drawStrip();
+    onEdit();
+  };
 
   container.innerHTML = "";
   const bar = document.createElement("div");
@@ -143,6 +153,11 @@ export function mountSpriteEditor(container, { onEdit = () => {}, onStructure = 
   mkBtn("⬆", "Nudge up (wraps)", () => edit((f, s) => shiftFrame(f, s, 0, -1)));
   mkBtn("⬇", "Nudge down (wraps)", () => edit((f, s) => shiftFrame(f, s, 0, 1)));
   mkBtn("🧹", "Clear this frame", () => edit((f, s) => blankFrame(s)));
+  const onionBtn = mkBtn("👻", "Onion skin — ghost the previous frame under this one while you animate", () => {
+    st.onion = !st.onion;
+    onionBtn.style.outline = st.onion ? "1px solid #39ff5e" : "none";
+    drawGrid();
+  });
 
   // grid size
   const sizeSel = document.createElement("select");
@@ -179,7 +194,7 @@ export function mountSpriteEditor(container, { onEdit = () => {}, onStructure = 
   const swatches = [];
   SPRITE_PAL.forEach((c, i) => {
     const sw = document.createElement("button");
-    sw.title = i === 0 ? "Transparent (eraser color)" : "Color " + i.toString(16);
+    sw.title = i === 0 ? "Transparent (eraser color)" : "Color " + i.toString(16) + " — select, then 🎨 retune it";
     sw.style.cssText = "height:22px;border-radius:4px;border:1px solid #2a3a4a;cursor:pointer;" +
       (i === 0
         ? "background:repeating-conic-gradient(#223 0% 25%, #112 0% 50%) 0 0/8px 8px"
@@ -188,7 +203,47 @@ export function mountSpriteEditor(container, { onEdit = () => {}, onStructure = 
     palRow.appendChild(sw);
     swatches.push(sw);
   });
-  const syncPal = () => swatches.forEach((sw, i) => { sw.style.outline = i === st.color ? "2px solid #39ff5e" : "none"; });
+  const syncPal = () => {
+    const pal = palNow();
+    swatches.forEach((sw, i) => {
+      sw.style.outline = i === st.color ? "2px solid #39ff5e" : "none";
+      if (i > 0) sw.style.background = pal[i];
+    });
+    if (st.color > 0 && /^#[0-9a-fA-F]{6}$/.test(String(pal[st.color]))) palPick.value = pal[st.color];
+    palReset.style.display = st.o && st.o.sprite.pal ? "" : "none";
+  };
+
+  // THIS SPRITE'S PALETTE — its color PROM. Real boards swapped a tiny PROM
+  // per character to recolor the same pixels; retuning any slot here gives
+  // this sprite its own 16 colors (every frame, saved with the game or model).
+  const palEdit = document.createElement("div");
+  palEdit.style.cssText = "display:flex;gap:6px;align-items:center;margin-top:6px;max-width:264px";
+  const palPick = document.createElement("input");
+  palPick.type = "color"; palPick.value = "#7dff9e";
+  palPick.title = "Retune the selected palette slot — this sprite gets its OWN 16 colors (its color PROM)";
+  palPick.style.cssText = "width:40px;height:26px;padding:1px;border:1px solid #2a3a4a;border-radius:4px;background:#0a1410;cursor:pointer";
+  const palHint = document.createElement("span");
+  palHint.textContent = "retunes the selected slot";
+  palHint.style.cssText = "font-size:10px;color:#7a8894;flex:1";
+  const palReset = document.createElement("button");
+  palReset.className = "btn btn-small btn-ghost";
+  palReset.textContent = "↺ stock";
+  palReset.title = "Back to the stock 16 colors (the pixels keep their slot numbers)";
+  palEdit.append(palPick, palHint, palReset);
+  left.appendChild(palEdit);
+  palPick.addEventListener("input", () => {
+    if (!st.o || st.color === 0) return;
+    if (!Array.isArray(st.o.sprite.pal) || st.o.sprite.pal.length !== 16) st.o.sprite.pal = SPRITE_PAL.slice();
+    st.o.sprite.pal[st.color] = palPick.value;
+    syncPal(); drawGrid(); drawStrip();
+    onStructure();
+  });
+  palReset.addEventListener("click", () => {
+    if (!st.o || !st.o.sprite.pal) return;
+    delete st.o.sprite.pal;
+    syncPal(); drawGrid(); drawStrip();
+    onStructure();
+  });
 
   // ---- frames strip + fps + preview
   const framesLabel = document.createElement("label");
@@ -286,7 +341,14 @@ export function mountSpriteEditor(container, { onEdit = () => {}, onStructure = 
     // transparent checker
     cx2.fillStyle = "#101a22";
     for (let y = 0; y < s; y++) for (let x = (y % 2); x < s; x += 2) cx2.fillRect(x * px, y * px, px, px);
-    paintFrame(cx2, st.o.sprite.frames[st.fi], s, px);
+    // 👻 onion skin: the previous frame ghosts underneath while you animate
+    const frames = st.o.sprite.frames;
+    if (st.onion && frames.length > 1) {
+      cx2.save(); cx2.globalAlpha = 0.3;
+      paintFrame(cx2, frames[(st.fi + frames.length - 1) % frames.length], s, px, palNow());
+      cx2.restore();
+    }
+    paintFrame(cx2, frames[st.fi], s, px, palNow());
     cx2.strokeStyle = "rgba(90,110,130,0.25)";
     cx2.lineWidth = 1;
     for (let i = 0; i <= s; i++) {
@@ -303,7 +365,7 @@ export function mountSpriteEditor(container, { onEdit = () => {}, onStructure = 
       th.width = 32; th.height = 32;
       th.style.cssText = "border-radius:4px;cursor:pointer;background:#0a1410;image-rendering:pixelated;border:" +
         (i === st.fi ? "2px solid #39ff5e" : "1px solid #2a3a4a");
-      paintFrame(th.getContext("2d"), f, s, 32 / s);
+      paintFrame(th.getContext("2d"), f, s, 32 / s, palNow());
       th.title = "Frame " + (i + 1);
       th.addEventListener("click", () => { st.fi = i; drawGrid(); drawStrip(); });
       strip.appendChild(th);
@@ -328,7 +390,7 @@ export function mountSpriteEditor(container, { onEdit = () => {}, onStructure = 
       if (ptick >= 1) { pframe += Math.floor(ptick); ptick %= 1; }
       const f = sp.frames[pframe % sp.frames.length];
       pcx.clearRect(0, 0, 96, 96);
-      paintFrame(pcx, f, sp.s, 96 / sp.s);
+      paintFrame(pcx, f, sp.s, 96 / sp.s, palNow());
     }
     requestAnimationFrame(loop);
   };

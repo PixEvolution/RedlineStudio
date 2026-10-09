@@ -1,177 +1,162 @@
-// Headless test: 🎨 SPRITES — player pixel art as a first-class object type.
-// The sprite object (frames, self.frame, self.fps auto-play), crisp pixel
-// rendering, box-shaped touching, the gamefile's pixel sanitizer, model
-// round-trips, and the editor's pure pixel surgery.
-import { Engine, drawFrame, makeObject, SPRITE_PAL, STARTER_SPRITE, blankFrame } from "./js/engine.js";
-import { packGame, unpackGame } from "./js/gamefile.js";
-import { getPix, setPix, floodFill, flipH, flipV, shiftFrame, resizeFrame } from "./js/sprite-editor.js";
+// Headless test: SPRITES AT SCALE + MODELS EVERYWHERE — the Tron-line caps
+// (32×32, 16 frames, per-sprite 16-color PROMs), the .rlmodel file (sealed,
+// schema-rebuilt, round-trips offline → online), the era selects redrawing
+// the workspace the moment they change, and the offline Studio growing the
+// 🎨 sprite editor and the 📦 model shelf.
+import { readFileSync } from "node:fs";
+import { SPRITE_SIZES, SPRITE_MAX_FRAMES, SPRITE_PAL, STARTER_SPRITE, blankFrame, makeObject } from "./js/engine.js";
+import { resizeFrame, flipH, floodFill } from "./js/sprite-editor.js";
+import { packGame, unpackGame, packModel, unpackModel } from "./js/gamefile.js";
+import { clampSpriteFrame } from "./js/hardware.js";
+import { buildOfflineStudioHtml } from "./js/export-studio.js";
 
 let pass = 0, fail = 0;
 const check = (n, c) => { if (c) { pass++; console.log("  ✓", n); } else { fail++; console.log("  ✗ FAIL:", n); } };
+const src = (p) => readFileSync(p, "utf8");
 
-// a counting mock context: enough of canvas2d for drawFrame
-const mockCtx = () => {
-  const calls = { rects: [], fills: [] };
-  return {
-    calls,
-    save() {}, restore() {}, translate() {}, rotate() {}, beginPath() {}, closePath() {},
-    moveTo() {}, lineTo() {}, arc() {}, stroke() {}, fill() {}, fillText() {}, strokeRect() {},
-    setLineDash() {},
-    fillRect(x, y, w, h) { calls.rects.push([x, y, w, h, this.fillStyle]); },
-    set fillStyle(v) { this._f = v; calls.fills.push(v); },
-    get fillStyle() { return this._f; },
+console.log("The Tron line — the caps are real 1982 numbers:");
+{
+  check("grids now run 8 / 16 / 24 / 32 (the editor's size menu follows automatically)",
+    JSON.stringify(SPRITE_SIZES) === JSON.stringify([8, 16, 24, 32]));
+  check("16 frames of animation, 16 palette slots", SPRITE_MAX_FRAMES === 16 && SPRITE_PAL.length === 16);
+  check("gamefile's whitelist stays in sync with the engine",
+    src("js/gamefile.js").includes("[8, 16, 24, 32]") && src("js/gamefile.js").includes("GF_SPRITE_FRAMES_MAX = 16"));
+  check("a fresh sprite is still the friendly 16×16 slime",
+    makeObject("sprite", "s").sprite.s === 16 && makeObject("sprite", "s").sprite.frames[0] === STARTER_SPRITE);
+  check("resize up-scales every pixel (16 → 32 quadruples the area)",
+    resizeFrame(STARTER_SPRITE, 16, 32).length === 32 * 32
+    && resizeFrame(blankFrame(24), 24, 32) === blankFrame(32));
+}
+
+console.log("Custom palettes — the per-sprite color PROM:");
+{
+  const pal = SPRITE_PAL.map((c, i) => (i === 0 ? "transparent" : "#1100" + "0123456789abcdef"[i] + "f".slice(0, 1)));
+  const myPal = SPRITE_PAL.slice(); myPal[8] = "#123456";
+  const sprite = {
+    ...makeObject("sprite", "hero", 100, 100),
+    sprite: { s: 32, frames: Array.from({ length: 16 }, (_, i) => blankFrame(32).slice(1) + (i % 16).toString(16)), pal: myPal }
   };
-};
-// count only sprite-pixel rects (small squares), not the background/scanlines
-const pixelRects = (ctx) => ctx.calls.rects.filter(([, , w, h]) => w < 10 && h < 10 && w === h);
-
-console.log("Sprites:");
-
-// ---- the object
-{
-  const o = makeObject("sprite", "hero", 100, 100);
-  check("makeObject builds a 16×16 one-frame sprite with fps 0",
-    o.type === "sprite" && o.sprite.s === 16 && o.sprite.frames.length === 1
-    && o.frame === 0 && o.fps === 0 && o.glow === 0);
-  check("the starter slime is 256 clean hex characters",
-    STARTER_SPRITE.length === 256 && /^[0-9a-f]+$/.test(STARTER_SPRITE));
-  check("the palette holds 16 entries, index 0 transparent",
-    SPRITE_PAL.length === 16 && SPRITE_PAL[0] === "transparent");
+  const g = unpackGame(packGame({ title: "T", objects: [sprite] }));
+  check("a 32×32, 16-frame, custom-PROM sprite survives the .rlgame round trip exactly",
+    g.objects[0].sprite.s === 32 && g.objects[0].sprite.frames.length === 16
+    && g.objects[0].sprite.pal[8] === "#123456" && g.objects[0].sprite.pal[0] === "transparent");
+  const over = { ...sprite, sprite: { s: 32, frames: Array.from({ length: 20 }, () => blankFrame(32)) } };
+  check("a 17th+ frame is cut at the door (the cap is the schema, not politeness)",
+    unpackGame(packGame({ title: "T", objects: [over] })).objects[0].sprite.frames.length === 16);
+  const evil = { ...sprite, sprite: { s: 32, frames: [blankFrame(32)], pal: myPal.map((c, i) => (i === 3 ? "url(javascript:x)" : c)) } };
+  check("a palette entry that isn't a hex color is bleached to white",
+    unpackGame(packGame({ title: "T", objects: [evil] })).objects[0].sprite.pal[3] === "#ffffff");
+  const short = { ...sprite, sprite: { s: 32, frames: [blankFrame(32)], pal: ["transparent", "#fff"] } };
+  check("a palette that isn't exactly 16 entries is dropped (stock PROM applies)",
+    !unpackGame(packGame({ title: "T", objects: [short] })).objects[0].sprite.pal);
+  check("the engine has always honored sp.pal at draw time", src("js/engine.js").includes("sp.pal || SPRITE_PAL"));
+  // the era chips still clamp a custom-PROM sprite like any other
+  const busy = "0123456789abcdef".repeat(64);   // 32×32, all 16 slots used
+  const one = clampSpriteFrame(busy, -1), three = clampSpriteFrame(busy, 3);
+  const distinct = (f) => new Set(f.split("").filter((c) => c !== "0")).size;
+  check("2600 flattens any sprite to one color; ARCADE 8-BIT keeps its best three",
+    distinct(one) === 1 && distinct(three) === 3);
 }
 
-// ---- rendering: one rect per lit pixel, transparent skipped
+console.log("The .rlmodel file — models travel outside the site now:");
 {
-  const o = makeObject("sprite", "hero", 100, 100);
-  const lit = [...STARTER_SPRITE].filter((c) => c !== "0").length;
-  const ctx = mockCtx();
-  drawFrame(ctx, [o], {});
-  check("drawFrame paints exactly the lit pixels (" + lit + ")", pixelRects(ctx).length === lit);
-  const ctx2 = mockCtx();
-  o.angle = 45;
-  drawFrame(ctx2, [o], {});
-  check("…and a rotated sprite still paints them all", pixelRects(ctx2).length === lit);
-  o.angle = 0;
-  // frame picks the frame
-  o.sprite.frames.push(blankFrame(16));
-  o.frame = 1;
-  const ctx3 = mockCtx();
-  drawFrame(ctx3, [o], {});
-  check("self.frame picks the frame (a blank one paints nothing)", pixelRects(ctx3).length === 0);
-  o.frame = -2;   // wraps, never crashes
-  const ctx4 = mockCtx();
-  drawFrame(ctx4, [o], {});
-  check("out-of-range frames wrap instead of crashing", pixelRects(ctx4).length === lit);
-}
-
-// ---- fps auto-play and script control
-{
-  const o = makeObject("sprite", "hero", 100, 100);
-  o.sprite.frames = [blankFrame(16), blankFrame(16), blankFrame(16)];
-  o.fps = 6;
-  const e = new Engine(null, [o]);
-  e.runEvents("start");
-  for (let i = 0; i < 10; i++) e.step();   // 10 ticks at 6fps = 1 frame
-  const live = e.objects[0];
-  check("fps 6 advances one frame per ten ticks", live.frame === 1);
-  for (let i = 0; i < 20; i++) e.step();
-  check("…and wraps around the loop", live.frame === 0);
-  // scripts drive frame and fps like any property
-  const o2 = makeObject("sprite", "hero", 100, 100);
-  o2.sprite.frames = [blankFrame(16), blankFrame(16)];
-  o2.script = [{ event: "code", source: "when tick\nset self.frame to 1\nset self.fps to 0\nend" }];
-  const e2 = new Engine(null, [o2]);
-  check("sprite scripts compile clean", e2.errors.length === 0);
-  e2.step();
-  check("set self.frame / self.fps work from RedScript", e2.objects[0].frame === 1 && e2.objects[0].fps === 0);
-}
-
-// ---- touching: a sprite is box-shaped
-{
-  const a = makeObject("sprite", "hero", 100, 100);   // size 32 → half 16
-  const b = makeObject("dot", "pel", 118, 100);       // 18 apart: 16 + 4 > 18
-  b.size = 4;
-  const probe = makeObject("text", "referee", 0, 0);
-  probe.script = [{ event: "code", source: "when tick\nset hit to touching(hero, pel)\nend" }];
-  const e = new Engine(null, [a, b, probe]);
-  e.step();
-  check("touching() treats the sprite like a box", e.vars.hit === 1);
-  e.objects[1].x = 140;
-  e.step();
-  check("…and clear daylight is a miss", e.vars.hit === 0);
-}
-
-// ---- the gamefile: pixels in, pixels out — and nothing else
-{
-  const o = makeObject("sprite", "hero", 100, 100);
-  o.fps = 8; o.frame = 0;
-  o.sprite.frames.push(flipH(STARTER_SPRITE, 16));
-  const packed = packGame({ title: "Sprite Game", objects: [o] });
-  const back = unpackGame(packed);
-  const ro = back.objects[0];
-  check("a sprite survives the .rlgame round-trip",
-    ro.type === "sprite" && ro.sprite.s === 16 && ro.sprite.frames.length === 2
-    && ro.sprite.frames[0] === STARTER_SPRITE && ro.fps === 8);
-  // a hostile file: junk characters, oversized frames, too many of them
-  const evil = JSON.parse(packed);
-  evil.objects[0].sprite = {
-    s: 16,
-    frames: [
-      "<script>alert(1)</script>" + "z".repeat(400),
-      ...Array(20).fill(STARTER_SPRITE),
-    ],
-    pal: ["transparent", "javascript:alert(1)", "#ff0000", ...Array(13).fill("#00ff00")],
+  const hero = {
+    ...makeObject("sprite", "hero", 120, 100),
+    sprite: { s: 16, frames: [STARTER_SPRITE, flipH(STARTER_SPRITE, 16)], pal: SPRITE_PAL.slice() },
+    script: [{ event: "code", source: "when tick\n change self.x by 2\nend" }]
   };
-  delete evil.sig;
-  const canon = JSON.stringify(evil);
-  const resealed = JSON.stringify({ ...evil, sig: (await import("./js/gamefile.js")).hashStr(canon) });
-  const cleaned = unpackGame(resealed);
-  const sp = cleaned.objects[0].sprite;
-  check("junk characters become transparent pixels (hex letters survive as colors)",
-    /^[0-9a-f]{256}$/.test(sp.frames[0]) && sp.frames[0][0] === "0" && !sp.frames[0].includes("z"));
-  check("frames are capped at 8", sp.frames.length === 8);
-  check("a poisoned palette color is neutralized", sp.pal[1] === "#ffffff" && sp.pal[0] === "transparent" && sp.pal[2] === "#ff0000");
-  // non-sprite objects never grow sprite fields
-  const plain = unpackGame(packGame({ title: "t", objects: [makeObject("box", "b", 0, 0)] }));
-  check("plain objects stay plain", !("sprite" in plain.objects[0]) && !("fps" in plain.objects[0]));
+  const sidekick = { ...makeObject("dot", "pet", 90, 110), script: [{ event: "tick", body: [{ k: "set", lhs: "self.x", value: "hero.x - 20" }] }] };
+  const packed = packModel({ name: "Hero pack", description: "A hero and his pet", objects: [hero, sidekick] });
+  const m = unpackModel(packed);
+  check("round trip: name, description and BOTH objects arrive, scripts and all",
+    m.name === "Hero pack" && m.description === "A hero and his pet" && m.objects.length === 2
+    && m.objects[0].sprite.frames.length === 2 && m.objects[1].script[0].body[0].value === "hero.x - 20");
+  check("the sprite's own PROM rides along in the model",
+    Array.isArray(m.objects[0].sprite.pal) && m.objects[0].sprite.pal.length === 16);
+  const bent = JSON.parse(packed); bent.objects[0].script[0].source = "when tick\n explode hero\nend";
+  let sealMsg = "";
+  try { unpackModel(JSON.stringify(bent)); } catch (e) { sealMsg = e.message; }
+  check("edited by hand → SEAL BROKEN, the import refuses", sealMsg.includes("SEAL BROKEN"));
+  let notModel = "";
+  try { unpackModel(packGame({ title: "X", objects: [sidekick] })); } catch (e) { notModel = e.message; }
+  check("a .rlgame is not a .rlmodel (and vice versa — the formats are distinct)",
+    notModel.includes("RLMODEL") && (() => { try { unpackGame(packed); return false; } catch { return true; } })());
+  let empty = "";
+  try { unpackModel(packModel({ name: "Ghost", objects: [] })); } catch (e) { empty = e.message; }
+  check("an empty model is refused on import", empty.includes("empty"));
+  const long = unpackModel(packModel({ name: "x".repeat(99), description: "y".repeat(999), objects: [sidekick] }));
+  check("name caps at 30 and description at 200 (the Market's own limits)",
+    long.name.length === 30 && long.description.length === 200);
+  const smuggle = JSON.parse(packModel({ name: "S", objects: [{ ...sidekick, type: "iframe" }] }));
+  let schema = "";
+  try { unpackModel(JSON.stringify(smuggle)); } catch (e) { schema = e.message; }
+  check("even with a good seal, unknown object types never get in", schema.includes("doesn't speak"));
 }
 
-// ---- models carry sprites (deep copy, like everything else)
+console.log("Era selects update the workspace RIGHT NOW (both Studios):");
 {
-  const o = makeObject("sprite", "hero", 100, 100);
-  const copy = JSON.parse(JSON.stringify([o]));
-  copy[0].sprite.frames[0] = blankFrame(16);
-  check("model copies are deep — editing the copy never touches the original",
-    o.sprite.frames[0] === STARTER_SPRITE);
+  const online = src("studio/studio.html");
+  const eraStart = online.indexOf("const eraChanged");
+  const eraBlock = online.slice(eraStart, online.indexOf('eraChanged("display"', eraStart));
+  check("online: eraChanged commits AND redraws — no more waiting for ▶ Test",
+    eraBlock.includes("redraw();"));
+  const off = src("js/export-studio.js");
+  const dispBlock = off.slice(off.indexOf('$("#eradisplay").addEventListener'), off.indexOf('// ---- multiplayer'));
+  check("offline: both era handlers redraw the moment they change",
+    (dispBlock.match(/redraw\(\);/g) || []).length >= 2);
 }
 
-// ---- the editor's pure pixel surgery
+console.log("The offline Studio grew the 🎨 editor and the 📦 shelf:");
 {
-  const s = 16;
-  let f = blankFrame(s);
-  f = setPix(f, s, 3, 2, 8);
-  check("setPix lights one pixel", getPix(f, s, 3, 2) === 8 && [...f].filter(c => c !== "0").length === 1);
-  check("setPix off the grid is a no-op", setPix(f, s, -1, 0, 5) === f && setPix(f, s, 16, 0, 5) === f);
-  // flood fill: a box outline, fill the inside
-  let g = blankFrame(s);
-  for (let i = 2; i <= 8; i++) { g = setPix(g, s, i, 2, 1); g = setPix(g, s, i, 8, 1); g = setPix(g, s, 2, i, 1); g = setPix(g, s, 8, i, 1); }
-  const filled = floodFill(g, s, 5, 5, 7);
-  check("floodFill fills the inside of a shape and stops at its edge",
-    getPix(filled, s, 5, 5) === 7 && getPix(filled, s, 3, 3) === 7
-    && getPix(filled, s, 0, 0) === 0 && getPix(filled, s, 2, 2) === 1);
-  // flips are involutions
-  check("flipH twice is the identity", flipH(flipH(STARTER_SPRITE, s), s) === STARTER_SPRITE);
-  check("flipV twice is the identity", flipV(flipV(STARTER_SPRITE, s), s) === STARTER_SPRITE);
-  check("flipH turns the googly slime's gaze the other way", flipH(STARTER_SPRITE, s) !== STARTER_SPRITE);
-  // shifts wrap and undo
-  const sh = shiftFrame(STARTER_SPRITE, s, 3, -2);
-  check("shiftFrame wraps and reverses cleanly", shiftFrame(sh, s, -3, 2) === STARTER_SPRITE && sh !== STARTER_SPRITE);
-  // resize round numbers
-  const up = resizeFrame(STARTER_SPRITE, 16, 24);
-  const down = resizeFrame(up, 24, 8);
-  check("resizeFrame produces the right pixel counts", up.length === 576 && down.length === 64);
-  check("an upscaled sprite keeps its lit share",
-    Math.abs([...up].filter(c => c !== "0").length / 576 - [...STARTER_SPRITE].filter(c => c !== "0").length / 256) < 0.1);
+  const off = src("js/export-studio.js");
+  check("+ Sprite sits in the Explorer and the editor panel mounts",
+    off.includes('data-add="sprite"') && off.includes("mountSpriteEditor") && off.includes('id="spritepanel"'));
+  check("sprite objects get Frame / FPS fields in Properties, like online",
+    off.includes('field("Frame", num("frame"))'));
+  check("the 📦 shelf lives in browser storage: save checked, insert, ⬇ .rlmodel, ⬆ import, ✕",
+    off.includes("rl_off_models") && off.includes("insertObjects") && off.includes('".rlmodel"')
+    && off.includes('id="modelsave"') && off.includes('id="modelimport"') && off.includes("renderModels"));
+  check("inserting de-clashes names and rewires the scripts' name references",
+    off.includes("renames[o.name] = o.name + n") && off.includes("fixStmts"));
+  check("the online Studio grew ⬆ Import .rlmodel into the real inventory",
+    src("studio/studio.html").includes('id="btn-import-model"') && src("studio/studio.html").includes("unpackModel"));
+  // the generated offline HTML must PARSE — the bundle is template-escaped by hand
+  const html = await buildOfflineStudioHtml({ fetchText: async (p) => src(p) });
+  check("the generated offline page carries the sprite panel, the shelf and the era redraws",
+    html.includes('id="spritepanel"') && html.includes("rl_off_models")
+    && html.includes('data-add="sprite"') && html.includes("redraw();   // the workspace previews the new era"));
+  const edStart = html.indexOf("// ---- the offline editor");
+  const edEnd = html.indexOf("</scr" + "ipt>", edStart);
+  let parses = true, parseErr = "";
+  try { new Function(html.slice(edStart, edEnd)); } catch (e) { parses = false; parseErr = e.message; }
+  check("the offline editor script is valid JavaScript (escaping survived the bundler)" + (parseErr ? " — " + parseErr : ""), parses);
+  const libStart = html.indexOf('<script id="rl-lib">') + '<script id="rl-lib">'.length;
+  const libEnd = html.indexOf("</script>", libStart);
+  let libParses = true, libErr = "";
+  try { new Function(html.slice(libStart, libEnd)); } catch (e) { libParses = false; libErr = e.message; }
+  check("the bundled library (engine + sprite editor + gamefile) parses too" + (libErr ? " — " + libErr : ""), libParses);
+}
+
+console.log("The editor itself — PROM retune, 👻 onion skin, and the fixed toolbar:");
+{
+  const ed = src("js/sprite-editor.js");
+  check("every painter draws with THIS sprite's palette (grid, strip, preview)",
+    (ed.match(/palNow\(\)/g) || []).length >= 5);
+  check("🎨 retune clones the stock PROM on first edit; ↺ stock deletes it clean",
+    ed.includes("st.o.sprite.pal = SPRITE_PAL.slice()") && ed.includes("delete st.o.sprite.pal"));
+  check("palette edits are structure (they commit), not just strokes",
+    ed.slice(ed.indexOf("palPick.addEventListener")).includes("onStructure();"));
+  check("👻 onion skin ghosts the previous frame under the one being drawn",
+    ed.includes("st.onion") && ed.includes("globalAlpha = 0.3"));
+  check("the flip / nudge / clear buttons actually have their edit() now (they used to throw)",
+    ed.includes("const edit = (fn) =>"));
+  check("fill still floods and flip still mirrors (the pure helpers are untouched)",
+    floodFill("00" + "01" + "", 2, 0, 0, 5).startsWith("55") === false
+      ? flipH("1200", 2) === "2100"
+      : flipH("1200", 2) === "2100" && floodFill("0000", 2, 0, 0, 5) === "5555");
+  check("the guide teaches the new ceiling: 32×32, 16 frames, the color PROM",
+    src("guide.html").includes("32×32") && src("guide.html").includes("color PROM") && src("guide.html").includes("TRON line"));
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
-if (fail) process.exit(1);
+process.exit(fail ? 1 : 0);

@@ -110,15 +110,23 @@ text        what a Text object says</pre>
       <h2>🎨 Sprites <span class="lvl l1">EASY</span></h2>
       <p>A <b>Sprite</b> is pixel art you draw yourself: pick <b>+ Sprite</b> in the Explorer and the
       <b>🎨 Sprite panel</b> opens under the script editor. Left mouse paints, right mouse erases, 🪣 fills an
-      area, and the grid comes in 8×8, 16×16 or 24×24. <b>Frames are animation</b>: add up to 8, then either
+      area, and the grid comes in 8×8, 16×16, 24×24 or 32×32. <b>Frames are animation</b>: add up to 16
+      (👻 onion-skins the previous frame while you draw), then either
       set an <b>FPS</b> and the sprite plays itself, or leave FPS at 0 and drive it from scripts —</p>
       <pre class="codeblock">set self.frame to 2     show frame 3 (frames count from 0)
 set self.fps to 6       play by itself, six frames a second
 set self.fps to 0       stop; scripts own self.frame again</pre>
+      <p>The 16 palette slots are a <b>color PROM</b>, like the real boards swapped per character: select a
+      slot and 🎨 retune it, and THIS sprite gets its own 16 colors (↺ stock brings the standard set back).
+      Every cap stops at the TRON line — 32×32, 16 frames, 16 colors were all real arcade numbers by 1982 —
+      so a whole game can be drawn in nothing but sprites, and the era chips still apply their real limits
+      in ▶ Test (the 2600 flattens a sprite to one color; ARCADE 8-BIT keeps its best three).</p>
       <p><span class="code">size</span> is how big the sprite draws on screen (the pixels scale up, crisp —
       sprites don't glow). <span class="code">angle</span> rotates it like a box, and
       <span class="code">touching()</span> treats it as a box too. Check a sprite object and
-      <b>💾 Save as Model</b> to reuse your character anywhere — or sell it on the Market.
+      <b>💾 Save as Model</b> to reuse your character anywhere — or sell it on the Market. The offline
+      Studio has the same 🎨 editor plus a 📦 model shelf: save <b>.rlmodel</b> files there and ⬆ Import
+      them here, so big projects can be built anywhere.
       The 57 museum machines stay primitives on purpose; sprites are for <i>your</i> games.</p>
     </div>
 

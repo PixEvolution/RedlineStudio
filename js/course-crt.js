@@ -147,6 +147,7 @@ reach in and change it. Every step ticks itself when the lesson sees you've done
           text: `<b>Play it.</b> Hit <b>▶ Test</b> in the Studio. Up/Down aims, SPACE fires — gravity bends
           every shot, exactly like the 1947 arc. Destroy all three targets at least once, get a feel for how
           the aim number changes your arc. Then press <b>▶ Test</b> again (or ✕) to stop.`,
+          needsTest: true,
           check: (ctx) => ctx.testCount >= 1
         },
         {
@@ -364,6 +365,7 @@ end</pre>
         {
           text: `<b>▶ Test version 1.</b> A and D slide your cannon along the bottom. That's it — and
           that's the point: <b>one working rule beats ten imagined ones.</b> Stop the test.`,
+          needsTest: true,
           check: (ctx) => ctx.testCount >= 2
         },
         {
@@ -446,6 +448,7 @@ end</pre>
         },
         {
           text: `<b>▶ Test the finished machine.</b> Sixty seconds on the clock — set the score to beat.`,
+          needsTest: true,
           check: (ctx) => ctx.testCount >= 3
         }
       ]

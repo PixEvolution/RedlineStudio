@@ -16,7 +16,7 @@
 const GAME_FORMAT = "RLGAME1";
 const MAX_OBJECTS = 400, MAX_EVENTS = 120, MAX_STMTS = 400;
 const TYPES = ["dot", "ring", "box", "line", "text", "tri", "sprite"];
-const GF_SPRITE_SIZES = [8, 16, 24], GF_SPRITE_FRAMES_MAX = 8;
+const GF_SPRITE_SIZES = [8, 16, 24, 32], GF_SPRITE_FRAMES_MAX = 16;   // the TRON line ('82) — keep in sync with engine.js
 const EVENTS = ["start", "tick", "click", "answer", "key", "code"];
 const STMT_KS = ["set", "change", "if", "repeat", "say", "explode", "beep", "print", "clear", "code"];
 
@@ -175,6 +175,44 @@ export function unpackGame(text) {
     screen: d.screen && Array.isArray(d.screen.objects)
       ? { mode: ["none", "static", "live"].includes(d.screen.mode) ? d.screen.mode : "static", objects: cleanObjects(d.screen.objects) }
       : undefined
+  };
+}
+
+// ---- the .rlmodel file: MODELS travel outside the site too -----------------
+// A model is a bag of objects (sprites, scripts and all) with a name — the
+// offline Studio saves these so a big project's characters can be built on a
+// plane, then ⬆ imported into the online Studio's inventory (and the Market).
+// Same promise as .rlgame: the seal catches edits, the schema rebuilds every
+// object from the whitelist above, and no engine ever travels in the file.
+const MODEL_FORMAT = "RLMODEL1";
+
+export function packModel({ name, description, objects }) {
+  const payload = {
+    format: MODEL_FORMAT,
+    engine: "v1",
+    name: String(name || "Untitled Model").slice(0, 30),
+    description: String(description || "").slice(0, 200),
+    objects: objects || []
+  };
+  const canon = JSON.stringify(payload);
+  return JSON.stringify({ ...payload, sig: hashStr(canon) });
+}
+
+export function unpackModel(text) {
+  let d;
+  try { d = JSON.parse(String(text)); } catch { throw new Error("That's not a model file — it doesn't even parse."); }
+  if (!d || d.format !== MODEL_FORMAT) throw new Error("Not a RedlineStudio model file (missing the RLMODEL seal).");
+  if (d.engine !== "v1") throw new Error("This model was made for an engine version this Studio doesn't have.");
+  const { sig, ...payload } = d;
+  if (hashStr(JSON.stringify(payload)) !== sig) {
+    throw new Error("SEAL BROKEN — this file was changed after it left the Studio. Open it in the offline Studio and save it again.");
+  }
+  const objects = cleanObjects(d.objects);
+  if (objects.length === 0) throw new Error("This model file is empty — nothing to import.");
+  return {
+    name: str(d.name, 30) || "Untitled Model",
+    description: str(d.description, 200),
+    objects
   };
 }
 

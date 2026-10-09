@@ -135,8 +135,17 @@ console.log("The lesson window + the Studio's course mode:");
   check("focusing an open Studio never RELOADS it (the triple-click bug)",
     win.includes("studioWin && !studioWin.closed"));
   check("progress LATCHES (a passed step stays passed) and the chapter is remembered",
-    win.includes("rl_course_steps_") && win.includes("rl_course_ch_")
-    && win.includes("stays passed"));
+    win.includes("rl_course_steps2_") && win.includes("rl_course_ch_")
+    && win.includes("STAYS passed"));
+  check("steps unlock strictly IN ORDER — leftovers can't pre-tick later steps",
+    win.includes("!latched.has(stepKey(ci, i - 1))"));
+  check("▶ Test steps are RELATIVE: only tests after the previous step count",
+    win.includes("st.needsTest") && win.includes("c.testCount > base")
+    && (src("js/course-crt.js").match(/needsTest: true/g) || []).length === 3);
+  check("the code editor types like one: Enter keeps indentation, Tab indents",
+    src("js/blocks.js").includes("wireCodeKeys")
+    && src("js/blocks.js").includes('e.key === "Tab"')
+    && src("js/blocks.js").includes("bthen$"));
   check("completion spans every hands-on chapter, not just one",
     win.includes("stepChapters.every"));
   check("the Studio runs lesson commands without background confirm() popups",
