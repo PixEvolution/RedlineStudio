@@ -46,6 +46,14 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/ages/$(request.auth.uid))
         && get(/databases/$(database)/documents/ages/$(request.auth.uid)).data.ageBracket in ['13', '16', '18'];
     }
+    // THE PLAY-ONLY TIER: a declared under-13 account plays games; publishing,
+    // Market listing and the custom profile page wait until 13. Undeclared
+    // accounts are NOT in this tier — it applies exactly where the site knows.
+    function isU13() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/ages/$(request.auth.uid))
+        && get(/databases/$(database)/documents/ages/$(request.auth.uid)).data.ageBracket == 'u13';
+    }
 
     // ------------------------------------------------------------- users
     match /users/{userId} {
@@ -89,7 +97,12 @@ service cloud.firestore {
         || (resource.data.get('uid', '') != request.auth.uid
             && changedKeys().hasOnly(['coins', 'votes', 'likes', 'dislikes'])
             && request.resource.data.get('coins', 0) >= resource.data.get('coins', 0))
+        // a moderator running the one-time bracket migration: this touch may
+        // move ONLY the ageBracket field (the conditions below pin the how)
+        || (isMod() && changedKeys().hasOnly(['ageBracket']))
       )
+      // the custom profile page is above the play-only tier
+      && (!changedKeys().hasAny(['pageScene']) || !isU13())
       // THE AGE BRACKET IS PRIVATE NOW (/ages/{uid}). The public record may
       // never gain one; an old public copy stays frozen until its owner moves
       // it out — allowed only when the private copy (same batch) matches.
@@ -100,6 +113,13 @@ service cloud.firestore {
         || ('ageBracket' in resource.data
             && !('ageBracket' in request.resource.data)
             && getAfter(/databases/$(database)/documents/ages/$(request.auth.uid)).data.ageBracket == resource.data.ageBracket)
+        // …or a MODERATOR moves it for them (the one-time migration): same
+        // conservation — the private copy written in this same batch must
+        // match the public one being removed, keyed by the ACCOUNT's uid
+        || (isMod()
+            && 'ageBracket' in resource.data
+            && !('ageBracket' in request.resource.data)
+            && getAfter(/databases/$(database)/documents/ages/$(resource.data.uid)).data.ageBracket == resource.data.ageBracket)
       );
 
       // the owner may erase their own account (the ⚙ Account delete button) —
@@ -113,7 +133,9 @@ service cloud.firestore {
       allow read: if true;
 
       // publishing binds the game to this login; machines start with ◎0 pools
-      allow create: if signedIn()
+      // (and publishing is above the play-only tier — under-13 accounts
+      // build, test and download, but don't put games in front of others)
+      allow create: if signedIn() && !isU13()
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.get('pool', 0) == 0;
 
@@ -190,7 +212,13 @@ service cloud.firestore {
       allow create: if signedIn()
         && request.resource.data.ownerUid == request.auth.uid;
 
-      allow update: if signedIn() && (
+      // listing a model on the Market (flipping `listed` on) is above the
+      // play-only tier — an under-13 account keeps its models to itself
+      allow update: if signedIn()
+        && !(isU13()
+             && request.resource.data.get('listed', false) == true
+             && resource.data.get('listed', false) != true)
+        && (
         (resource.data.ownerUid == request.auth.uid
           && request.resource.data.ownerUid == request.auth.uid)
         || (!('ownerUid' in resource.data)
@@ -302,11 +330,35 @@ service cloud.firestore {
     // deleting the account. (A technical user could erase and re-declare —
     // the same as making a new account, which honest self-declaration allows.)
     match /ages/{uid} {
-      allow read: if signedIn() && request.auth.uid == uid;
-      allow create: if signedIn() && request.auth.uid == uid
+      // a mod may read brackets only to run the one-time migration and honor
+      // parent requests — the operator can see them in the console anyway
+      allow read: if isMod() || (signedIn() && request.auth.uid == uid);
+      // an under-13 declaration also stores `grows`: the YYYYMM month the
+      // account turns 13 (an integer like 203902 — the MONTH, never the
+      // birth date), so the bracket can grow up on its own below
+      allow create: if (
+          signedIn() && request.auth.uid == uid
+          && request.resource.data.ageBracket in ['u13', '13', '16', '18']
+          && (
+            request.resource.data.keys().hasOnly(['ageBracket'])
+            || (request.resource.data.keys().hasOnly(['ageBracket', 'grows'])
+                && request.resource.data.ageBracket == 'u13'
+                && request.resource.data.grows is int)
+          )
+        )
+        // …or a mod migrating an old PUBLIC bracket into here (the users-doc
+        // side of that batch checks the values match; a mod could do this
+        // from the console regardless — this just lets Mod Desk do it)
+        || (isMod()
+            && request.resource.data.keys().hasOnly(['ageBracket'])
+            && request.resource.data.ageBracket in ['u13', '13', '16', '18']);
+      // GROWING UP is the one allowed change: u13 → 13, by the owner, only
+      // once the stored turns-13 month has arrived on the SERVER clock
+      allow update: if signedIn() && request.auth.uid == uid
+        && resource.data.ageBracket == 'u13'
+        && resource.data.get('grows', 999999) <= request.time.year() * 100 + request.time.month()
         && request.resource.data.keys().hasOnly(['ageBracket'])
-        && request.resource.data.ageBracket in ['u13', '13', '16', '18'];
-      allow update: if false;
+        && request.resource.data.ageBracket == '13';
       allow delete: if isMod() || (signedIn() && request.auth.uid == uid);
     }
 
@@ -331,6 +383,30 @@ service cloud.firestore {
         && request.resource.data.game is string;
       allow update: if false;
       allow delete: if isMod();   // resolving a report
+    }
+
+    // ------------------------------------------------------------- inbox
+    // The contact form (contact.html): privacy requests, parent/guardian
+    // requests, appeals, copyright notices. Anyone may write one — INCLUDING
+    // logged-out visitors, because a parent needn't have an account — and
+    // only moderators can read or clear them. Sizes are capped; that's the
+    // whole spam defense a write-only box needs.
+    match /inbox/{msgId} {
+      allow read: if isMod();
+      allow create: if request.resource.data.keys().hasOnly(['topic', 'text', 'contact', 'by', 'at'])
+        && request.resource.data.topic is string
+        && request.resource.data.topic.size() >= 1
+        && request.resource.data.topic.size() <= 40
+        && request.resource.data.text is string
+        && request.resource.data.text.size() >= 1
+        && request.resource.data.text.size() <= 1000
+        && request.resource.data.contact is string
+        && request.resource.data.contact.size() <= 120
+        && request.resource.data.by is string
+        && request.resource.data.by.size() <= 20
+        && request.resource.data.at is int;
+      allow update: if false;
+      allow delete: if isMod();
     }
 
     // everything else: denied

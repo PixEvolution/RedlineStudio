@@ -81,7 +81,10 @@
         `joined ${fmtDate(profile.createdAt) || "recently"} · ${games.length} game${games.length === 1 ? "" : "s"} · ${totalPlays} total plays`;
 
       if (me === profile.username) {
-        document.getElementById("btn-edit-page").style.display = "";
+        // the play-only tier (under-13): the custom page waits until 13
+        import("./js/age.js").then(({ myBracket }) => myBracket()).then((b) => {
+          if (b !== "u13") document.getElementById("btn-edit-page").style.display = "";
+        }).catch(() => { document.getElementById("btn-edit-page").style.display = ""; });
       }
 
       // likes on the player + their comment wall

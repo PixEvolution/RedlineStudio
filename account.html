@@ -28,7 +28,10 @@
         (<span class="code">under 13 · 13+ · 16+ · 18+</span>), <b>privately</b>: only you can see it. The
         date itself is never stored, and the bracket can't be edited later, so get it right. It unlocks
         content by rating: 16+ games need a declared 16+, and the Casino and 18+ games need a declared 18+
-        <b>with a verified email</b>. Comments, the Forums and typed machine chat need a declared 13+.</p>
+        <b>with a verified email</b>. Comments, the Forums, machine chat, publishing, the Market and the
+        custom profile page need a declared 13+ — an under-13 account plays games, and grows into the rest
+        by itself (for under-13 declarations, the <b>month</b> the account turns 13 is saved privately with
+        the bracket — never the date — so everything unlocks on time).</p>
         <label for="dob">Birth date</label>
         <input type="date" id="dob" style="max-width:220px">
         <br><br>
@@ -107,7 +110,7 @@
     } from "./js/auth.js";
     import { db } from "./js/firebase.js";
     import { doc, getDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    import { bracketFromBirthdate, bracketAge, canLinkEmail } from "./js/ratings.js";
+    import { bracketFromBirthdate, growsFromBirthdate, bracketAge, canLinkEmail } from "./js/ratings.js";
     import { myBracket, declareBracket, eraseMyAge } from "./js/age.js";
     import { listGamesBy, deleteGame } from "./js/games.js";
     import { listMyModels, deleteModel } from "./js/models.js";
@@ -141,7 +144,8 @@
     const renderAge = () => {
       const b = bracket;
       if (b) {
-        $("#age-now").innerHTML = `Declared bracket: <b>${AGE_WORDS[b] || b}</b> — set once, locked for good, visible only to you.`;
+        $("#age-now").innerHTML = `Declared bracket: <b>${AGE_WORDS[b] || b}</b> — set once, locked for good, visible only to you.`
+          + (b === "u13" ? ` It upgrades to <b>13+</b> on its own the month you turn 13 — nothing to re-enter.` : "");
         $("#age-set").style.display = "none";
       } else {
         $("#age-now").textContent = "No age declared yet — 16+ and 18+ content, comments, the Forums and typed chat stay locked until you do.";
@@ -154,7 +158,7 @@
       if (!b) { toast("Enter a real birth date.", true); return; }
       if (!confirm(`Save your age bracket as "${AGE_WORDS[b]}"? This is set ONCE and can't be changed.`)) return;
       try {
-        bracket = await declareBracket(b);
+        bracket = await declareBracket(b, growsFromBirthdate($("#dob").value));
         try { sessionStorage.removeItem("rl_adult_ok"); } catch {}   // the nav re-checks
         renderAge(); renderEmail(await emailStatus());
         toast("Age bracket saved privately. Only the bracket was stored — never the date.");

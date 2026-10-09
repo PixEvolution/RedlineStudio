@@ -16,7 +16,7 @@ export const RATINGS = [
   { id: "E",   badge: "E",   label: "E — Everyone",            min: 0,  needsEmail: false },
   { id: "T13", badge: "13+", label: "T — Teen (13+)",          min: 13, needsEmail: false },
   { id: "M16", badge: "16+", label: "M — Mature (16+)",        min: 16, needsEmail: false },
-  { id: "A18", badge: "18+", label: "A — Adult (18+, verified)", min: 18, needsEmail: true }
+  { id: "A18", badge: "18+", label: "A — Adult (18+, verified email)", min: 18, needsEmail: true }
 ];
 
 export function cleanRating(r) {
@@ -80,6 +80,43 @@ export function canLinkEmail(bracket) {
 export function canUseFreeText(bracket) {
   const age = bracketAge(bracket);
   return age !== null && age >= 13;
+}
+
+// THE PLAY-ONLY TIER: an account with a declared under-13 bracket plays games
+// and browses the museum, and that's the whole account until it turns 13 —
+// no publishing, no Market listing or buying, no custom profile page, and the
+// social layer (machine chat, comments, forums) isn't shown to it at all.
+// The account GROWS OUT of the tier by itself: an under-13 declaration also
+// stores the MONTH the account turns 13 (an integer like 203902 — never the
+// birth date), and when that month arrives the private bracket upgrades to
+// "13" on its own (age.js does it; the database rules verify the month
+// against the server clock). Undeclared accounts are not play-only: the
+// platform can't treat everyone as a child, so the tier applies exactly
+// where the site actually knows.
+export function isPlayOnly(bracket) {
+  return bracket === "u13";
+}
+
+// Publishing to the public arcade, listing or buying on the Market, and
+// editing the custom profile page all sit above the play-only tier.
+export function canPublish(bracket) {
+  return !isPlayOnly(bracket);
+}
+
+// For an under-13 birth date: the first YYYYMM month in which the account is
+// 13 for the WHOLE month (never unlocks early; at most a few weeks late).
+// Returns null for dates that aren't under 13.
+export function growsFromBirthdate(dob, now = new Date()) {
+  if (bracketFromBirthdate(dob, now) !== "u13") return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dob || "").trim());
+  let y = Number(m[1]) + 13, mo = Number(m[2]);
+  if (Number(m[3]) > 1) { mo++; if (mo > 12) { mo = 1; y++; } }
+  return y * 100 + mo;
+}
+
+// Has a stored turns-13 month arrived?
+export function growsDue(grows, now = new Date()) {
+  return Number.isFinite(grows) && grows <= now.getFullYear() * 100 + (now.getMonth() + 1);
 }
 
 export const QUICK_CHAT = [

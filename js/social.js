@@ -8,7 +8,7 @@ import { db } from "./firebase.js";
 import { auth } from "./auth.js";
 import { userDocId } from "./auth.js";
 import { myBracket } from "./age.js";
-import { canUseFreeText } from "./ratings.js";
+import { canUseFreeText, isPlayOnly } from "./ratings.js";
 import {
   collection, doc, addDoc, getDocs, getDoc, deleteDoc, updateDoc,
   query, where, serverTimestamp, runTransaction, increment
@@ -126,9 +126,23 @@ export async function deleteComment(commentId) {
 }
 
 // Full comments widget: input (when logged in) + live list. Renders into `mount`.
+// THE PLAY-ONLY TIER: for a logged-in under-13 account the section isn't
+// shown at all — not the box, not other people's comments.
 export function renderComments(mount, kind, id, me, { heading = "Comments" } = {}) {
   mount.innerHTML = "";
   mount.className = "comments";
+
+  if (me) {
+    myBracket().then((b) => {
+      if (isPlayOnly(b)) {
+        mount.innerHTML = "";
+        const hint = document.createElement("p");
+        hint.className = "hint";
+        hint.textContent = "Comments unlock the month you turn 13.";
+        mount.appendChild(hint);
+      }
+    }).catch(() => {});
+  }
 
   const h = document.createElement("h3");
   h.textContent = heading;

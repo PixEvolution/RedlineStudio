@@ -18,6 +18,25 @@
     </div>
 
     <div class="panel">
+      <h2>📨 Contact inbox</h2>
+      <p class="hint">Messages from the <a href="contact.html">contact form</a> — privacy and parent/guardian
+      requests, appeals, copyright notices. Parent and privacy requests get an answer within 30 days (the
+      Privacy Policy promises it); appeals within 14 (the Terms promise that).</p>
+      <div id="inbox-list"><p class="hint">Loading…</p></div>
+    </div>
+
+    <div class="panel">
+      <h2>🔒 Age brackets → private</h2>
+      <p class="hint">Accounts from before Sept 25 still carry their age bracket on the PUBLIC account record
+      until they visit again. This moves every remaining one into the private <span class="code">ages</span>
+      records at once. Needs the matching rules pasted first. Idempotent — running it again just finds
+      nothing left to move. Accounts with no uid stamp can't be moved from here (no login to key on); they
+      keep migrating themselves on their next visit.</p>
+      <button class="btn" id="btn-ages">Move public brackets private</button>
+      <span class="hint" id="ages-status" style="margin-left:10px"></span>
+    </div>
+
+    <div class="panel">
       <h2>🧱 Game cards</h2>
       <p class="hint">The list pages read a light <span class="code">cards</span> collection so phones open
       instantly. This button builds (or rebuilds) a card for every existing game — run it ONCE after the
@@ -39,7 +58,7 @@
   <script type="module">
     import { renderNav, toast, $, fmtDate } from "./js/ui.js";
     import { requireLogin } from "./js/auth.js";
-    import { amIMod, listReports, resolveReport, backfillCards } from "./js/mod.js";
+    import { amIMod, listReports, resolveReport, backfillCards, migrateBrackets, listInbox, resolveInbox } from "./js/mod.js";
 
     renderNav("");
     const user = requireLogin("login.html");
@@ -88,6 +107,59 @@
       }
     }
     load();
+
+    async function loadInbox() {
+      const mount = $("#inbox-list");
+      try {
+        const msgs = await listInbox();
+        mount.innerHTML = "";
+        if (msgs.length === 0) { mount.innerHTML = '<p class="hint">Inbox zero.</p>'; return; }
+        for (const m of msgs) {
+          const row = document.createElement("div");
+          row.className = "my-game-row";
+          const info = document.createElement("div");
+          const head = document.createElement("strong");
+          head.textContent = (m.topic || "message").toUpperCase();
+          const meta = document.createElement("div");
+          meta.className = "hint";
+          meta.textContent = `${m.by ? "from " + m.by : "not logged in"}`
+            + `${m.contact ? " · reply to: " + m.contact : " · no reply contact given"} · ${fmtDate(m.at)}`;
+          const body = document.createElement("div");
+          body.textContent = "“" + (m.text || "") + "”";
+          info.append(head, meta, body);
+          const actions = document.createElement("div");
+          const done = document.createElement("button");
+          done.className = "btn btn-small btn-ghost";
+          done.textContent = "Resolve ✓";
+          done.addEventListener("click", async () => {
+            try { await resolveInbox(m.id); toast("Resolved."); loadInbox(); }
+            catch (err) { toast(err.message, true); }
+          });
+          actions.append(done);
+          row.append(info, actions);
+          mount.appendChild(row);
+        }
+      } catch (err) {
+        mount.innerHTML = "";
+        toast("Couldn't load the contact inbox: " + err.message, true);
+      }
+    }
+    loadInbox();
+
+    $("#btn-ages").addEventListener("click", async () => {
+      const btn = $("#btn-ages"), status = $("#ages-status");
+      btn.disabled = true;
+      status.textContent = "Reading every account…";
+      try {
+        const r = await migrateBrackets((done, total) => { status.textContent = `Moving brackets… ${done}/${total}`; });
+        status.textContent = `Done — ${r.moved} moved, ${r.cleared} public copies cleared, ${r.skipped} skipped (no uid or mismatch), of ${r.total} carriers.`;
+        toast("Brackets are private now.");
+      } catch (err) {
+        status.textContent = "";
+        toast("Migration failed: " + err.message, true);
+      }
+      btn.disabled = false;
+    });
 
     $("#btn-backfill").addEventListener("click", async () => {
       const btn = $("#btn-backfill"), status = $("#backfill-status");

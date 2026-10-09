@@ -60,6 +60,20 @@
     import { currentUser } from "./js/auth.js";
     import { listThreads, getThread, createThread, listPosts, replyToThread, deletePost, deleteThread } from "./js/forum.js";
     import { amIMod } from "./js/mod.js";
+    import { myBracket } from "./js/age.js";
+    import { isPlayOnly } from "./js/ratings.js";
+
+    // THE PLAY-ONLY TIER: for a logged-in under-13 account the Forums aren't
+    // part of the site yet — the page says so and shows nothing else.
+    if (currentUser() && isPlayOnly(await myBracket().catch(() => null))) {
+      document.querySelector("main").innerHTML = `
+        <h1 class="page-title">Forums</h1>
+        <p class="page-sub">The Forums unlock the month you turn 13 — your account does it on its own,
+        nothing to re-enter. Until then: the arcade's all yours.</p>
+        <p><a class="btn" href="index.html">← Back to the games</a></p>`;
+      renderNav("forums");
+      throw new Error("play-only tier");
+    }
 
     renderNav("");
     const me = currentUser();

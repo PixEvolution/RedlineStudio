@@ -93,7 +93,7 @@
       blockEl.innerHTML = !viewer
         ? `<b>Rated ${info.badge}</b> — <a href="login.html">log in</a> to play. This machine only opens for ${info.badge} players.`
         : verdict.why === "verify"
-          ? `<b>Rated ${info.badge}</b> — this machine only opens for verified adult accounts.`
+          ? `<b>Rated ${info.badge}</b> — this machine only opens for a declared 18+ birth date with a verified email.`
           : `<b>Rated ${info.badge}</b> — this machine only opens for ${info.badge} players.`;
       mount.appendChild(blockEl);
       return false;

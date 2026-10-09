@@ -1,6 +1,6 @@
 // Headless test: the ad plumbing — completely dormant until configured,
 // correct AdSense markup once it is, bottom-of-page slots only.
-import { AD_CONFIG, renderAd, footAd } from "./js/ads.js";
+import { AD_CONFIG, renderAd, footAd, setAdGate } from "./js/ads.js";
 
 let pass = 0, fail = 0;
 const check = (n, c) => { if (c) { pass++; console.log("  ✓", n); } else { fail++; console.log("  ✗ FAIL:", n); } };
@@ -30,13 +30,13 @@ check("the live config carries a slot id", /^\d{8,12}$/.test(LIVE.slot));
 console.log("Dormant when unconfigured (the kill switch still works):");
 AD_CONFIG.client = ""; AD_CONFIG.slot = "";
 check("no config: renderAd does nothing", renderAd(el("div")) === false);
-check("no config: footAd leaves the page untouched", footAd() === false && main.children.length === 0);
+check("no config: footAd leaves the page untouched", (await footAd()) === false && main.children.length === 0);
 check("no config: no ad script is loaded", head.children.length === 0);
 
 console.log("Configured:");
 AD_CONFIG.client = LIVE.client;
 AD_CONFIG.slot = LIVE.slot;
-check("footAd mounts the bottom slot", footAd() === true && main.children.length === 1);
+check("footAd mounts the bottom slot", (await footAd()) === true && main.children.length === 1);
 const box = main.children[0].children[0];
 const ins = box.children.find(c => c.className === "adsbygoogle");
 check("the AdSense unit carries the right ids",
@@ -47,9 +47,16 @@ check("the ad script loads once, from Google, with the client id",
   head.children.length === 1 && head.children[0].src.includes("adsbygoogle.js?client=" + LIVE.client));
 check("every slot links the privacy policy",
   box.children.some(c => c.className === "ad-cap" && c.innerHTML.includes("privacy.html")));
-footAd();
+await footAd();
 check("a second page slot reuses the one script", main.children.length === 2 && head.children.length === 1);
 check("each slot announces itself to AdSense", globalThis.adsbygoogle.length === 2);
+
+console.log("Children see no ads:");
+setAdGate(async () => false);   // what the real gate returns for a declared under-13
+check("an under-13 account gets NO ad slot at all",
+  (await footAd()) === false && main.children.length === 2);
+setAdGate(async () => true);
+check("…and everyone else still does", (await footAd()) === true && main.children.length === 3);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

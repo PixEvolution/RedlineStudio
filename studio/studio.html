@@ -165,7 +165,7 @@
           <option value="E">E — Everyone</option>
           <option value="T13">T — Teen (13+)</option>
           <option value="M16">M — Mature (16+)</option>
-          <option value="A18">A — Adult (18+, verified)</option>
+          <option value="A18">A — Adult (18+, verified email)</option>
         </select>
         <p class="hint" style="margin:6px 0 0">Rate it honestly — misrated games get moderated.
           <a href="../ratings.html" target="_blank" style="color:#ff8f8c">ⓘ what each rating means</a></p>
@@ -292,6 +292,8 @@
     import { renderNav, toast, $, fmtDate } from "../js/ui.js";
     import { requireLogin } from "../js/auth.js";
     import { publishGame, updateGame, deleteGame, listGamesBy } from "../js/games.js";
+    import { myBracket } from "../js/age.js";
+    import { canPublish } from "../js/ratings.js";
     import { Engine, drawFrame, makeObject, CANVAS_W, CANVAS_H } from "../js/engine.js";
     import { describeEra } from "../js/hardware.js";
     import { mountSpriteEditor } from "../js/sprite-editor.js";
@@ -1128,6 +1130,14 @@
       const btn = $("#btn-publish");
       btn.disabled = true;
       try {
+        // THE PLAY-ONLY TIER: under-13 accounts build, test and download —
+        // putting things in front of OTHER players waits until 13 (the
+        // database rules enforce this too)
+        if (!canPublish(await myBracket().catch(() => null))) {
+          throw new Error(pageMode
+            ? "Your custom page unlocks the month you turn 13. Until then your profile shows the standard card."
+            : "Publishing to the arcade unlocks the month you turn 13 — it happens on its own, nothing to re-enter. Until then: build, test, and download your games to keep them.");
+        }
         // quick compile check so broken scripts get flagged before publishing
         const check = new Engine(null, scene.objects);
         const isCasino = !pageMode && $("#g-type").value === "casino";

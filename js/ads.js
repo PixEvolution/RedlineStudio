@@ -82,10 +82,25 @@ export function renderAd(mount) {
 
 // One call per page: the bottom-of-page ad slot. Does nothing until
 // AD_CONFIG is filled in, so it's safe to ship everywhere ahead of time.
-export function footAd() {
+//
+// CHILDREN: an account with a declared under-13 bracket gets NO ads at all —
+// not non-personalized ones, none. (That's stricter than Google's
+// child-directed treatment, and far simpler to be sure about.) Logged-out
+// visitors and undeclared accounts get the non-personalized ads above.
+// The gate is swappable so the headless test can simulate a logged-in child.
+let adGate = async () => {
+  try {
+    const { myBracket } = await import("./age.js");
+    return (await myBracket()) !== "u13";
+  } catch { return true; }   // can't tell — treat like logged out
+};
+export function setAdGate(fn) { adGate = fn; }
+
+export async function footAd() {
   if (typeof document === "undefined") return false;
   const main = document.querySelector("main");
   if (!main) return false;
+  if (!(await adGate())) return false;
   const mount = document.createElement("div");
   mount.id = "ad-foot";
   main.appendChild(mount);

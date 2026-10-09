@@ -14,6 +14,7 @@
 
 import { db } from "./firebase.js";
 import { auth, authReady, currentUser, userDocId } from "./auth.js";
+import { growsDue } from "./ratings.js";
 import {
   doc, getDoc, setDoc, deleteDoc, writeBatch, deleteField
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -34,6 +35,16 @@ export async function myBracket() {
     const a = await getDoc(ageRef(u.uid));
     if (a.exists() && BRACKETS.includes(a.data().ageBracket)) {
       cached = a.data().ageBracket;
+      // GROWING UP: an under-13 declaration carries the MONTH the account
+      // turns 13 (never the birth date). When that month arrives, the
+      // bracket upgrades itself — the rules check the month against the
+      // server clock, so this can't be pulled forward.
+      if (cached === "u13" && growsDue(a.data().grows)) {
+        try {
+          await setDoc(ageRef(u.uid), { ageBracket: "13" });
+          cached = "13";
+        } catch {}   // rules not live yet — still u13 this visit
+      }
       return cached;
     }
   } catch {
@@ -64,13 +75,18 @@ export async function myBracket() {
 }
 
 // Declare the bracket — once. Throws if one is already set.
-export async function declareBracket(bracket) {
+// An under-13 declaration also stores `grows`, the YYYYMM month the account
+// turns 13 (from ratings.growsFromBirthdate) — the month, never the date —
+// so the account unlocks on its own instead of staying a child forever.
+export async function declareBracket(bracket, grows = null) {
   if (!BRACKETS.includes(bracket)) throw new Error("That isn't a valid age bracket.");
   await authReady;
   const u = auth.currentUser;
   if (!u) throw new Error("You're not logged in.");
   if (await myBracket()) throw new Error("Your age bracket is already set.");
-  await setDoc(ageRef(u.uid), { ageBracket: bracket });
+  const rec = bracket === "u13" && Number.isFinite(grows)
+    ? { ageBracket: "u13", grows } : { ageBracket: bracket };
+  await setDoc(ageRef(u.uid), rec);
   cached = bracket;
   return bracket;
 }

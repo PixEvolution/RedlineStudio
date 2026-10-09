@@ -19,13 +19,15 @@
 <body>
   <main class="page guide">
     <h1 class="page-title">Privacy Policy</h1>
-    <p class="page-sub">Effective September 25, 2026 · Applies to redlinestudio.dev and everything on it.</p>
+    <p class="page-sub">Effective October 8, 2026 (first version September 25, 2026) · Applies to
+    redlinestudio.dev and everything on it.</p>
 
     <div class="panel">
       <h2>1. Who we are</h2>
       <p>RedlineStudio (the "Service") is a browser-based game platform operated by <b>Redline Digital LLC</b>, a Michigan
-      limited liability company ("Redline Digital", "we", "us"). Redline Digital decides
-      what data the Service collects and why. For any privacy question or request, email
+      limited liability company formed September 28, 2026 ("Redline Digital", "we", "us"). Redline Digital decides
+      what data the Service collects and why. For any privacy question or request, use the
+      <a href="contact.html" style="color:#ff8f8c">contact form</a> (no account needed) or email
       <b>RedlineDigitalGames@proton.me</b>.</p>
       <p><b>In short:</b> an account needs only a username and a password. We never ask for your real name,
       address, phone number or birth date. Most of what you do on the Service is <b>public by design</b>. This
@@ -58,9 +60,13 @@
       <p>To unlock age-rated content you enter a birth date once in ⚙ Account. Your browser turns it into an
       <b>age bracket</b> (under 13, 13+, 16+ or 18+). Only the bracket is saved, in a <b>private record that
       only your login can read</b>. Other players can't see it. <b>The birth date is never sent to or stored
-      by us.</b> Once saved, the bracket cannot be changed from the site. Accounts created before September 25,
-      2026 kept their bracket on the public account record; it moves to the private record automatically the
-      next time that account visits.</p>
+      by us.</b> For an <b>under-13</b> declaration, the browser also saves the <b>month</b> (never the date)
+      in which the account turns 13, in the same private record, so the account unlocks 13+ features on time
+      by itself. Once saved, the bracket cannot be changed from the site, except that an under-13 bracket
+      upgrades itself to 13+ when that month arrives. Accounts created before September 25, 2026 kept their
+      bracket on the public account record; those brackets have since been moved into the private records.
+      "18+" on this Service means a <b>self-declared</b> 18+ birth date plus a verified email — we do not
+      verify identity or age beyond that.</p>
 
       <h3>2.4 Things you make and do</h3>
       <ul>
@@ -84,12 +90,14 @@
         currently at (or none), whether you're seated or in line, and when that last changed. This enforces
         "one account, one machine."</li>
         <li><b>Machine chat.</b> Messages (up to 120 characters) are stored with your username and a
-        timestamp. Each machine keeps its most recent 50 messages. Accounts without a declared 13+ bracket
-        send only fixed quick-chat phrases.</li>
+        timestamp. Each machine keeps its most recent 50 messages. Undeclared accounts send only fixed
+        quick-chat phrases; under-13 accounts have no machine chat at all (section 7).</li>
         <li><b>Watch window.</b> While you're the main player at a machine, your browser publishes images
         of your game screen with your username: about 5 per second to a live feed, plus a slower snapshot
         stored with the machine's seat record. These show <b>only the game canvas</b>, never your camera,
-        desktop or other tabs.</li>
+        desktop or other tabs. Anyone can watch, and watchers can be any age, including minors.
+        <b>Under-13 accounts' screens are never broadcast</b> — their browsers don't publish either feed
+        (section 7).</li>
         <li><b>Online multiplayer.</b> In duels and multi-seat rooms, your browser exchanges game state
         (positions, inputs, events) with other players through Firebase Realtime Database, tagged with your
         uid and a timestamp.</li>
@@ -129,7 +137,7 @@
         <li>your published games, listed models, profile and profile page, comments, forum posts, likes,
         and high scores;</li>
         <li>which machine you're at, seat and line activity, machine chat, and the watch-window images of
-        your game screen;</li>
+        your game screen (under-13 accounts' screens are never broadcast — section 7);</li>
         <li>multiplayer game data you send during online play.</li>
       </ul>
       <p>Your password, your linked email address, your age bracket, and your reports are <b>not</b> public.
@@ -171,6 +179,8 @@
       <h2>6. Advertising</h2>
       <p>To keep the Service free, pages load Google AdSense code. Ads only ever appear at the <b>bottom of
       pages</b>, never beside or over a game. As of the effective date, ads are not yet being served.</p>
+      <p>Accounts with a declared <b>under-13</b> bracket are shown <b>no ads at all</b> — not even
+      non-personalized ones.</p>
       <p>When ads run, Redline Digital requests <b>non-personalized ads only</b>, for every visitor. These
       ads are chosen from general context such as the page, not from your browsing history. Google may still
       use cookies or similar technologies, and receive your IP address, to limit how often an ad is shown,
@@ -184,24 +194,34 @@
 
     <div class="panel">
       <h2>7. Children's privacy</h2>
-      <p>The Service is open to all ages and is built to collect as little as possible from children:</p>
+      <p>The Service is open to all ages and is built to collect as little as possible from children. An
+      account with a declared <b>under-13</b> bracket is a <b>play-only account</b>: it plays games, and the
+      parts of the Service that would put a child's content or activity in front of other people are switched
+      off until the account turns 13 (which it does by itself — section 2.3):</p>
       <ul>
         <li>no account requires a real name, email, phone number, address or birth date;</li>
         <li>age brackets are private, so no one can look up which players are children;</li>
         <li>under-13 accounts <b>cannot link an email</b> and so have no way to be contacted off the Service;</li>
-        <li><b>typing messages other players can read</b> (comments, forum threads and posts, and typed machine
-        chat) requires a declared 13+ bracket. Under-13 and undeclared accounts chat at the machines only by
-        picking from a fixed list of phrases, so they can't type personal information into chat;</li>
+        <li>under-13 accounts <b>cannot publish games, list or buy on the Market, or build a custom profile
+        page</b> — nothing they make is shown to other players;</li>
+        <li>under-13 accounts have <b>no chat, comments or Forums at all</b> — they neither write nor see
+        them. Undeclared accounts can read, and chat at the machines only by picking from a fixed list of
+        phrases, so they can't type personal information into chat; typing freely requires a declared 13+;</li>
+        <li>under-13 accounts' <b>game screens are never broadcast</b> to the watch window — their browsers
+        simply don't publish the feed;</li>
         <li>16+ and 18+ content and the Casino are locked for under-13 players, and for anyone who hasn't
         declared an age;</li>
-        <li>ads are non-personalized for everyone (section 6).</li>
+        <li>under-13 accounts see <b>no ads</b>; ads are non-personalized for everyone else (section 6).</li>
       </ul>
-      <p>Children should never put personal information in usernames, games, profile pages, or anything else
-      they publish. Moderators remove content that does. <b>Parents and guardians:</b> an account's footprint is
+      <p>What remains visible about an under-13 account is what every account shows: the username (never a
+      real name — the site says so at signup), uid, coin balance, join date, and high-score rows.</p>
+      <p>Children should never put personal information in usernames or anything else on the Service.
+      Moderators remove content that does. <b>Parents and guardians:</b> an account's footprint is
       what's described in this policy. You can delete your child's account with ⚙ Account → Delete (you'll
-      need the password), or email <b>RedlineDigitalGames@proton.me</b> and we will review your child's account and
-      delete it and its content. If we learn we've collected personal information from a child under 13
-      beyond what's described here, we will delete it.</p>
+      need the password), or use the <a href="contact.html" style="color:#ff8f8c">contact form</a> or email
+      <b>RedlineDigitalGames@proton.me</b> and we will review your child's account and delete it and its
+      content. <b>We answer parent and guardian requests within 30 days.</b> If we learn we've collected
+      personal information from a child under 13 beyond what's described here, we will delete it.</p>
     </div>
 
     <div class="panel">
@@ -224,7 +244,8 @@
         their inventories);</li>
         <li>reports you filed, until a moderator resolves them.</li>
       </ul>
-      <p>To have any of that removed too, email <b>RedlineDigitalGames@proton.me</b> from your linked email, or tell us
+      <p>To have any of that removed too, use the <a href="contact.html" style="color:#ff8f8c">contact
+      form</a> or email <b>RedlineDigitalGames@proton.me</b> from your linked email, or tell us
       your username if you have none. We'll act within 30 days. A casino machine that still holds coins must
       be emptied before its account can be deleted.</p>
       <p><b>Automatically temporary data:</b> live watch-window frames are deleted when the player
@@ -238,7 +259,8 @@
       <p>You can view and edit most of your data on the site, and delete your account yourself at any
       time. Depending on where you live, you may also have the right to access, correct, delete or receive a
       copy of your personal information, to object to or restrict its processing, and not to be treated
-      differently for using these rights. To make a request, email <b>RedlineDigitalGames@proton.me</b>. Because
+      differently for using these rights. To make a request, use the
+      <a href="contact.html" style="color:#ff8f8c">contact form</a> or email <b>RedlineDigitalGames@proton.me</b>. Because
       accounts have no identity attached, we may ask you to prove you control the account, for example by
       emailing from its linked address or by confirming a detail only the account holder would know.</p>
       <p><b>Visitors in the EEA, UK and Switzerland:</b> we process data to provide the Service you asked for
@@ -265,7 +287,8 @@
 
     <div class="panel">
       <h2>12. Contact</h2>
-      <p>Redline Digital LLC · Michigan, USA · <b>RedlineDigitalGames@proton.me</b><br>
+      <p>Redline Digital LLC · Michigan, USA · <b>RedlineDigitalGames@proton.me</b> · or the
+      <a href="contact.html" style="color:#ff8f8c">contact form</a>, which needs no account and no email.<br>
       See also the <a href="terms.html" style="color:#ff8f8c">Terms of Service</a>.</p>
     </div>
   </main>

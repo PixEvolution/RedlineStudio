@@ -8,11 +8,21 @@
 // when the player disconnects.
 
 import { liveDb } from "./rtdb.js";
+import { myBracket } from "./age.js";
+import { isPlayOnly } from "./ratings.js";
 import {
   ref, set, remove, onValue, onDisconnect
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const HZ = 5;   // frames per second on the wire
+
+// CHILDREN'S PRIVACY: an under-13 account's screen is never broadcast — no
+// live frames go out at all (the slow seat snapshot is suppressed too, in
+// floor.js). Watchers at that machine see "playing" without the screen.
+// Resolved once per page; an unreadable bracket broadcasts (undeclared
+// accounts aren't children the site knows about).
+let _quiet = null;
+const quietFeed = () => (_quiet ??= myBracket().then(isPlayOnly).catch(() => false));
 
 // The player's side. start(getSnap) begins broadcasting; stop() cleans up.
 export function createLivePublisher(gameId, username) {
@@ -23,13 +33,16 @@ export function createLivePublisher(gameId, username) {
   return {
     start(getSnap) {
       this.stop();
-      try { onDisconnect(node).remove(); } catch {}
-      timer = setInterval(() => {
-        try {
-          const snap = getSnap();
-          if (snap) set(node, { by: username || "", at: Date.now(), snap }).catch(() => {});
-        } catch {}
-      }, Math.round(1000 / HZ));
+      quietFeed().then((quiet) => {
+        if (quiet || timer) return;   // under-13: nothing leaves the browser
+        try { onDisconnect(node).remove(); } catch {}
+        timer = setInterval(() => {
+          try {
+            const snap = getSnap();
+            if (snap) set(node, { by: username || "", at: Date.now(), snap }).catch(() => {});
+          } catch {}
+        }, Math.round(1000 / HZ));
+      });
     },
     stop() {
       if (timer) { clearInterval(timer); timer = null; }

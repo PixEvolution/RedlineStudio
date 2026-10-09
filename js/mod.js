@@ -18,7 +18,7 @@ import { auth, authReady } from "./auth.js";
 import { db } from "./firebase.js";
 import {
   doc, getDoc, updateDoc, deleteDoc, collection, getDocs, query, orderBy, limit,
-  writeBatch
+  writeBatch, deleteField
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { cardFields } from "./games.js";
 import { renderThumb } from "./cards.js";
@@ -90,4 +90,51 @@ export async function listReports(max = 100) {
 }
 export async function resolveReport(reportId) {
   await deleteDoc(doc(db, "reports", reportId));
+}
+
+// 📨 the contact form's inbox (contact.html → /inbox): privacy and parent
+// requests, appeals, copyright notices. Anyone can write one (even logged
+// out); only mods read and clear them.
+export async function listInbox(max = 200) {
+  const snap = await getDocs(query(collection(db, "inbox"), orderBy("at", "desc"), limit(max)));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+export async function resolveInbox(msgId) {
+  await deleteDoc(doc(db, "inbox", msgId));
+}
+
+// ---- THE ONE-TIME BRACKET MIGRATION: move every old PUBLIC age bracket
+// (users docs from before Sept 25, 2026) into the private /ages/{uid}
+// records, all at once, instead of waiting for each account to visit again.
+// Idempotent and safe to re-run: it only touches users docs that still carry
+// a public ageBracket. Accounts with no uid stamp (v1 accounts that never
+// logged in under the new auth) can't be migrated — their uid isn't known —
+// so they're counted and keep migrating themselves on their next visit.
+export async function migrateBrackets(onProgress = () => {}) {
+  const snap = await getDocs(collection(db, "users"));
+  const carriers = snap.docs.filter(d => typeof d.data().ageBracket === "string");
+  let moved = 0, cleared = 0, skipped = 0, done = 0;
+  let batch = writeBatch(db), inBatch = 0;
+  const flush = async () => { if (inBatch) { await batch.commit(); batch = writeBatch(db); inBatch = 0; } };
+  for (const d of carriers) {
+    const u = d.data();
+    done++;
+    if (!u.uid) { skipped++; continue; }           // pre-auth-v2 account — no uid to key on
+    const privSnap = await getDoc(doc(db, "ages", u.uid));
+    if (privSnap.exists()) {
+      // the private record already exists — just clear the public copy if it matches
+      if (privSnap.data().ageBracket === u.ageBracket) {
+        batch.update(d.ref, { ageBracket: deleteField() });
+        inBatch++; cleared++;
+      } else skipped++;                            // mismatch — leave for a human look
+    } else {
+      batch.set(doc(db, "ages", u.uid), { ageBracket: u.ageBracket });
+      batch.update(d.ref, { ageBracket: deleteField() });
+      inBatch += 2; moved++;
+    }
+    if (inBatch >= 300) { await flush(); onProgress(done, carriers.length); }
+  }
+  await flush();
+  onProgress(done, carriers.length);
+  return { total: carriers.length, moved, cleared, skipped };
 }

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RedlineStudio — Contact</title>
+  <meta name="description" content="Contact Redline Digital: privacy and parent/guardian requests, moderation appeals, misrated games, copyright notices, or anything else.">
+  <link rel="canonical" href="https://redlinestudio.dev/contact.html">
+  <meta property="og:site_name" content="RedlineStudio">
+  <meta property="og:title" content="Contact — RedlineStudio">
+  <meta property="og:description" content="Reach Redline Digital: privacy requests, parent requests, appeals, copyright notices.">
+  <meta property="og:url" content="https://redlinestudio.dev/contact.html">
+  <meta property="og:type" content="website">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="page guide">
+    <h1 class="page-title">Contact</h1>
+    <p class="page-sub">Two ways to reach Redline Digital — this form (no account needed), or email
+    <b>RedlineDigitalGames@proton.me</b>. Both land with the same person.</p>
+
+    <div class="panel">
+      <h2>Send a message</h2>
+      <p class="hint">Parent/guardian and privacy requests get an answer within <b>30 days</b>; moderation
+      appeals within <b>14 days</b>. Leave a way to reply if you want one — the form works without it, but
+      then the answer can only be an action, not a message back.</p>
+      <label for="c-topic">What's this about?</label>
+      <select id="c-topic" style="max-width:340px">
+        <option value="parent request">Parent or guardian request (about a child's account)</option>
+        <option value="privacy request">Privacy request (access, correction, deletion)</option>
+        <option value="appeal">Appeal a moderation decision</option>
+        <option value="misrated game">Report a misrated game</option>
+        <option value="copyright">Copyright notice</option>
+        <option value="other">Something else</option>
+      </select>
+      <label for="c-text">Your message</label>
+      <textarea id="c-text" rows="6" maxlength="1000" placeholder="Say the thing — include the username or game it's about."></textarea>
+      <label for="c-contact">How can we reply? (optional — an email address)</label>
+      <input type="text" id="c-contact" maxlength="120" style="max-width:340px" placeholder="you@example.com">
+      <br><br>
+      <button class="btn" id="c-send">Send</button>
+      <span class="hint" id="c-status" style="margin-left:10px"></span>
+    </div>
+
+    <div class="panel">
+      <h2>Faster routes for some things</h2>
+      <ul>
+        <li><b>A game breaking the rules or misrated:</b> the ⚑ Report button on its page reaches
+        moderation directly.</li>
+        <li><b>Deleting your own account:</b> ⚙ Account → Delete is immediate — no need to write in.</li>
+        <li><b>General questions:</b> the <a href="forums.html" style="color:#ff8f8c">Forums</a> are open.</li>
+        <li><b>Legal, privacy, copyright and security notices</b> are valid through this form or the email
+        above, as the <a href="terms.html" style="color:#ff8f8c">Terms</a> and
+        <a href="privacy.html" style="color:#ff8f8c">Privacy Policy</a> say.</li>
+      </ul>
+    </div>
+  </main>
+
+  <script type="module">
+    import { renderNav, toast, $ } from "./js/ui.js";
+    import { currentUser } from "./js/auth.js";
+    import { db } from "./js/firebase.js";
+    import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    renderNav("");
+
+    $("#c-send").addEventListener("click", async () => {
+      const btn = $("#c-send"), status = $("#c-status");
+      const text = $("#c-text").value.trim();
+      if (!text) { toast("Write the message first.", true); return; }
+      btn.disabled = true;
+      status.textContent = "Sending…";
+      try {
+        await addDoc(collection(db, "inbox"), {
+          topic: $("#c-topic").value,
+          text: text.slice(0, 1000),
+          contact: $("#c-contact").value.trim().slice(0, 120),
+          by: currentUser() || "",
+          at: Date.now()
+        });
+        $("#c-text").value = "";
+        status.textContent = "";
+        toast("Sent. It lands directly with the operator.");
+      } catch (err) {
+        status.textContent = "";
+        toast("Couldn't send: " + err.message, true);
+        btn.disabled = false;
+        return;
+      }
+      btn.disabled = false;
+    });
+  </script>
+</body>
+</html>

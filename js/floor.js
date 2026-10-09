@@ -10,7 +10,7 @@
 import { db } from "./firebase.js";
 import { userDocId, auth } from "./auth.js";
 import { myBracket } from "./age.js";
-import { canUseFreeText, QUICK_CHAT } from "./ratings.js";
+import { canUseFreeText, isPlayOnly, QUICK_CHAT } from "./ratings.js";
 import {
   doc, onSnapshot, runTransaction, setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -19,6 +19,13 @@ import {
 // QUICK_CHAT (see ratings.js). Looked up once per page.
 let _freeText = null;
 const freeTextAllowed = () => (_freeText ??= myBracket().then(canUseFreeText).catch(() => false));
+
+// THE PLAY-ONLY TIER (under-13): the machine works — seats, the line, the
+// hog clock — but the social layer doesn't exist for this account: machine
+// chat isn't shown, and the slow watch snapshot is never written (live.js
+// suppresses the fast frames the same way). Looked up once per page.
+let _playOnly = null;
+const playOnlyHere = () => (_playOnly ??= myBracket().then(isPlayOnly).catch(() => false));
 
 export {
   STALE_MS, BEAT_MS, QBEAT_MS, HOG_MS, NUDGE_COOLDOWN_MS, MAX_SEATS,
@@ -164,6 +171,7 @@ export function createFloor(gameId, me, { hogMs = HOG_MS, seats = 1 } = {}) {
       floor.stopBeating();
       const beatOnce = async () => {
         try {
+          const quiet = await playOnlyHere();   // under-13: screen stays private
           await runTransaction(db, async (tx) => {
             const s = await tx.get(ref);
             const data = s.exists() ? s.data() : {};
@@ -173,8 +181,14 @@ export function createFloor(gameId, me, { hogMs = HOG_MS, seats = 1 } = {}) {
             players[me] = { ...players[me], beat: now };
             const next = withSeating(data, players, now);
             if (next.player === me) {
-              const snap = getSnap ? getSnap() : null;
-              if (snap) { next.snap = snap; next.snapAt = snap.at; }
+              if (quiet) {
+                // don't broadcast — and don't leave the LAST player's screen
+                // up with this player at the machine
+                next.snap = null; next.snapAt = 0;
+              } else {
+                const snap = getSnap ? getSnap() : null;
+                if (snap) { next.snap = snap; next.snapAt = snap.at; }
+              }
             }
             tx.set(ref, next);
           });
@@ -334,7 +348,8 @@ export function createFloor(gameId, me, { hogMs = HOG_MS, seats = 1 } = {}) {
     async chat(text) {
       text = String(text || "").trim().slice(0, 120);
       if (!me || !text) return;
-      // under-13 / undeclared: fixed phrases only
+      if (await playOnlyHere()) return;   // under-13: chat doesn't exist
+      // undeclared: fixed phrases only
       if (!(await freeTextAllowed()) && !QUICK_CHAT.includes(text)) return;
       try {
         await runTransaction(db, async (tx) => {
@@ -421,6 +436,14 @@ export function renderFloorPanel(mount, floor, me) {
       input.style.display = "none";
       quick.style.display = "";
       quick.title = "Typing your own messages is for players who've declared 13+ in ⚙ Account.";
+    });
+    // the play-only tier: no chat at all — reading included
+    playOnlyHere().then((quiet) => {
+      if (!quiet) return;
+      const hint = document.createElement("p");
+      hint.className = "hint";
+      hint.textContent = "Machine chat unlocks the month you turn 13 — until then it's just you and the game.";
+      chatBox.replaceWith(hint);
     });
   }
 
