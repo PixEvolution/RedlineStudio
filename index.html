@@ -41,11 +41,13 @@
 
   <script type="module">
     import { renderNav, toast } from "./js/ui.js";
+    import { addPanelSpeakers } from "./js/speech.js";
     import { listAllPublic, ROOM_SIZE } from "./js/games.js";
     import { gameCard, resetLiveCardBudget } from "./js/cards.js";
     import { createFilterBar, applyFilter } from "./js/filterbar.js";
 
     renderNav("");
+    addPanelSpeakers();
 
     const grid = document.getElementById("games");
 

@@ -31,6 +31,9 @@ console.log("The guide is a clickable book now:");
     guide.includes('window.addEventListener("hashchange", goHash)')
     && guide.includes("g-flash"));
   check("open/close-all buttons exist", guide.includes("Open all") && guide.includes("Close all"));
+  check("📋 Copy guide: one button copies every section as one text block, code fenced",
+    guide.includes("Copy guide") && guide.includes('out.push("```"')
+    && guide.includes("navigator.clipboard.writeText") && guide.includes('execCommand("copy")'));
 }
 
 console.log("The Studio meets the guide:");

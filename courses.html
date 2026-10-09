@@ -55,8 +55,10 @@
 
   <script type="module">
     import { renderNav } from "./js/ui.js";
+    import { addPanelSpeakers } from "./js/speech.js";
     import { COURSES, isUnlocked, myProgress } from "./js/courses.js";
     renderNav("");
+    addPanelSpeakers();
 
     const list = document.getElementById("course-list");
     const note = document.getElementById("course-note");

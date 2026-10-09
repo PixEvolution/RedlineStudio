@@ -560,7 +560,9 @@ hits            how many times other players have hit YOU (respawn on change)</p
 
   <script type="module">
     import { renderNav } from "./js/ui.js";
+    import { addPanelSpeakers } from "./js/speech.js";
     renderNav("");
+    addPanelSpeakers();
   </script>
   <script>
     // ---- the clickable guide: contents, collapsible sections, ✓ read marks.
@@ -638,7 +640,49 @@ hits            how many times other players have hit YOU (respawn on change)</p
       btnNone.className = "btn btn-small btn-ghost";
       btnNone.textContent = "Close all";
       btnNone.addEventListener("click", () => { open.clear(); saveSet(KEY_OPEN, open); paint(); });
-      head.append(prog, btnAll, btnNone);
+
+      // 📋 Copy the WHOLE guide as one plain-text block — every section,
+      // open or folded — ready to paste to a friend, a doc, or an AI.
+      const btnCopy = document.createElement("button");
+      btnCopy.className = "btn btn-small btn-ghost";
+      btnCopy.textContent = "📋 Copy guide";
+      btnCopy.title = "Copy the entire guide as one text block — code tables fenced, ready to paste anywhere";
+      const serialize = (el, out) => {
+        if (el.tagName === "PRE") { out.push("```", el.textContent.replace(/\s+$/, ""), "```", ""); return; }
+        if (el.tagName === "UL" || el.tagName === "OL") {
+          for (const li of el.children) out.push("· " + li.textContent.replace(/\s+/g, " ").trim());
+          out.push("");
+          return;
+        }
+        const t = el.textContent.replace(/\s+/g, " ").trim();
+        if (t) out.push(t, "");
+      };
+      btnCopy.addEventListener("click", async () => {
+        const out = ["REDLINESTUDIO CODING GUIDE — https://redlinestudio.dev/guide.html", ""];
+        for (const p of panels) {
+          const lvl = p.querySelector(".lvl");
+          out.push("══════ " + labelOf(p) + (lvl ? " [" + lvl.textContent.trim() + "]" : "") + " ══════", "");
+          for (const el of p.querySelector(".panel-body").children) serialize(el, out);
+        }
+        const text = out.join("\n");
+        let ok = false;
+        try { await navigator.clipboard.writeText(text); ok = true; } catch {}
+        if (!ok) {
+          try {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            ok = document.execCommand("copy");
+            ta.remove();
+          } catch {}
+        }
+        const was = btnCopy.textContent;
+        btnCopy.textContent = ok ? `✓ Copied — ${Math.round(text.length / 1000)}k characters` : "✗ Couldn't copy";
+        setTimeout(() => { btnCopy.textContent = was; }, 2500);
+      });
+
+      head.append(prog, btnAll, btnNone, btnCopy);
       toc.appendChild(head);
       const note = document.createElement("p");
       note.className = "hint";

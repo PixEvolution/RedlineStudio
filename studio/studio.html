@@ -1581,6 +1581,7 @@ Enter (in chat/answer boxes)   send</pre>
         <div class="course-nav" style="display:flex; gap:6px; align-items:center; margin:8px 0">
           <button class="btn btn-small btn-ghost" id="course-prev">◂</button>
           <span id="course-where" class="hint" style="flex:1; text-align:center"></span>
+          <button class="btn btn-small btn-ghost" id="course-speak" title="Listen to this chapter">🔊</button>
           <button class="btn btn-small" id="course-next">Next ▸</button>
         </div>
         <div id="course-body" style="max-height:46vh; overflow:auto; font-size:.92em"></div>
@@ -1661,6 +1662,19 @@ Enter (in chat/answer boxes)   send</pre>
           }
         }
       };
+
+      // 🔊 listen to the chapter — for learners who'd rather hear the lesson
+      try {
+        const sp = await import("../js/speech.js");
+        if (sp.canSpeak()) {
+          sp.wireSpeaker(panel.querySelector("#course-speak"), () => sp.textOf(body));
+          const hush = () => sp.stopSpeaking();   // turning the page stops the voice
+          panel.querySelector("#course-prev").addEventListener("click", hush);
+          panel.querySelector("#course-next").addEventListener("click", hush);
+        } else {
+          panel.querySelector("#course-speak").style.display = "none";
+        }
+      } catch {}
 
       panel.querySelector("#course-prev").addEventListener("click", () => { chapter = Math.max(0, chapter - 1); render(); });
       panel.querySelector("#course-next").addEventListener("click", () => { chapter = Math.min(course.chapters.length - 1, chapter + 1); render(); });

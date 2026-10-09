@@ -58,11 +58,13 @@
 
   <script type="module">
     import { renderNav, toast, $ } from "./js/ui.js";
+    import { addPanelSpeakers } from "./js/speech.js";
     import { currentUser } from "./js/auth.js";
     import { db } from "./js/firebase.js";
     import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     renderNav("");
+    addPanelSpeakers();
 
     $("#c-send").addEventListener("click", async () => {
       const btn = $("#c-send"), status = $("#c-status");
