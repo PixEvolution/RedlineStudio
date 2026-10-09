@@ -57,6 +57,7 @@
     import { currentUser } from "./js/auth.js";
     import { listThreads, getThread, createThread, listPosts, replyToThread, deletePost, deleteThread } from "./js/forum.js";
     import { amIMod } from "./js/mod.js";
+    import { wireLevel } from "./js/level.js";
 
     renderNav("");
     const me = currentUser();
@@ -82,7 +83,12 @@
           title.title = t.title;
           const meta = document.createElement("div");
           meta.className = "hint";
-          meta.textContent = `by ${t.author} · ${t.replies || 0} repl${(t.replies || 0) === 1 ? "y" : "ies"} · ${fmtDate(t.lastAt || t.createdAt)}`;
+          meta.textContent = "by ";
+          const au = document.createElement("span");
+          au.textContent = t.author;
+          wireLevel(au, t.author);
+          meta.appendChild(au);
+          meta.appendChild(document.createTextNode(` · ${t.replies || 0} repl${(t.replies || 0) === 1 ? "y" : "ies"} · ${fmtDate(t.lastAt || t.createdAt)}`));
           row.append(title, meta);
           mount.appendChild(row);
         }
@@ -115,7 +121,12 @@
         const t = await getThread(threadId);
         $("#th-title").textContent = t.title;
         document.title = "RedlineStudio — " + t.title;
-        $("#th-meta").textContent = `started by ${t.author} · ${fmtDate(t.createdAt)}`;
+        $("#th-meta").textContent = "started by ";
+        const thAu = document.createElement("span");
+        thAu.textContent = t.author;
+        wireLevel(thAu, t.author);
+        $("#th-meta").appendChild(thAu);
+        $("#th-meta").appendChild(document.createTextNode(` · ${fmtDate(t.createdAt)}`));
         if (me === t.author || await amIMod()) {
           const del = document.createElement("a");
           del.href = "#";
@@ -151,6 +162,7 @@
         who.className = "comment-author";
         who.textContent = p.author;
         who.href = "profile.html?u=" + encodeURIComponent(p.author);
+        wireLevel(who, p.author);
         const when = document.createElement("span");
         when.className = "hint";
         when.textContent = fmtDate(p.createdAt);

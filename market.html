@@ -46,6 +46,7 @@
     import { renderVotes, renderComments } from "./js/social.js";
     import { createFilterBar, applyFilter } from "./js/filterbar.js";
     import { createPager } from "./js/rooms.js";
+    import { wireLevel } from "./js/level.js";
 
     renderNav("");
     const PAGE_SIZE = 24;
@@ -140,7 +141,12 @@
           }
           const meta = document.createElement("div");
           meta.className = "game-meta";
-          meta.textContent = `by ${m.owner} · ${fmtDate(m.createdAt)}`;
+          meta.textContent = "by ";
+          const own = document.createElement("span");
+          own.textContent = m.owner;
+          wireLevel(own, m.owner);
+          meta.appendChild(own);
+          meta.appendChild(document.createTextNode(` · ${fmtDate(m.createdAt)}`));
           const priceRow = document.createElement("div");
           priceRow.style.display = "flex";
           priceRow.style.justifyContent = "space-between";

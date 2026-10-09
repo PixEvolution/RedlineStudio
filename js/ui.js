@@ -4,6 +4,7 @@
 import { currentUser, logout, auth, authReady } from "./auth.js";
 import { getCoins } from "./economy.js";
 import { myBracket } from "./age.js";
+import { wireLevel } from "./level.js";
 
 export const COIN = "◎";   // the coin symbol — renders on every platform (the coin emoji does not on Windows)
 
@@ -51,6 +52,7 @@ export function renderNav(rootPath = "") {
     name.textContent = user; // textContent = safe for any character
     name.href = rootPath + "profile.html?u=" + encodeURIComponent(user);
     name.title = user + " — my profile";
+    wireLevel(name, user);   // "name N" — the player level, earned one course at a time
     const gear = document.createElement("a");
     gear.href = rootPath + "account.html";
     gear.textContent = "⚙";

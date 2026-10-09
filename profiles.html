@@ -31,6 +31,7 @@
     import { listAllPublic } from "./js/games.js";
     import { createFilterBar, applyFilter } from "./js/filterbar.js";
     import { createPager } from "./js/rooms.js";
+    import { wireLevel } from "./js/level.js";
 
     renderNav("");
     const grid = document.getElementById("players");
@@ -58,6 +59,7 @@
         name.className = "game-title";
         name.textContent = u.username;
         name.title = u.username;
+        wireLevel(name, u.username);
         const meta = document.createElement("div");
         meta.className = "game-meta";
         meta.textContent = `joined ${fmtDate(u.createdAt) || "recently"} · ${u.plays} plays · ▲ ${u.likes} ▼ ${u.dislikes}`;

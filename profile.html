@@ -55,6 +55,7 @@
     import { db } from "./js/firebase.js";
     import { userDocId } from "./js/auth.js";
     import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { wireLevel } from "./js/level.js";
 
     renderNav("");
 
@@ -72,6 +73,7 @@
       const games = await listCardsBy(username);
 
       nameEl.textContent = profile.username;
+      wireLevel(nameEl, profile.username);
       document.title = "RedlineStudio — " + profile.username;
       const totalPlays = games.reduce((n, g) => n + (g.plays || 0), 0);
       metaEl.textContent =

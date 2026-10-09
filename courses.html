@@ -42,6 +42,9 @@
       you've actually done it. Finish every step and the course
       is complete — <b>completing a course unlocks the next</b>, in museum order, so by the end of the
       ladder you've rebuilt the history of game design with your own hands.</p>
+      <p><b>Courses are the leveling game.</b> Every player starts at <b>level 1</b>, and every finished
+      course is <b>+1 level</b> — your level rides beside your username everywhere on the site, and the
+      only way to raise it is to build. No shortcuts, no purchases: level 10 means ten machines, by hand.</p>
       <p class="hint">Progress saves to your account, so <a href="login.html" style="color:#ff8f8c">log
       in</a> before you start. (Logged out, the course still runs — it just can't remember you finished.)
       Each course ends with a machine you can publish to the Games page, high-score table included.</p>
@@ -58,6 +61,7 @@
     import { renderNav } from "./js/ui.js";
     import { addPanelSpeakers } from "./js/speech.js";
     import { COURSES, isUnlocked, myProgress } from "./js/courses.js";
+    import { levelFrom } from "./js/level.js";
     renderNav("");
     addPanelSpeakers();
 
@@ -65,9 +69,13 @@
     const note = document.getElementById("course-note");
     const progress = await myProgress();   // null = logged out
 
+    // the courses ARE the leveling game: every finished course is +1 level,
+    // and the level rides beside your username all over the site
+    const lvl = levelFrom(progress);
+    const next = COURSES.find(c => progress ? !progress[c.id] : true);
     note.textContent = progress === null
-      ? "You're not logged in — course 1 is open to everyone, but finishing only counts on an account."
-      : `${Object.keys(progress).length ? Object.keys(progress).length + " course(s) on your shelf." : "Nothing on the shelf yet — course 1 awaits."}`;
+      ? "You're not logged in — course 1 is open to everyone, but finishing only counts on an account (and levels live on the account)."
+      : `⭐ You're level ${lvl}` + (next ? ` — finish ${next.title} to reach level ${lvl + 1}.` : " — the whole ladder is yours. Maximum level… for now.");
 
     COURSES.forEach((c, i) => {
       const row = document.createElement("div");
@@ -89,7 +97,7 @@
       } else if (unlocked) {
         const go = document.createElement("button");
         go.className = "btn btn-small";
-        go.textContent = i === 0 ? "▶ Start here" : "▶ Start";
+        go.textContent = (i === 0 ? "▶ Start here" : "▶ Start") + (progress !== null ? ` → level ${lvl + 1}` : "");
         go.addEventListener("click", () => {
           // the LESSON opens as its own little window; its 🎮 button opens the
           // course's full-size Studio beside it

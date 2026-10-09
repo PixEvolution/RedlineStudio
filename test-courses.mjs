@@ -5,6 +5,7 @@
 import { readFileSync, existsSync } from "node:fs";
 import { COURSES, courseIndex, isUnlocked } from "./js/courses.js";
 import { course } from "./js/course-crt.js";
+import { levelFrom } from "./js/level.js";
 
 let pass = 0, fail = 0;
 const check = (n, c) => { if (c) { pass++; console.log("  ✓", n); } else { fail++; console.log("  ✗ FAIL:", n); } };
@@ -173,6 +174,46 @@ console.log("The hub, the rules, the doors in:");
     && (src("museum.html").match(/courses\.html/g) || []).length >= 2);
   check("the privacy policy discloses course progress", src("privacy.html").includes("Course progress"));
   check("the sitemap carries courses.html", src("sitemap.xml").includes("/courses.html"));
+}
+
+console.log("⭐ Player level — the courses ARE the leveling game:");
+{
+  check("level = 1 + courses completed: everyone starts at 1, course 1 makes you level 2",
+    levelFrom(null) === 1 && levelFrom({}) === 1 && levelFrom({ crt: 1 }) === 2
+    && levelFrom({ crt: 1, bertie: 1, nimrod: 1 }) === 4);
+  check("the full ladder tops out at level " + (COURSES.length + 1) + " — and grows with every course written",
+    levelFrom(Object.fromEntries(COURSES.map(c => [c.id, 1]))) === COURSES.length + 1);
+  const lvl = src("js/level.js");
+  check("the level is COMPUTED from /progress, never stored — two public reads, so it can't be faked",
+    lvl.includes('doc(db, "users"') && lvl.includes('doc(db, "progress"') && !lvl.includes("setDoc"));
+  check("lookups cache per page and ten minutes in the browser",
+    lvl.includes("inflight") && lvl.includes("rl_lvl_") && lvl.includes("10 * 60 * 1000"));
+  check("unknown user / offline shows NOTHING rather than a guess",
+    lvl.includes("return 0") && lvl.includes("if (!n) return;"));
+  check("the format is Victor's: username, space, number (the number a shade dimmer)",
+    lvl.includes('" " + n') && lvl.includes("opacity:.75"));
+  const WIRED = [
+    ["js/ui.js", "the nav bar's own name"],
+    ["js/social.js", "comment authors"],
+    ["js/scores.js", "high-score tables"],
+    ["forums.html", "forum threads and posts"],
+    ["profiles.html", "the players directory"],
+    ["profile.html", "the profile page itself"],
+    ["play.html", "the game's owner"],
+    ["market.html", "market listings"],
+    ["account.html", "the account page"]
+  ];
+  for (const [f, what] of WIRED) check(`levels ride beside names: ${what}`, src(f).includes("wireLevel"));
+  check("forums tag all three name spots (thread list, thread head, every post)",
+    (src("forums.html").match(/wireLevel\(/g) || []).length >= 3);
+  const hub = src("courses.html");
+  check("the hub says your level and what the next course makes you",
+    hub.includes("You're level") && hub.includes("to reach level") && hub.includes("→ level"));
+  check("the hub teaches the rule: +1 per course, no shortcuts",
+    hub.includes("leveling game") && hub.includes("+1 level"));
+  check("finishing a course is a ⭐ LEVEL UP in the lesson window",
+    src("course.html").includes("LEVEL UP — you're level") && src("course.html").includes("levelFrom"));
+  check("the privacy policy discloses the public level", src("privacy.html").includes("player level"));
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

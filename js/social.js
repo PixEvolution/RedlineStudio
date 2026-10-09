@@ -4,6 +4,7 @@
 // lists can show counts with no extra reads. Comments are their own collection.
 
 import { amIMod } from "./mod.js";
+import { wireLevel } from "./level.js";
 import { db } from "./firebase.js";
 import { auth } from "./auth.js";
 import { userDocId } from "./auth.js";
@@ -192,6 +193,7 @@ export function renderComments(mount, kind, id, me, { heading = "Comments" } = {
         who.className = "comment-author";
         who.textContent = c.author;
         who.href = "profile.html?u=" + encodeURIComponent(c.author);
+        wireLevel(who, c.author);
         const text = document.createElement("span");
         text.className = "comment-text";
         text.textContent = c.text;

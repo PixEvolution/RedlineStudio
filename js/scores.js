@@ -13,6 +13,7 @@
 
 import { db } from "./firebase.js";
 import { auth, userDocId } from "./auth.js";
+import { wireLevel } from "./level.js";
 import {
   doc, getDoc, setDoc, collection, query, orderBy, limit, getDocs, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -85,6 +86,7 @@ export function renderScoreboard(mount, gameId, me) {
         name.className = "score-name";
         name.href = "profile.html?u=" + encodeURIComponent(r.user);
         name.textContent = r.user;
+        wireLevel(name, r.user);
         const pts = document.createElement("span");
         pts.className = "score-pts";
         pts.textContent = r.score;

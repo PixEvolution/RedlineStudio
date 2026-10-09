@@ -53,6 +53,7 @@
     import { attachParty } from "./js/party.js";
     import { submitScore, renderScoreboard } from "./js/scores.js";
     import { sharpenCanvas, attachScreenSizeButton } from "./js/screen-size.js";
+    import { wireLevel } from "./js/level.js";
 
     renderNav("");
 
@@ -653,6 +654,7 @@
       ownerLink.href = "profile.html?u=" + encodeURIComponent(game.owner);
       ownerLink.textContent = game.owner;
       ownerLink.style.color = "#ff8f8c";
+      wireLevel(ownerLink, game.owner);
       metaEl.appendChild(ownerLink);
       metaEl.appendChild(document.createTextNode(
         ` · ${game.plays || 0} plays · published ${fmtDate(game.createdAt)}` +

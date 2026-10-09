@@ -137,6 +137,7 @@
     import { myBracket, declareBracket, eraseMyAge } from "./js/age.js";
     import { listGamesBy, deleteGame } from "./js/games.js";
     import { listMyModels, deleteModel } from "./js/models.js";
+    import { wireLevel } from "./js/level.js";
 
     renderNav("");
     addPanelSpeakers();
@@ -197,6 +198,7 @@
     await authReady;
 
     $("#acc-name").textContent = user;
+    wireLevel($("#acc-name"), user);
     import("./js/mod.js").then(async ({ amIMod }) => {
       const { auth } = await import("./js/auth.js");
       $("#acc-uid").textContent = auth.currentUser?.uid || "…";

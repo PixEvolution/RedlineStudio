@@ -47,10 +47,11 @@
     const $ = (s) => document.querySelector(s);
     const body = $("#lesson-body"), foot = $("#lesson-foot"), where = $("#les-where");
 
-    let course = null, progApi = null;
+    let course = null, progApi = null, levelFrom = null;
     try {
       course = (await import("./js/course-" + id + ".js")).course;
       progApi = await import("./js/courses.js");
+      ({ levelFrom } = await import("./js/level.js"));
     } catch {
       body.innerHTML = `<p class="hint">That course doesn't exist yet — the
         <a href="courses.html" style="color:#ff8f8c">course hub</a> lists what's written.</p>`;
@@ -99,7 +100,7 @@
     const DONE_KEY = "rl_course_steps2_" + id;   // v2: ordered steps, relative tests
     let chapter = 0;
     try { chapter = Math.min(course.chapters.length - 1, Math.max(0, Number(localStorage.getItem(CH_KEY)) || 0)); } catch {}
-    let done = false, savedToAccount = false;
+    let done = false, savedToAccount = false, doneMsg = "";
     // LATCHED progress: a step that has passed STAYS passed — the lesson
     // explores, clears the workspace, rebuilds, and nothing earned unticks.
     // Each latch remembers the ▶ Test count at that moment, which makes the
@@ -166,13 +167,18 @@
       }
       if (allStepsPass()) {
         if (!done) { done = true; }
-        foot.textContent = "✅ COURSE COMPLETE" + (savedToAccount ? " — saved to your account. The next course is unlocked." : "");
+        foot.textContent = doneMsg || "✅ COURSE COMPLETE";
         if (!savedToAccount) {
           savedToAccount = true;
-          progApi.markDone(id).then((ok) => {
-            foot.textContent = ok
-              ? "✅ COURSE COMPLETE — saved to your account. The next course is unlocked."
-              : "✅ COURSE COMPLETE — log in (in the Studio window) and revisit to save it to your account.";
+          progApi.markDone(id).then(async (ok) => {
+            if (ok) {
+              // completing a course IS the level-up: level = 1 + courses done
+              const lvl = levelFrom(await progApi.myProgress());
+              doneMsg = `⭐ LEVEL UP — you're level ${lvl} now. It rides beside your name everywhere, and the next course is unlocked.`;
+            } else {
+              doneMsg = "✅ COURSE COMPLETE — log in (in the Studio window) and revisit to save it (and your level-up) to your account.";
+            }
+            foot.textContent = doneMsg;
           }).catch(() => { savedToAccount = false; });
         }
       } else {
