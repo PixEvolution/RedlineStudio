@@ -29,7 +29,7 @@ console.log("The voice picker:");
   check("no browser engine: canSpeak false, listVoices resolves empty",
     canSpeak() === false && (await listVoices()).length === 0);
   check("listVoices collects the LATE deliveries and keeps the biggest list",
-    src("js/speech.js").includes("v.length > best.length")
+    src("js/speech.js").includes("v.length > voiceCache.length")
     && src("js/speech.js").includes('"voiceschanged"'));
   check("the panel can re-ask (↻) and points at each OS's install path",
     src("account.html").includes('id="voice-refresh"')
@@ -43,7 +43,11 @@ console.log("The voice picker:");
     acct.includes("Listening voice") && acct.includes('id="voice-sel"')
     && acct.includes('id="voice-rate"') && acct.includes('id="voice-try"'));
   check("every 🔊 obeys the chosen voice and speed",
-    src("js/speech.js").includes("chosenVoice()") && src("js/speech.js").includes("u.rate = rate"));
+    src("js/speech.js").includes("resolveVoice") && src("js/speech.js").includes("u.rate = rate"));
+  check("the voice cache warms on EVERY page load, and the speaker WAITS for it",
+    src("js/speech.js").includes("warmVoices();")
+    && src("js/speech.js").includes("await resolveVoice()")
+    && src("js/speech.js").includes("stopped during the wait"));
 }
 
 console.log("The wiring:");

@@ -62,32 +62,46 @@ export function setVoicePrefs({ voice = "", rate = 1 } = {}) {
 // seen, instead of trusting the first answer. (The browser can still only
 // list INSTALLED voices: each OS offers more behind Settings → Speech /
 // Spoken Content / Text-to-speech — once installed, they show up here.)
+// The warm cache: browsers hand over an EMPTY voice list on a fresh page
+// until something asks — so this module asks the moment it loads, on every
+// page, and keeps listening for the late deliveries. Without this, a chosen
+// voice silently falls back to the default everywhere but the settings page.
+let voiceCache = [];
+function warmVoices() {
+  try {
+    const v = window.speechSynthesis.getVoices() || [];
+    if (v.length > voiceCache.length) voiceCache = v;
+  } catch {}
+}
+if (typeof window !== "undefined" && canSpeak()) {
+  warmVoices();
+  const synth = window.speechSynthesis;
+  if (synth.addEventListener) synth.addEventListener("voiceschanged", warmVoices);
+  else synth.onvoiceschanged = warmVoices;
+}
+
 export function listVoices({ wait = 700 } = {}) {
   return new Promise((resolve) => {
     if (!canSpeak()) { resolve([]); return; }
-    const synth = window.speechSynthesis;
-    let best = synth.getVoices() || [];
-    const take = () => {
-      const v = synth.getVoices() || [];
-      if (v.length > best.length) best = v;
-    };
-    synth.addEventListener?.("voiceschanged", take);
-    synth.onvoiceschanged = take;
+    warmVoices();
     const finish = () => {
-      take();
-      try { synth.removeEventListener?.("voiceschanged", take); } catch {}
-      resolve([...best].sort((a, b) => (a.lang + a.name).localeCompare(b.lang + b.name)));
+      warmVoices();
+      resolve([...voiceCache].sort((a, b) => (a.lang + a.name).localeCompare(b.lang + b.name)));
     };
     // resolve quickly when something is already there, but give the late
     // deliveries their beat; an empty start waits the full window
-    setTimeout(finish, best.length ? wait : wait * 3);
+    setTimeout(finish, voiceCache.length ? wait : wait * 3);
   });
 }
 
-function chosenVoice() {
+// The player's chosen voice, resolved against the live list — WAITING for
+// the list when a fresh page hasn't delivered it yet (the whole bug).
+async function resolveVoice() {
   const { voice } = getVoicePrefs();
   if (!voice) return null;
-  try { return window.speechSynthesis.getVoices().find(v => v.name === voice) || null; } catch { return null; }
+  warmVoices();
+  if (!voiceCache.length) await listVoices({ wait: 120 });
+  return voiceCache.find(v => v.name === voice) || null;
 }
 
 let current = null;   // { btn, stop } — the one voice allowed at a time
@@ -100,11 +114,10 @@ if (typeof window !== "undefined") {
   window.addEventListener("pagehide", stopSpeaking);
 }
 
-function speakChunks(chunks, onDone) {
+function speakChunks(chunks, v, onDone) {
   const synth = window.speechSynthesis;
   synth.cancel();
   let i = 0, dead = false;
-  const v = chosenVoice();
   const { rate } = getVoicePrefs();
   const next = () => {
     if (dead || i >= chunks.length) { onDone(); return; }
@@ -121,7 +134,7 @@ function speakChunks(chunks, onDone) {
 
 // Make `btn` a play/stop toggle for getText()'s content.
 export function wireSpeaker(btn, getText) {
-  btn.addEventListener("click", (e) => {
+  btn.addEventListener("click", async (e) => {
     e.stopPropagation();
     e.preventDefault();
     if (current && current.btn === btn) { stopSpeaking(); return; }
@@ -132,8 +145,11 @@ export function wireSpeaker(btn, getText) {
     btn.textContent = "⏹";
     btn.title = "Stop";
     const restore = () => { btn.textContent = was; btn.title = "Listen"; };
-    const kill = speakChunks(chunks, () => { if (current && current.btn === btn) current = null; restore(); });
-    current = { btn, restore: () => { kill(); restore(); } };
+    let kill = null, killed = false;
+    current = { btn, restore: () => { killed = true; if (kill) kill(); restore(); } };
+    const v = await resolveVoice();   // waits out a fresh page's empty voice list
+    if (killed || !current || current.btn !== btn) return;   // stopped during the wait
+    kill = speakChunks(chunks, v, () => { if (current && current.btn === btn) current = null; restore(); });
   });
 }
 
