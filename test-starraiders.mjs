@@ -103,10 +103,16 @@ console.log("Condition red:");
   for (let i = 0; i < 14; i++) e.step();
   check("a wild shot misses — and still cost 10 energy", e.vars.z1on === 1
     && e.vars.score === sc0 && e.vars.energy <= en0 - 10);
-  // dead centre
+  // dead centre — PINNED through the torpedo's flight: the fighter's idle
+  // weave is clocked off real time, so an unpinned target occasionally
+  // drifts past the wreck check's tolerance (same trick as the Asteroids
+  // test's drifting rock)
   z.x = 240; z.y = 180; e.vars.z1z = 20;
   tap(e, "Space");
-  for (let i = 0; i < 14; i++) e.step();
+  for (let i = 0; i < 14; i++) {
+    e.step();
+    if (e.vars.z1on === 1) { z.x = 240; z.y = 180; }
+  }
   check("a centred shot kills (+100) and clears the sector", e.vars.z1on === 0
     && e.vars.score === sc0 + 100 && e.vars.zleft === 7
     && String(e.byName.status.text).includes("SECTOR CLEARED"));

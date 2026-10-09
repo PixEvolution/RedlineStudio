@@ -166,6 +166,7 @@ function makeBtn() {
 // 🔊 on every .panel's heading: reads that whole panel.
 export function addPanelSpeakers(root = document) {
   if (!canSpeak()) return 0;
+  addPlayAllButton(root);   // the page-level audiobook switch rides along
   let n = 0;
   for (const panel of root.querySelectorAll(".panel")) {
     if (panel.classList.contains("g-toc")) continue;   // the contents list isn't prose
@@ -199,4 +200,81 @@ export function addEntrySpeakers(sel) {
     h.appendChild(btn);
   }
   return heads.length;
+}
+
+// ---------------------------------------------------------------------------
+// ▶ PLAY ALL — the audiobook mode: read every block on the page in order,
+// scrolling to and highlighting the paragraph being spoken. Any individual 🔊
+// click stops it (one voice at a time is the house rule), and the button is
+// its own stop switch.
+
+// Every readable block on the page, in document order: headings, paragraphs,
+// lists and code tables inside the panels (the guide's contents list skipped).
+export function collectReadables(root = document) {
+  const items = [];
+  for (const panel of root.querySelectorAll(".panel")) {
+    if (panel.classList.contains("g-toc")) continue;
+    for (const el of panel.querySelectorAll("h2, h3, p, ul, ol, pre")) {
+      const text = textOf(el).trim();
+      if (text) items.push({ el, text });
+    }
+  }
+  return items;
+}
+
+export function wirePlayAll(btn, getItems, { onItem = null } = {}) {
+  // default page behavior: a folded guide section opens as the voice reaches it
+  const openFoldIfAny = (it) => {
+    const panel = it.el.closest(".panel");
+    if (panel && panel.classList.contains("closed")) panel.querySelector("h2")?.click();
+  };
+  btn.addEventListener("click", async (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (current && current.btn === btn) { stopSpeaking(); return; }
+    stopSpeaking();
+    const items = getItems();
+    if (!items.length) return;
+    const was = btn.textContent;
+    btn.textContent = "⏹ Stop reading";
+    btn.title = "Stop";
+    let stopped = false, kill = null, hl = null, hlWas = "";
+    const clearHl = () => {
+      if (hl) { hl.style.outline = hlWas; hl.style.outlineOffset = ""; hl = null; }
+    };
+    const restore = () => { clearHl(); btn.textContent = was; btn.title = "Listen to this whole page, top to bottom"; };
+    current = { btn, restore: () => { stopped = true; if (kill) kill(); restore(); } };
+    const v = await resolveVoice();
+    for (const it of items) {
+      if (stopped || !current || current.btn !== btn) return;
+      try { (onItem || openFoldIfAny)(it); } catch {}
+      clearHl();
+      hl = it.el;
+      hlWas = hl.style.outline;
+      hl.style.outline = "2px solid #ff9d4a";
+      hl.style.outlineOffset = "3px";
+      try { it.el.scrollIntoView({ behavior: "smooth", block: "center" }); } catch {}
+      await new Promise((done) => { kill = speakChunks(toChunks(it.text), v, done); });
+    }
+    if (current && current.btn === btn) current = null;
+    restore();
+  });
+}
+
+// The page-level button, placed under the page's subtitle. addPanelSpeakers
+// calls this, so every page with 🔊 buttons gets its audiobook switch too.
+export function addPlayAllButton(root = document) {
+  if (!canSpeak()) return false;
+  const sub = root.querySelector(".page-sub");
+  if (!sub || root.querySelector(".playall-btn")) return false;
+  if (!collectReadables(root).length) return false;
+  const btn = document.createElement("button");
+  btn.className = "speak-btn playall-btn";
+  btn.type = "button";
+  btn.textContent = "▶ Play all";
+  btn.title = "Listen to this whole page, top to bottom";
+  btn.style.cssText = "display:inline-block; margin:10px 0 0; font-size:.85em; background:transparent; border:1px solid #3a4452; border-radius:7px; color:#8fa0b4; padding:3px 12px; cursor:pointer";
+  wirePlayAll(btn, () => collectReadables(root));
+  sub.after(btn);
+  return true;
 }

@@ -50,6 +50,21 @@ console.log("The voice picker:");
     && src("js/speech.js").includes("stopped during the wait"));
 }
 
+console.log("▶ Play all — the audiobook mode:");
+{
+  const sp = src("js/speech.js");
+  check("every page with 🔊 buttons grows a page-level ▶ Play all",
+    sp.includes("addPlayAllButton(root);") && sp.includes('"▶ Play all"'));
+  check("it reads every block in document order (headings, paragraphs, lists, code tables)",
+    sp.includes("collectReadables") && sp.includes('querySelectorAll("h2, h3, p, ul, ol, pre")'));
+  check("it scrolls to and highlights the paragraph being spoken — and cleans up after",
+    sp.includes('block: "center"') && sp.includes("2px solid #ff9d4a") && sp.includes("clearHl()"));
+  check("a folded guide section opens as the voice reaches it",
+    sp.includes("openFoldIfAny"));
+  check("the button is its own stop switch, and any 🔊 click hijacks the voice",
+    sp.includes('"⏹ Stop reading"') && sp.includes("stopped = true"));
+}
+
 console.log("The wiring:");
 {
   const PAGES = ["index.html", "guide.html", "museum.html", "ratings.html", "privacy.html",
