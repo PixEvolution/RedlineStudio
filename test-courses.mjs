@@ -182,8 +182,21 @@ console.log("The lesson window + the Studio's course mode:");
   check("the IDE chrome: line numbers + live syntax coloring over a real textarea, both studios",
     blk.includes("wireCodeEditor") && blk.includes("highlightCode")
     && blk.includes("code-gut") && blk.includes("rl-ide-css")
-    && blk.includes("row.appendChild(wireCodeEditor(ta")
-    && blk.includes("panel.appendChild(wireCodeEditor(ta"));
+    && blk.includes('row.appendChild(wireCodeEditor(ta')
+    && blk.includes('panel.appendChild(wireCodeEditor(ta'));
+  check("the caret lines up with the colored text (margin/spacing pinned on BOTH layers)",
+    blk.includes("margin:0;padding:8px") && (blk.match(/letter-spacing:0/g) || []).length >= 3);
+  check("the red squiggle: the REAL compiler lints after a typing pause and marks the line",
+    blk.includes("compileProgram") && blk.includes("compileStmts")
+    && blk.includes('class="bad"') && blk.includes("underline wavy")
+    && blk.includes("setTimeout(lint, 400)") && blk.includes("bad-n"));
+  check("the error bar prints the compiler's words plus the 💡 beginner hint",
+    blk.includes("code-err") && blk.includes("errorHint"));
+  const { compileProgram: cp } = await import("./js/redscript.js");
+  check("the compiler names the exact line, so the squiggle lands where the mistake is",
+    (() => { try { cp('when tick\n  chnage self.x by 4\nend'); return false; }
+      catch (e) { return /^line 2:/.test(e.message); } })()
+    && (() => { try { cp('when tick\n  set x to 1\nend'); return true; } catch { return false; } })());
   check("completion spans every hands-on chapter, not just one",
     win.includes("stepChapters.every"));
   check("the Studio runs lesson commands without background confirm() popups",

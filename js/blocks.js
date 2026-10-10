@@ -3,6 +3,8 @@
 //
 // createBlockEditor(container, script, { onChange }) — edits `script` in place.
 
+import { compileProgram, compileStmts, errorHint } from "./redscript.js";
+
 const EVENT_LABELS = {
   start: "⚡ When game starts",
   tick: "🔁 Every frame",
@@ -160,7 +162,7 @@ export function createBlockEditor(container, script, { onChange = () => {} } = {
         s.source = v;
         ta.rows = Math.max(3, v.split("\n").length + 1);
         changed();
-      }));
+      }, "stmts"));
     }
 
     return row;
@@ -233,7 +235,7 @@ export function createBlockEditor(container, script, { onChange = () => {} } = {
         ev.source = v;
         ta.rows = Math.max(5, v.split("\n").length + 1);
         changed();
-      }));
+      }, "program"));
     } else {
       ev.body = ev.body || [];
       const bodyMount = document.createElement("div");
@@ -341,13 +343,20 @@ export function wireCodeKeys(ta, getValue, setValue) {
 // letters come from the highlighter. Shared by the online AND offline Studio
 // (the styles inject themselves, so the offline bundle carries them too).
 const IDE_CSS = `
-.code-ide{display:flex;border:1px solid #2a2a31;border-radius:8px;background:#0d1117;overflow:hidden;margin:4px 0}
-.code-gut{flex:0 0 2.6em;text-align:right;padding:8px 6px 8px 0;color:#49535f;user-select:none;overflow:hidden;white-space:pre;font:12px/1.5 "Courier New",monospace}
+.code-ide{display:flex;flex-direction:column;border:1px solid #2a2a31;border-radius:8px;background:#0d1117;overflow:hidden;margin:4px 0}
+.code-row{display:flex}
+.code-gut{flex:0 0 2.6em;text-align:right;padding:8px 6px 8px 0;color:#49535f;user-select:none;overflow:hidden;white-space:pre;font:12px/1.5 "Courier New",monospace;letter-spacing:0;word-spacing:0}
+.code-gut .bad-n{color:#ff6666;font-weight:700}
 .code-box{position:relative;flex:1;min-width:0}
-.code-hl{position:absolute;inset:0;margin:0;padding:8px;pointer-events:none;overflow:hidden;white-space:pre;color:#8dffa9;font:12px/1.5 "Courier New",monospace}
-.code-ide .code-ta{position:relative;display:block;width:100%;box-sizing:border-box;background:transparent;border:0;outline:none;color:transparent;caret-color:#8dffa9;padding:8px;white-space:pre;overflow:auto;resize:none;font:12px/1.5 "Courier New",monospace;border-radius:0}
+.code-hl{position:absolute;inset:0;margin:0;padding:8px;pointer-events:none;overflow:hidden;white-space:pre;color:#8dffa9;font:12px/1.5 "Courier New",monospace;letter-spacing:0;word-spacing:0;tab-size:2}
+.code-ide .code-ta{position:relative;display:block;width:100%;box-sizing:border-box;background:transparent;border:0;outline:none;color:transparent;caret-color:#8dffa9;margin:0;padding:8px;white-space:pre;overflow:auto;resize:none;font:12px/1.5 "Courier New",monospace;letter-spacing:0;word-spacing:0;tab-size:2;border-radius:0}
+.code-ide .code-ta:focus{outline:none}
 .code-ide .code-ta::selection{background:rgba(57,255,94,.28)}
-.code-hl .k{color:#ff9d4a}.code-hl .s{color:#ffd75e}.code-hl .n{color:#7ddfff}.code-hl .c{color:#7a8894;font-style:italic}.code-hl .f{color:#b48cff}`;
+.code-ide:focus-within{border-color:#1f8f3c}
+.code-hl .k{color:#ff9d4a}.code-hl .s{color:#ffd75e}.code-hl .n{color:#7ddfff}.code-hl .c{color:#7a8894;font-style:italic}.code-hl .f{color:#b48cff}
+.code-hl .bad{text-decoration:underline wavy #ff5555 1.5px;text-underline-offset:3px;background:rgba(255,85,85,.07)}
+.code-err{display:none;padding:5px 10px;border-top:1px solid #3a2328;background:#1a1114;color:#ff8f8c;font-size:11.5px;line-height:1.45;white-space:pre-wrap}
+.code-err .code-err-hint{color:#c8a46a}`;
 function ensureIdeCss() {
   if (document.getElementById("rl-ide-css")) return;
   const st = document.createElement("style");
@@ -368,28 +377,72 @@ export function highlightCode(src) {
   });
 }
 
-export function wireCodeEditor(ta, getValue, setValue) {
+// mode: "program" for a top-level 📜 Code section (has `when` events),
+// "stmts" for a Code block inside an event. The SAME compiler ▶ Test uses
+// runs here after each typing pause, so the squiggle never lies.
+export function wireCodeEditor(ta, getValue, setValue, mode = "program") {
   ensureIdeCss();
   const wrap = document.createElement("div"); wrap.className = "code-ide";
+  const row = document.createElement("div"); row.className = "code-row";
   const gut = document.createElement("div"); gut.className = "code-gut";
   const box = document.createElement("div"); box.className = "code-box";
   const hl = document.createElement("pre"); hl.className = "code-hl";
   hl.setAttribute("aria-hidden", "true");
+  const err = document.createElement("div"); err.className = "code-err";
   ta.classList.add("code-ta");
   ta.setAttribute("wrap", "off");
   box.append(hl, ta);
-  wrap.append(gut, box);
+  row.append(gut, box);
+  wrap.append(row, err);
+
+  // the red squiggle: compile after a 400ms typing pause (never mid-keystroke,
+  // half-typed lines aren't mistakes yet), mark the offending line, and print
+  // the compiler's words — plus the beginner hint when it knows one
+  let badLine = 0, lintTimer = null;
+  const lint = () => {
+    const v = ta.value;
+    let msg = "";
+    try { (mode === "stmts" ? compileStmts : compileProgram)(v); } catch (e) { msg = String(e.message || e); }
+    const was = badLine;
+    if (msg) {
+      const m = /^line (\d+):/.exec(msg);
+      badLine = m ? Number(m[1]) : v.split("\n").length;
+      const hint = errorHint(msg.replace(/^line \d+:\s*/, ""));
+      err.innerHTML = "";
+      err.appendChild(document.createTextNode("⚠ " + msg));
+      if (hint) {
+        const h = document.createElement("div");
+        h.className = "code-err-hint";
+        h.textContent = "💡 " + hint;
+        err.appendChild(h);
+      }
+      err.style.display = "block";
+    } else {
+      badLine = 0;
+      err.style.display = "none";
+    }
+    if (badLine !== was) paint();
+  };
+  const lintSoon = () => { clearTimeout(lintTimer); lintTimer = setTimeout(lint, 400); };
+
   const sync = () => { hl.scrollTop = ta.scrollTop; hl.scrollLeft = ta.scrollLeft; gut.scrollTop = ta.scrollTop; };
   const paint = () => {
-    hl.innerHTML = highlightCode(ta.value) + "\n";
-    const n = ta.value.split("\n").length;
-    let g = ""; for (let i = 1; i <= n; i++) g += i + "\n";
-    gut.textContent = g;
+    const lines = highlightCode(ta.value).split("\n");
+    if (badLine >= 1 && badLine <= lines.length) {
+      lines[badLine - 1] = `<span class="bad">${lines[badLine - 1] || " "}</span>`;
+    }
+    hl.innerHTML = lines.join("\n") + "\n";
+    let g = "";
+    for (let i = 1; i <= lines.length; i++) {
+      g += (i === badLine ? `<span class="bad-n">${i}</span>` : i) + "\n";
+    }
+    gut.innerHTML = g;
     sync();
   };
-  wireCodeKeys(ta, getValue, (v) => { setValue(v); paint(); });
-  ta.addEventListener("input", paint);
+  wireCodeKeys(ta, getValue, (v) => { setValue(v); paint(); lintSoon(); });
+  ta.addEventListener("input", () => { paint(); lintSoon(); });
   ta.addEventListener("scroll", sync);
   paint();
+  lint();   // existing code shows its state immediately (museum code = clean)
   return wrap;
 }
