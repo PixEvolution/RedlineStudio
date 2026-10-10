@@ -146,7 +146,8 @@ reach in and change it. Every step ticks itself when the lesson sees you've done
         {
           text: `<b>Play it.</b> Hit <b>▶ Test</b> in the Studio. Up/Down aims, SPACE fires — gravity bends
           every shot, exactly like the 1947 arc. Destroy all three targets at least once, get a feel for how
-          the aim number changes your arc. Then press <b>▶ Test</b> again (or ✕) to stop.`,
+          the aim number changes your arc. While a test runs, the <b>▶ Test</b> button turns into
+          <b>■ Stop</b> — press that to stop.`,
           needsTest: true,
           check: (ctx) => ctx.testCount >= 1
         },
@@ -280,174 +281,136 @@ make the 4 an 8, and Test. Twice the muzzle velocity, and you knew exactly why b
 
     // ---------------------------------------------------------------- 7
     {
-      title: "Build your own — the things",
+      title: "Build YOUR game — the things",
       html: `
-<p>Now you build. Your machine, not a copy: the museum's shot flies <i>sideways</i> with gravity — yours
-will launch <b>straight up</b>, steerable on the pad, with a target that <b>comes back for more</b> and the
-one thing Goldsmith never got: <b>a public high-score table.</b></p>
-<p>This chapter places the <i>things</i>; the next one writes the <i>rules</i>. (Our sentence again.)
-Every step ticks itself — and steps you've already earned stay earned, so don't worry about the chapter-4
-ticks when the workspace clears.</p>`,
+<p>Now you build — and this is the part no course can do for you, because <b>the game is YOUR idea.</b>
+The museum machine was one answer to 1947's question ("steer a glowing thing, hit a thing"). Yours should
+be a different answer. Before you touch the Studio, say your idea in one sentence:
+<i>"a ___ that ___s, trying to ___."</i> A frog crossing traffic. A key hunting its lock. A snowflake
+dodging raindrops. Small and even silly is PERFECT — the whole museum machine is six things.</p>
+<p>There is <b>no correct game</b> the lesson is waiting for: the steps below check for the <i>ideas</i>
+from chapters 5 and 6 showing up in your workspace, whatever your game is about. This chapter places your
+<b>things</b>; the next writes your <b>rules</b> (our sentence again). Steps you've already earned stay
+earned when the workspace clears.</p>`,
       steps: [
         {
           text: `<b>Start fresh.</b> <button class="btn btn-small" data-act="start-fresh">🧹 Clear the workspace</button>
-          — the museum machine's job is done. (It reloads any time from chapter 5 if you want to peek back.)`,
+          — the museum machine's job is done. (It reloads any time from chapter 5 if you ever want to
+          re-read how IT solved something. That's not cheating — reading working code is how every
+          programmer on earth works.)`,
           check: (ctx) => ctx.fresh
         },
         {
-          text: `<b>Put your game's name on screen.</b> Explorer → <b>+ Text</b>. In Properties: set
-          <b>name</b> to <span class="code">title</span>, type your game's name into <b>text</b> (anything —
-          it's YOUR machine), and drag it near the top. <span class="hint">Why name things? Because rules
-          talk to things by name. "title" is for you; the next object's name is for the SCRIPT, so it has
-          to be exact.</span>`,
+          text: `<b>Put YOUR game's name on screen.</b> Explorer → <b>+ Text</b>. In Properties: set
+          <b>name</b> to <span class="code">title</span> and type your game's actual name into <b>text</b> —
+          the one from your sentence, not a placeholder. <span class="hint">Why name things? Because rules
+          talk to things by name — "title" tells both of us what this object is for.</span>`,
           check: (ctx) => {
             const t = byName(ctx, "title");
-            return !!(t && t.type === "text" && String(t.text || "").trim().length > 0 && t.y < 140);
+            const txt = String(t && t.text || "").trim();
+            return !!(t && t.type === "text" && txt.length >= 2 && txt.toUpperCase() !== "TEXT");
           }
         },
         {
-          text: `<b>Add the target.</b> <b>+ Ring</b>, name it exactly <span class="code">target1</span>,
-          drag it into the top half of the screen. <span class="hint">Exactly target1, because your script
-          is about to say "dist(self, target1)" — a name that doesn't match is a friend the script can't
-          find.</span>`,
+          text: `<b>Add your cast — at least two more things.</b> + Dot, + Ring, + Box, + Ship, whatever
+          your idea needs — and <b>name each one what it IS in your game</b>: frog, car1, lock, snowflake.
+          <span class="hint">Names like <span class="code">dot1</span> are the Studio's shrug. The moment a
+          thing is named, your rules can talk about it — and in the next chapter they will, by the names
+          you pick right now.</span>`,
           check: (ctx) => {
-            const t = byName(ctx, "target1");
-            return !!(t && t.type === "ring" && t.y < 190);
+            const def = /^(dot|ring|box|line|text|tri|ship|sprite)\d*$/i;
+            const named = ctx.objects.filter(o =>
+              String(o.name || "").toLowerCase() !== "title" && !def.test(String(o.name || "")));
+            return ctx.objects.length >= 3 && named.length >= 2;
           }
         },
         {
-          text: `<b>Add the cannon.</b> <b>+ Dot</b>, name it <span class="code">cannon</span>, and type
-          its position straight into Properties: <b>x 240, y 320</b> — bottom middle.
-          <span class="hint">Typing exact numbers instead of dragging is a habit worth starting now: it's
-          how you line things up on purpose.</span>`,
-          check: (ctx) => {
-            const c = byName(ctx, "cannon");
-            return !!(c && c.type === "dot" && c.y > 260 && c.x > 140 && c.x < 340);
-          }
+          text: `<b>Make them look the part.</b> Pick colors in Properties — at least one thing shouldn't
+          stay Studio green — and place everything on purpose: drag it, or type exact <b>x / y</b> numbers
+          (typing coordinates is a habit worth starting; it's how things line up exactly).
+          <span class="hint">This is the chapter-4 lesson working for YOU now: properties are facts,
+          change the fact and the thing obeys.</span>`,
+          check: (ctx) => ctx.objects.some(o => o.color && String(o.color).toLowerCase() !== "#39ff5e")
         }
       ]
     },
 
     // ---------------------------------------------------------------- 8
     {
-      title: "Build your own — the rules",
+      title: "Build YOUR game — the rules",
       html: `
-<p>Three versions of one program, each one small, each one tested before the next. This is honestly how
-games get made — nobody writes the whole brain at once. Select <span class="code">cannon</span>, add a
-<b>📜 Code</b> section in its Script panel, and build up:</p>`,
+<p>Now your rules — and here's where this course keeps its promise: <b>nothing to copy.</b> Instead, you
+get the <b>five ingredients every arcade machine since 1947 has used</b>, and you cook each one into your
+own idea. Every ingredient comes with a <i>pattern card</i> — the SHAPE of the rule, shown with the
+museum's numbers — but the names, numbers and feel are yours, and the steps check for the <b>idea</b>, not
+any particular lines. Two games that both pass can look completely different. That's the point.</p>
+<p>Select the thing your player controls and add a <b>📜 Code</b> section in its Script panel (or build
+with 🧱 blocks — every ingredient works both ways). And notice the editor is on your side now: type
+<span class="code">when key "Space"</span>, press Enter, and the <span class="code">end</span> writes
+itself. Quotes close themselves too. Stuck at any point? Chapter 5 reloads the museum machine — read how
+IT did the ingredient, then come back and do it YOUR way.</p>`,
       steps: [
         {
-          text: `<b>Version 1 — steering.</b> Put exactly this in the Code section:
-<pre class="codeblock">when start
-  set flying to 0
-  say "A AND D SLIDE THE SHOT" for 3
-end
-
-when tick
-  if flying == 0 then
-    if keydown("a") then
-      change self.x by -4
-    end
-    if keydown("d") then
-      change self.x by 4
-    end
+          text: `<b>① Give the player hands.</b> Somewhere in your game, a thing must answer the keys.
+          Held keys use <span class="code">keydown("a")</span> inside <i>when tick</i> (sliding, steering);
+          single presses use a <i>when key</i> card (jumping, firing). The pattern:
+<pre class="codeblock">when tick
+  if keydown("d") then
+    change self.x by 4
   end
 end</pre>
-          <span class="hint">Reading it with chapter-5 eyes: a start card that sets one mood box, and a
-          heartbeat card whose bouncer only lets steering happen on the pad.
-          <span class="code">keydown("a")</span> is new — it's true the whole time the key is HELD, which
-          is what sliding wants (when-key fires once per press; keydown holds the door open).</span>`,
+          <span class="hint">Yours might move up, spin with angle, or speed a frog across traffic — any
+          direction, any speed, any keys. The step ticks when SOMETHING in your game listens to the
+          keyboard.</span>`,
           check: (ctx) => {
-            const c = byName(ctx, "cannon");
-            return !!(c && scriptText(c).includes("keydown") && scriptText(c).includes("flying"));
+            const s = ctx.objects.map(o => scriptText(o)).join("");
+            return s.includes("keydown(") || s.includes("when key") || s.includes('"event":"key"');
           }
         },
         {
-          text: `<b>▶ Test version 1.</b> A and D slide your cannon along the bottom. That's it — and
-          that's the point: <b>one working rule beats ten imagined ones.</b> Stop the test.`,
+          text: `<b>▶ Test ingredient one.</b> Move your thing around. That's already a game respecting
+          you — and that's the real method: <b>one working rule beats ten imagined ones.</b> Press
+          <b>■ Stop</b> when you've felt it.`,
           needsTest: true,
           check: (ctx) => ctx.testCount >= 2
         },
         {
-          text: `<b>Version 2 — launch and hit.</b> Replace the WHOLE Code section with this (it contains
-          v1 plus the new cards — replacing whole versions keeps you out of find-the-missing-line misery):
-<pre class="codeblock">when start
-  set flying to 0
-  set score to 0
-  say "A/D AIM · SPACE FIRES" for 4
-end
-
-when key "Space"
-  if flying == 0 then
-    set flying to 1
-  end
-end
-
-when tick
-  if flying == 0 then
-    if keydown("a") then
-      change self.x by -4
-    end
-    if keydown("d") then
-      change self.x by 4
-    end
-  end
-  if flying == 1 then
-    change self.y by -6
-    if target1.visible == 1 and dist(self, target1) < 22 then
-      explode target1
-      set target1.visible to 0
-      change score by 1
-      say "HIT!" for 1
-      set flying to 2
-    end
-    if self.y < -10 then
-      set flying to 2
-    end
-  end
-  if flying == 2 then
-    set flying to 0
-    set self.y to 320
-  end
+          text: `<b>② Make meeting MEAN something — and count it.</b> When two of your things get close,
+          something happens, and a box named <span class="code">score</span> keeps count. The pattern is
+          chapter 6's dist-circle, with YOUR names in it:
+<pre class="codeblock">if dist(self, lock) < 22 then
+  explode lock
+  change score by 1
 end</pre>
-          <span class="hint">Every piece is from chapter 5 or 6: Space flips the mood to 1 (writing a
-          number IS firing, remember); mood 1 climbs 6 a tick (negative-is-up again) and runs the
-          dist-circle hit; off the top = mood 2; mood 2 resets to the pad. One new box:
-          <span class="code">score</span> — and that name is special, which pays off in two steps.</span>`,
+          <span class="hint">(<span class="code">touching(self, lock)</span> works too.) The frog reaches
+          the far bank, the key finds the lock, the snowflake gets caught — whatever "it happened!" means
+          in your game. <span class="code">score</span> is a special name; it pays off in step ⑤.</span>`,
           check: (ctx) => {
-            const c = byName(ctx, "cannon");
-            if (!c) return false;
-            const s = scriptText(c);
-            return s.includes("dist(self, target1)") && s.includes("explode") && s.includes("score");
+            const s = ctx.objects.map(o => scriptText(o)).join("");
+            return (s.includes("dist(") || s.includes("touching(")) && s.includes("score");
           }
         },
         {
-          text: `<b>Version 3 — the target comes back.</b> One change inside the hit: instead of hiding the
-          target forever, teleport it somewhere new. Replace the hit's
-          <span class="code">set target1.visible to 0</span> line with these two:
-<pre class="codeblock">      set target1.x to rand(60, 420)
-      set target1.y to rand(50, 160)</pre>
-          <span class="hint"><span class="code">rand(60, 420)</span> picks a random number in that range —
-          and randomness is the whole reason the game stays alive instead of ending after one shot. Notice
-          you also just deleted a rule (the hiding) and the game got BETTER. Removing rules is design
-          too.</span>`,
-          check: (ctx) => {
-            const c = byName(ctx, "cannon");
-            return !!(c && scriptText(c).includes("rand("));
-          }
+          text: `<b>③ Add chance.</b> Use <span class="code">rand(</span> somewhere, so no two plays are
+          the same — the reward teleports (<span class="code">set lock.x to rand(60, 420)</span>), the
+          danger starts somewhere new, the speed wobbles. <span class="hint">Randomness is why a game
+          stays alive after the first win instead of being a puzzle with one answer.</span>`,
+          check: (ctx) => ctx.objects.some(o => scriptText(o).includes("rand("))
         },
         {
-          text: `<b>Give it an ending — and earn the leaderboard.</b> Select your
-          <span class="code">title</span> object, open <b>✨ Add behavior…</b> in its Script panel, pick
-          <b>⏱ Coin timer</b>. Sixty seconds, then the play truly ends. <span class="hint">Here's the
-          payoff: your game now counts a box named <span class="code">score</span> AND ends its plays —
-          and that combination makes the platform give it a <b>public ★ high-score table automatically</b>.
-          (Behaviors are ready-made rule-cards — open what it inserted and read it; it's when/do all the
-          way down.)</span>`,
+          text: `<b>④ Give it an ending.</b> A play has to END for a score to count. Easiest: select your
+          <span class="code">title</span> object, open <b>✨ Add behavior…</b>, pick <b>⏱ Coin timer</b> —
+          sixty seconds, then the play is over. (Or write your own ending: any rule that does
+          <span class="code">set endplay to 1</span>, like the frog getting hit.)
+          <span class="hint">Behaviors are ready-made rule-cards — open what it inserted and READ it;
+          it's when/do all the way down, every word from chapters 5 and 6.</span>`,
           check: (ctx) => ctx.objects.some(o => scriptText(o).includes("endplay"))
         },
         {
-          text: `<b>▶ Test the finished machine.</b> Sixty seconds on the clock — set the score to beat.`,
+          text: `<b>⑤ ▶ Test the finished machine.</b> Here's the payoff of ② and ④ together: a game that
+          counts a box named <span class="code">score</span> AND ends its plays gets a <b>public ★
+          high-score table automatically</b> when published — the one thing Goldsmith never got. Set the
+          first score on your own machine.`,
           needsTest: true,
           check: (ctx) => ctx.testCount >= 3
         }
@@ -458,18 +421,19 @@ end</pre>
     {
       title: "Finish line",
       html: `
-<p><b>Look at what you have.</b> Things with properties. Rules on when-cards. Variables, a mood box, a
-condition with a bouncer, a dist-circle hitbox, randomness, an explosion, an arcade-grade ending. Those
-aren't beginner topics — they are the SAME ideas every machine in the museum runs on. The other courses
-just stack them higher, and now every one of them has a name in your head.</p>
+<p><b>Look at what you have.</b> A game that exists because YOU thought of it — things with properties,
+rules on when-cards, variables, conditions with bouncers, a dist-circle, randomness, an arcade-grade
+ending. Those aren't beginner topics: they are the SAME ideas every machine in the museum runs on, and
+you just used them on an idea nobody handed you. The other courses stack them higher, and now every one
+of them has a name in your head.</p>
 <p><b>Three things worth doing before you go:</b></p>
 <p>① In the Script panel press <b>🧱 To blocks</b> — your typed program becomes draggable blocks. Press
 <b>📜 To code</b> and it's text again. Same program, two outfits — now you've seen it with your own eyes.</p>
-<p>② Change ONE number and Test. The <span class="code">-6</span> climb speed, the <span class="code">22</span>
-hit circle, the rand ranges. Feel the game change character. <b>Tuning numbers is half of all game
-design</b>, and it's the half you can do forever.</p>
-<p>③ <b>Publish it.</b> Type a description, rate it <b>E</b> (nothing in it is louder than an explosion of
-light), and hit <b>💾 Save</b> — your machine goes live on the Games page with its own high-score table,
+<p>② Change ONE number and Test. Whatever numbers YOUR rules use — a speed, a hit circle, a rand range.
+Feel the game change character. <b>Tuning numbers is half of all game design</b>, and it's the half you
+can do forever.</p>
+<p>③ <b>Publish it.</b> Type a description, rate it honestly (most first machines are <b>E</b>), and hit
+<b>💾 Save</b> — your machine goes live on the Games page with its own high-score table,
 playable by anyone on earth. Then open your normal
 <a href="studio/studio.html" target="_blank" rel="noopener" style="color:#ff8f8c">Studio</a> any time —
 it's under <b>My Games</b>, yours to grow forever.</p>

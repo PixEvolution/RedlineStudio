@@ -43,8 +43,13 @@ console.log("Course 1, second edition — shape:");
   check("📚 Go deeper boxes link the guide and trusted outside sources",
     all.includes("Go deeper") && all.includes("khanacademy.org") && all.includes("wikipedia.org")
     && all.includes("guide.html#recipes"));
-  check("the build gives WHOLE program versions, never find-the-line snippets",
-    (all.match(/when start/g) || []).length >= 2 && all.includes("Replace the WHOLE Code section"));
+  check("the build is YOUR game: pattern cards, no dictated program, no 'copy exactly'",
+    all.includes("pattern card") && all.includes("no correct game")
+    && !all.includes("exactly this") && !all.includes("Replace the WHOLE"));
+  check("the five-ingredient method replaces the three dictated versions",
+    all.includes("five ingredients") && all.includes("keydown") && all.includes("rand("));
+  check("the Stop button is called what it is (▶ Test turns into ■ Stop)",
+    all.includes("■ Stop") && !all.includes("(or ✕)"));
   check("the finish line: two-outfits flip, tune-one-number, the publish lap",
     all.includes("To blocks") && all.includes("Publish it") && all.includes("Bertie the Brain"));
 }
@@ -65,9 +70,10 @@ console.log("Course 1 — the checks, against real workspaces:");
     steps(PLAY).every(st => st.check(museum)));
   check("PLAY: the untouched museum green doesn't count as 'you recolored it'",
     !steps(PLAY)[2].check({ ...museum, objects: [{ name: "missile", type: "dot", size: 14, color: "#39ff5e" }, { name: "target1", type: "ring", y: 100 }] }));
-  // the finished build (v3 + timer), typed code
+  // A finished ORIGINAL build (the steps check ideas, not any one game):
+  // "a cannon that slides, trying to hit target1" — typed code
   const codeCannon = {
-    name: "cannon", type: "dot", x: 240, y: 320,
+    name: "cannon", type: "dot", x: 240, y: 320, color: "#ff9d4a",
     script: [{ event: "code", source: 'when start\n set flying to 0\n set score to 0\nend\nwhen key "Space"\n if flying == 0 then\n set flying to 1\n end\nend\nwhen tick\n if keydown("a") then\n change self.x by -4\n end\n if flying == 1 then\n if dist(self, target1) < 22 then\n explode target1\n change score by 1\n set target1.x to rand(60, 420)\n end\n end\nend' }]
   };
   // the same brain after 🧱 To blocks
@@ -96,11 +102,31 @@ console.log("Course 1 — the checks, against real workspaces:");
   check("an empty workspace passes nothing but 'start fresh'",
     steps(THINGS).filter(st => st.check({ objects: [], fresh: true, testCount: 0 })).length === 1
     && steps(RULES).filter(st => st.check({ objects: [], fresh: true, testCount: 0 })).length === 0);
-  check("naming matters: ring1 isn't target1, and a bottom-dwelling title doesn't count",
-    !steps(THINGS)[2].check({ objects: [{ name: "ring1", type: "ring", y: 100 }], fresh: true, testCount: 0 })
-    && !steps(THINGS)[1].check({ objects: [{ name: "title", type: "text", text: "X", y: 300 }], fresh: true, testCount: 0 }));
-  check("version 2 demands the real pieces (dist, explode, score)",
-    !steps(RULES)[2].check(built({ name: "cannon", type: "dot", y: 320, x: 240,
+  check("naming matters: default names (dot1, ring1) don't count as a cast, and 'TEXT' isn't a title",
+    !steps(THINGS)[2].check({ objects: [{ name: "title", type: "text", text: "ZAP" }, { name: "ring1", type: "ring" }, { name: "dot2", type: "dot" }], fresh: true, testCount: 0 })
+    && !steps(THINGS)[1].check({ objects: [{ name: "title", type: "text", text: "TEXT" }], fresh: true, testCount: 0 })
+    && steps(THINGS)[2].check({ objects: [{ name: "title", type: "text", text: "ZAP" }, { name: "frog", type: "dot" }, { name: "car1", type: "box" }], fresh: true, testCount: 0 }));
+  check("a DIFFERENT original game passes too — the steps check ideas, not the example",
+    (() => {
+      const frog = { name: "frog", type: "dot", color: "#7dff9e",
+        script: [{ event: "tick", body: [
+          { k: "if", cond: 'keydown("w")', then: [{ k: "change", lhs: "self.y", by: "-3" }], else: [] },
+          { k: "if", cond: "touching(self, bank)", then: [
+            { k: "change", lhs: "score", by: "1" },
+            { k: "set", lhs: "self.y", value: "340" },
+            { k: "set", lhs: "car1.x", value: "rand(0, 480)" }
+          ], else: [] }
+        ] }] };
+      const world = { objects: [
+        { name: "title", type: "text", text: "FROG RUN" },
+        { name: "bank", type: "box", script: [] },
+        { name: "car1", type: "box", script: [{ event: "tick", body: [{ k: "set", lhs: "endplay", value: "timer > 60" }] }] },
+        frog
+      ], fresh: true, testCount: 3 };
+      return steps(THINGS).every(st => st.check(world)) && steps(RULES).every((st, i) => st.check(world));
+    })());
+  check("ingredient ② demands the real pieces (a meeting AND a score)",
+    !steps(RULES)[2].check(built({ name: "cannon", type: "dot", y: 320, x: 240, color: "#ff9d4a",
       script: [{ event: "code", source: "when tick\n change self.x by 1\nend" }] })));
   check("the test steps count real ▶ Test runs (1, 2, then 3)",
     !steps(RULES)[1].check(built(codeCannon, { testCount: 1 }))
@@ -143,10 +169,18 @@ console.log("The lesson window + the Studio's course mode:");
   check("▶ Test steps are RELATIVE: only tests after the previous step count",
     win.includes("st.needsTest") && win.includes("c.testCount > base")
     && (src("js/course-crt.js").match(/needsTest: true/g) || []).length === 3);
+  const blk = src("js/blocks.js");
   check("the code editor types like one: Enter keeps indentation, Tab indents",
-    src("js/blocks.js").includes("wireCodeKeys")
-    && src("js/blocks.js").includes('e.key === "Tab"')
-    && src("js/blocks.js").includes("bthen$"));
+    blk.includes("wireCodeKeys") && blk.includes('e.key === "Tab"') && blk.includes("bthen$"));
+  check("a block opener types its own `end` — only when one is missing (auto-end)",
+    blk.includes("AUTO-END") && blk.includes("need > have"));
+  check("quotes and parens auto-close, step over, and backspace as a pair",
+    blk.includes("auto-close pairs") && blk.includes("pair === '\"\"' || pair === \"()\""));
+  check("the IDE chrome: line numbers + live syntax coloring over a real textarea, both studios",
+    blk.includes("wireCodeEditor") && blk.includes("highlightCode")
+    && blk.includes("code-gut") && blk.includes("rl-ide-css")
+    && blk.includes("row.appendChild(wireCodeEditor(ta")
+    && blk.includes("panel.appendChild(wireCodeEditor(ta"));
   check("completion spans every hands-on chapter, not just one",
     win.includes("stepChapters.every"));
   check("the Studio runs lesson commands without background confirm() popups",

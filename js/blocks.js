@@ -155,13 +155,12 @@ export function createBlockEditor(container, script, { onChange = () => {} } = {
         ta.rows = Math.max(3, ta.value.split("\n").length + 1);
         changed();
       });
-      wireCodeKeys(ta, () => ta.value, (v) => {
+      row.appendChild(wireCodeEditor(ta, () => ta.value, (v) => {
         ta.value = v;
         s.source = v;
         ta.rows = Math.max(3, v.split("\n").length + 1);
         changed();
-      });
-      row.appendChild(ta);
+      }));
     }
 
     return row;
@@ -229,13 +228,12 @@ export function createBlockEditor(container, script, { onChange = () => {} } = {
         ta.rows = Math.max(5, ta.value.split("\n").length + 1);
         changed();
       });
-      wireCodeKeys(ta, () => ta.value, (v) => {
+      panel.appendChild(wireCodeEditor(ta, () => ta.value, (v) => {
         ta.value = v;
         ev.source = v;
         ta.rows = Math.max(5, v.split("\n").length + 1);
         changed();
-      });
-      panel.appendChild(ta);
+      }));
     } else {
       ev.body = ev.body || [];
       const bodyMount = document.createElement("div");
@@ -272,29 +270,126 @@ export function createBlockEditor(container, script, { onChange = () => {} } = {
   return { render };
 }
 
-// ---- code-editor comfort: Enter keeps the line's indentation (and goes one
-// level deeper after "then" / "else" / "when …" / "repeat …"), Tab indents
-// two spaces instead of leaving the box. Small, but it's the difference
-// between typing code and fighting it.
+// ---- code-editor comfort, the way real editors behave (Roblox Studio and
+// friends): Enter keeps the line's indentation and goes one level deeper
+// after "then" / "else" / "when …" / "repeat …" — and a BLOCK OPENER TYPES
+// ITS OWN `end` (only when one is actually missing, so it never doubles up).
+// Tab indents two spaces instead of leaving the box; quotes and parens
+// auto-close around the cursor (or around a selection), and typing the
+// closer just steps over one that's already there.
 export function wireCodeKeys(ta, getValue, setValue) {
   ta.addEventListener("keydown", (e) => {
+    const a = ta.selectionStart, b = ta.selectionEnd;
+    // auto-close pairs: " → "", ( → () — wrap the selection if there is one
+    if (e.key === '"' || e.key === "(") {
+      e.preventDefault();
+      if (e.key === '"' && a === b && ta.value[a] === '"') { ta.selectionStart = ta.selectionEnd = a + 1; return; }
+      const close = e.key === '"' ? '"' : ")";
+      const sel = ta.value.slice(a, b);
+      setValue(ta.value.slice(0, a) + e.key + sel + close + ta.value.slice(b));
+      ta.selectionStart = a + 1; ta.selectionEnd = a + 1 + sel.length;
+      return;
+    }
+    if (e.key === ")" && a === b && ta.value[a] === ")") {
+      e.preventDefault();
+      ta.selectionStart = ta.selectionEnd = a + 1;
+      return;
+    }
+    // backspacing the open half of an empty pair takes both
+    if (e.key === "Backspace" && a === b && a > 0) {
+      const pair = ta.value.slice(a - 1, a + 1);
+      if (pair === '""' || pair === "()") {
+        e.preventDefault();
+        setValue(ta.value.slice(0, a - 1) + ta.value.slice(a + 1));
+        ta.selectionStart = ta.selectionEnd = a - 1;
+      }
+      return;
+    }
     if (e.key === "Tab") {
       e.preventDefault();
-      const a = ta.selectionStart, b = ta.selectionEnd;
       setValue(ta.value.slice(0, a) + "  " + ta.value.slice(b));
       ta.selectionStart = ta.selectionEnd = a + 2;
       return;
     }
     if (e.key !== "Enter") return;
     e.preventDefault();
-    const a = ta.selectionStart, b = ta.selectionEnd;
     const before = ta.value.slice(0, a);
     const line = before.slice(before.lastIndexOf("\n") + 1);
     let indent = (line.match(/^[ ]*/) || [""])[0];
     const t = line.trim();
-    if (/\bthen$/.test(t) || t === "else" || /^when\b/.test(t) || /^repeat\b/.test(t)) indent += "  ";
-    const ins = "\n" + indent;
+    const opens = /\bthen$/.test(t) || /^when\b/.test(t) || /^repeat\b/.test(t);
+    if (opens || t === "else") indent += "  ";
+    let ins = "\n" + indent;
+    // AUTO-END: when the line above opened a block and the program is short an
+    // `end`, write it on the next line — cursor lands indented inside the block
+    if (opens) {
+      const whole = before + ta.value.slice(b);
+      const need = (whole.match(/^[^\n]*\bthen[ ]*$/gm) || []).length
+        + (whole.match(/^[ ]*when\b/gm) || []).length
+        + (whole.match(/^[ ]*repeat\b/gm) || []).length;
+      const have = (whole.match(/^[ ]*end[ ]*$/gm) || []).length;
+      if (need > have) ins += "\n" + indent.slice(2) + "end";
+    }
     setValue(before + ins + ta.value.slice(b));
-    ta.selectionStart = ta.selectionEnd = a + ins.length;
+    ta.selectionStart = ta.selectionEnd = a + 1 + indent.length;
   });
+}
+
+// ---- the IDE chrome: line numbers down the side and live syntax coloring,
+// drawn by the classic overlay trick — a colored <pre> sits exactly under a
+// transparent-text textarea, so the caret and selection are real while the
+// letters come from the highlighter. Shared by the online AND offline Studio
+// (the styles inject themselves, so the offline bundle carries them too).
+const IDE_CSS = `
+.code-ide{display:flex;border:1px solid #2a2a31;border-radius:8px;background:#0d1117;overflow:hidden;margin:4px 0}
+.code-gut{flex:0 0 2.6em;text-align:right;padding:8px 6px 8px 0;color:#49535f;user-select:none;overflow:hidden;white-space:pre;font:12px/1.5 "Courier New",monospace}
+.code-box{position:relative;flex:1;min-width:0}
+.code-hl{position:absolute;inset:0;margin:0;padding:8px;pointer-events:none;overflow:hidden;white-space:pre;color:#8dffa9;font:12px/1.5 "Courier New",monospace}
+.code-ide .code-ta{position:relative;display:block;width:100%;box-sizing:border-box;background:transparent;border:0;outline:none;color:transparent;caret-color:#8dffa9;padding:8px;white-space:pre;overflow:auto;resize:none;font:12px/1.5 "Courier New",monospace;border-radius:0}
+.code-ide .code-ta::selection{background:rgba(57,255,94,.28)}
+.code-hl .k{color:#ff9d4a}.code-hl .s{color:#ffd75e}.code-hl .n{color:#7ddfff}.code-hl .c{color:#7a8894;font-style:italic}.code-hl .f{color:#b48cff}`;
+function ensureIdeCss() {
+  if (document.getElementById("rl-ide-css")) return;
+  const st = document.createElement("style");
+  st.id = "rl-ide-css";
+  st.textContent = IDE_CSS;
+  document.head.appendChild(st);
+}
+
+const KEYWORDS = "when|if|then|else|end|set|change|to|by|repeat|times|and|or|not|for|say|explode|beep|print|clear";
+const TOKEN_RE = new RegExp(
+  '(#[^\\n]*)|("(?:[^"\\\\\\n]|\\\\.)*"?)|\\b(\\d+(?:\\.\\d+)?)\\b|\\b(' + KEYWORDS + ')\\b|([A-Za-z_]\\w*)(?=\\()', "g");
+
+export function highlightCode(src) {
+  const safe = String(src).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return safe.replace(TOKEN_RE, (m, com, str, num, kw, fn) => {
+    const cls = com ? "c" : str ? "s" : num ? "n" : kw ? "k" : "f";
+    return `<span class="${cls}">${m}</span>`;
+  });
+}
+
+export function wireCodeEditor(ta, getValue, setValue) {
+  ensureIdeCss();
+  const wrap = document.createElement("div"); wrap.className = "code-ide";
+  const gut = document.createElement("div"); gut.className = "code-gut";
+  const box = document.createElement("div"); box.className = "code-box";
+  const hl = document.createElement("pre"); hl.className = "code-hl";
+  hl.setAttribute("aria-hidden", "true");
+  ta.classList.add("code-ta");
+  ta.setAttribute("wrap", "off");
+  box.append(hl, ta);
+  wrap.append(gut, box);
+  const sync = () => { hl.scrollTop = ta.scrollTop; hl.scrollLeft = ta.scrollLeft; gut.scrollTop = ta.scrollTop; };
+  const paint = () => {
+    hl.innerHTML = highlightCode(ta.value) + "\n";
+    const n = ta.value.split("\n").length;
+    let g = ""; for (let i = 1; i <= n; i++) g += i + "\n";
+    gut.textContent = g;
+    sync();
+  };
+  wireCodeKeys(ta, getValue, (v) => { setValue(v); paint(); });
+  ta.addEventListener("input", paint);
+  ta.addEventListener("scroll", sync);
+  paint();
+  return wrap;
 }
