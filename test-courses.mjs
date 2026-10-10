@@ -43,11 +43,14 @@ console.log("Course 1, second edition — shape:");
   check("📚 Go deeper boxes link the guide and trusted outside sources",
     all.includes("Go deeper") && all.includes("khanacademy.org") && all.includes("wikipedia.org")
     && all.includes("guide.html#recipes"));
-  check("the build is YOUR game: pattern cards, no dictated program, no 'copy exactly'",
-    all.includes("pattern card") && all.includes("no correct game")
-    && !all.includes("exactly this") && !all.includes("Replace the WHOLE"));
-  check("the five-ingredient method replaces the three dictated versions",
-    all.includes("five ingredients") && all.includes("keydown") && all.includes("rand("));
+  check("the assignment: build YOUR OWN shooter — the genre is given, the design is theirs",
+    all.includes("build your own shooter") && all.includes("no single correct shooter")
+    && all.includes("nothing to copy") && all.includes("now you apply it"));
+  check("pattern cards show the SHAPE with the museum's numbers — no dictated program, no 'copy exactly'",
+    all.includes("pattern card") && !all.includes("exactly this") && !all.includes("Replace the WHOLE"));
+  check("the five shooter rules all point back at the brain chapters (apply, don't learn new)",
+    all.includes("A shooter is five rules") && all.includes("keydown") && all.includes("rand(")
+    && all.includes("chapters 6 and 7"));
   check("the Stop button is called what it is (▶ Test turns into ■ Stop)",
     all.includes("■ Stop") && !all.includes("(or ✕)"));
   check("the finish line: two-outfits flip, tune-one-number, the publish lap",
@@ -106,7 +109,7 @@ console.log("Course 1 — the checks, against real workspaces:");
     !steps(THINGS)[2].check({ objects: [{ name: "title", type: "text", text: "ZAP" }, { name: "ring1", type: "ring" }, { name: "dot2", type: "dot" }], fresh: true, testCount: 0 })
     && !steps(THINGS)[1].check({ objects: [{ name: "title", type: "text", text: "TEXT" }], fresh: true, testCount: 0 })
     && steps(THINGS)[2].check({ objects: [{ name: "title", type: "text", text: "ZAP" }, { name: "frog", type: "dot" }, { name: "car1", type: "box" }], fresh: true, testCount: 0 }));
-  check("a DIFFERENT original game passes too — the steps check ideas, not the example",
+  check("the steps verify IDEAS, so a completely different take still passes (no hidden answer key)",
     (() => {
       const frog = { name: "frog", type: "dot", color: "#7dff9e",
         script: [{ event: "tick", body: [
