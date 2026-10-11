@@ -43,14 +43,15 @@ console.log("Course 1, second edition — shape:");
   check("📚 Go deeper boxes link the guide and trusted outside sources",
     all.includes("Go deeper") && all.includes("khanacademy.org") && all.includes("wikipedia.org")
     && all.includes("guide.html#recipes"));
-  check("the assignment: build YOUR OWN shooter — the genre is given, the design is theirs",
-    all.includes("build your own shooter") && all.includes("no single correct shooter")
-    && all.includes("nothing to copy") && all.includes("now you apply it"));
-  check("pattern cards show the SHAPE with the museum's numbers — no dictated program, no 'copy exactly'",
-    all.includes("pattern card") && !all.includes("exactly this") && !all.includes("Replace the WHOLE"));
-  check("the five shooter rules all point back at the brain chapters (apply, don't learn new)",
-    all.includes("A shooter is five rules") && all.includes("keydown") && all.includes("rand(")
-    && all.includes("chapters 6 and 7"));
+  check("the build is SPECIFIC again: a bottom cannon, steered, firing straight up",
+    all.includes("straight up") && all.includes("x 240, y 320") && all.includes("Type this into"));
+  check("whole typed versions, framed as learning — never 'copy exactly'",
+    (all.match(/when start/g) || []).length >= 2 && all.includes("typing it is part of the learning")
+    && all.includes("Swap the Code section")
+    && !all.includes("exactly this") && !all.includes("copy and paste"));
+  check("the build promises NOTHING NEW and points every line back at chapters 6 and 7",
+    all.includes("nothing new") && all.includes("chapters 6 and 7")
+    && !all.includes("touching(") && !/\bpattern card\b/.test(all));
   check("the Stop button is called what it is (▶ Test turns into ■ Stop)",
     all.includes("■ Stop") && !all.includes("(or ✕)"));
   check("the finish line: two-outfits flip, tune-one-number, the publish lap",
@@ -105,30 +106,10 @@ console.log("Course 1 — the checks, against real workspaces:");
   check("an empty workspace passes nothing but 'start fresh'",
     steps(THINGS).filter(st => st.check({ objects: [], fresh: true, testCount: 0 })).length === 1
     && steps(RULES).filter(st => st.check({ objects: [], fresh: true, testCount: 0 })).length === 0);
-  check("naming matters: default names (dot1, ring1) don't count as a cast, and 'TEXT' isn't a title",
-    !steps(THINGS)[2].check({ objects: [{ name: "title", type: "text", text: "ZAP" }, { name: "ring1", type: "ring" }, { name: "dot2", type: "dot" }], fresh: true, testCount: 0 })
-    && !steps(THINGS)[1].check({ objects: [{ name: "title", type: "text", text: "TEXT" }], fresh: true, testCount: 0 })
-    && steps(THINGS)[2].check({ objects: [{ name: "title", type: "text", text: "ZAP" }, { name: "frog", type: "dot" }, { name: "car1", type: "box" }], fresh: true, testCount: 0 }));
-  check("the steps verify IDEAS, so a completely different take still passes (no hidden answer key)",
-    (() => {
-      const frog = { name: "frog", type: "dot", color: "#7dff9e",
-        script: [{ event: "tick", body: [
-          { k: "if", cond: 'keydown("w")', then: [{ k: "change", lhs: "self.y", by: "-3" }], else: [] },
-          { k: "if", cond: "touching(self, bank)", then: [
-            { k: "change", lhs: "score", by: "1" },
-            { k: "set", lhs: "self.y", value: "340" },
-            { k: "set", lhs: "car1.x", value: "rand(0, 480)" }
-          ], else: [] }
-        ] }] };
-      const world = { objects: [
-        { name: "title", type: "text", text: "FROG RUN" },
-        { name: "bank", type: "box", script: [] },
-        { name: "car1", type: "box", script: [{ event: "tick", body: [{ k: "set", lhs: "endplay", value: "timer > 60" }] }] },
-        frog
-      ], fresh: true, testCount: 3 };
-      return steps(THINGS).every(st => st.check(world)) && steps(RULES).every((st, i) => st.check(world));
-    })());
-  check("ingredient ② demands the real pieces (a meeting AND a score)",
+  check("naming matters: ring1 isn't target1, and a bottom-dwelling title doesn't count",
+    !steps(THINGS)[2].check({ objects: [{ name: "ring1", type: "ring", y: 100 }], fresh: true, testCount: 0 })
+    && !steps(THINGS)[1].check({ objects: [{ name: "title", type: "text", text: "X", y: 300 }], fresh: true, testCount: 0 }));
+  check("version 2 demands the real pieces (dist on target1, explode, score)",
     !steps(RULES)[2].check(built({ name: "cannon", type: "dot", y: 320, x: 240, color: "#ff9d4a",
       script: [{ event: "code", source: "when tick\n change self.x by 1\nend" }] })));
   check("the test steps count real ▶ Test runs (1, 2, then 3)",
