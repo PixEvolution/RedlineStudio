@@ -32,14 +32,14 @@ console.log("Course 1, second edition — shape:");
   check("ten chapters, no cliffs: welcome → history → no-computer → studio tour → play → brain×2 → build×2 → finish",
     course.id === "crt" && course.chapters.length === 10);
   const sc = course.chapters.filter(c => c.steps);
-  check("THREE hands-on chapters (play, things, rules) with 4+4+6 verified steps",
-    sc.length === 3 && sc.map(c => c.steps.length).join(",") === "4,4,6"
+  check("THREE hands-on chapters (play, things, rules) with 4+4+7 verified steps",
+    sc.length === 3 && sc.map(c => c.steps.length).join(",") === "4,4,7"
     && sc.every(c => c.steps.every(st => st.text && typeof st.check === "function")));
   const all = course.chapters.map(c => (c.html || "") + (c.steps || []).map(st => st.text).join("")).join("");
   check("the history is in it: Goldsmith, Mann, overlays, the defocus blast, 'no computer'",
     ["Goldsmith", "Mann", "plastic", "defocus", "no computer"].every(k => all.includes(k)));
-  check("every idea gets surface AND under-the-hood: variable=box, velocity, the mood/state pattern, dist circle",
-    ["Under the hood", "labeled box", "velocity", "state machine", "dist(self, target1)", "keydown"].every(k => all.includes(k)));
+  check("every idea gets surface AND under-the-hood: variable=box, velocity, the mood/state pattern, dist circle, the readout",
+    ["Under the hood", "labeled box", "velocity", "state machine", "dist(self, target1)", "when key", "glues words and numbers"].every(k => all.includes(k)));
   check("📚 Go deeper boxes link the guide and trusted outside sources",
     all.includes("Go deeper") && all.includes("khanacademy.org") && all.includes("wikipedia.org")
     && all.includes("guide.html#recipes"));
@@ -52,6 +52,9 @@ console.log("Course 1, second edition — shape:");
   check("the build promises NOTHING NEW and points every line back at chapters 6 and 7",
     all.includes("nothing new") && all.includes("chapters 6 and 7")
     && !all.includes("touching(") && !/\bpattern card\b/.test(all));
+  check("ONLY learned words: no keydown anywhere (the museum aims with when-key cards, so the build does too)",
+    !all.includes("keydown") && all.includes("the museum's aim cards")
+    && all.includes("fixed cannon") && (all.match(/when key "Arrow/g) || []).length >= 2);
   check("the Stop button is called what it is (▶ Test turns into ■ Stop)",
     all.includes("■ Stop") && !all.includes("(or ✕)"));
   check("the finish line: two-outfits flip, tune-one-number, the publish lap",
@@ -74,23 +77,32 @@ console.log("Course 1 — the checks, against real workspaces:");
     steps(PLAY).every(st => st.check(museum)));
   check("PLAY: the untouched museum green doesn't count as 'you recolored it'",
     !steps(PLAY)[2].check({ ...museum, objects: [{ name: "missile", type: "dot", size: 14, color: "#39ff5e" }, { name: "target1", type: "ring", y: 100 }] }));
-  // A finished ORIGINAL build (the steps check ideas, not any one game):
-  // "a cannon that slides, trying to hit target1" — typed code
+  // the finished build (v3 + rand + timer): fixed cannon, aim knob, typed code
   const codeCannon = {
     name: "cannon", type: "dot", x: 240, y: 320, color: "#ff9d4a",
-    script: [{ event: "code", source: 'when start\n set flying to 0\n set score to 0\nend\nwhen key "Space"\n if flying == 0 then\n set flying to 1\n end\nend\nwhen tick\n if keydown("a") then\n change self.x by -4\n end\n if flying == 1 then\n if dist(self, target1) < 22 then\n explode target1\n change score by 1\n set target1.x to rand(60, 420)\n end\n end\nend' }]
+    script: [{ event: "code", source: 'when start\n set aim to 0\n set flying to 0\n set score to 0\nend\nwhen key "ArrowLeft"\n if flying == 0 then\n change aim by -1\n end\nend\nwhen key "Space"\n if flying == 0 then\n set flying to 1\n end\nend\nwhen tick\n if flying == 1 then\n change self.x by aim\n change self.y by -6\n if dist(self, target1) < 22 then\n explode target1\n change score by 1\n set target1.x to rand(60, 420)\n set flying to 2\n end\n end\nend' }]
   };
   // the same brain after 🧱 To blocks
   const blockCannon = {
-    name: "cannon", type: "dot", x: 250, y: 300,
-    script: [{ event: "tick", body: [
-      { k: "if", cond: 'keydown("a") and flying == 0', then: [{ k: "change", lhs: "self.x", by: "-4" }], else: [] },
-      { k: "if", cond: "dist(self, target1) < 22", then: [
-        { k: "explode", target: "target1" },
-        { k: "change", lhs: "score", by: "1" },
-        { k: "set", lhs: "target1.x", value: "rand(60, 420)" }
-      ], else: [] }
-    ] }]
+    name: "cannon", type: "dot", x: 240, y: 320,
+    script: [
+      { event: "key", key: "ArrowLeft", body: [
+        { k: "if", cond: "flying == 0", then: [{ k: "change", lhs: "aim", by: "-1" }], else: [] }
+      ] },
+      { event: "key", key: "Space", body: [
+        { k: "if", cond: "flying == 0", then: [{ k: "set", lhs: "flying", value: "1" }], else: [] }
+      ] },
+      { event: "tick", body: [
+        { k: "if", cond: "flying == 1", then: [
+          { k: "change", lhs: "self.x", by: "aim" },
+          { k: "if", cond: "dist(self, target1) < 22", then: [
+            { k: "explode", target: "target1" },
+            { k: "change", lhs: "score", by: "1" },
+            { k: "set", lhs: "target1.x", value: "rand(60, 420)" }
+          ], else: [] }
+        ], else: [] }
+      ] }
+    ]
   };
   const rest = [
     { name: "title", type: "text", text: "MOON SHOT", x: 240, y: 30,
@@ -98,7 +110,7 @@ console.log("Course 1 — the checks, against real workspaces:");
     { name: "target1", type: "ring", x: 300, y: 120, script: [] }
   ];
   const built = (cannon, extra = {}) => ({ objects: [...rest, cannon], fresh: true, testCount: 3, published: false, ...extra });
-  check("THINGS + RULES: all 10 build steps pass on the finished build (typed code)",
+  check("THINGS + RULES: all 11 build steps pass on the finished build (typed code)",
     steps(THINGS).every(st => st.check(built(codeCannon)))
     && steps(RULES).every(st => st.check(built(codeCannon))));
   check("…and still pass after 🧱 To blocks (block form)",
@@ -109,14 +121,14 @@ console.log("Course 1 — the checks, against real workspaces:");
   check("naming matters: ring1 isn't target1, and a bottom-dwelling title doesn't count",
     !steps(THINGS)[2].check({ objects: [{ name: "ring1", type: "ring", y: 100 }], fresh: true, testCount: 0 })
     && !steps(THINGS)[1].check({ objects: [{ name: "title", type: "text", text: "X", y: 300 }], fresh: true, testCount: 0 }));
-  check("version 2 demands the real pieces (dist on target1, explode, score)",
-    !steps(RULES)[2].check(built({ name: "cannon", type: "dot", y: 320, x: 240, color: "#ff9d4a",
+  check("version 3 demands the real pieces (dist on target1, explode, score)",
+    !steps(RULES)[3].check(built({ name: "cannon", type: "dot", y: 320, x: 240, color: "#ff9d4a",
       script: [{ event: "code", source: "when tick\n change self.x by 1\nend" }] })));
   check("the test steps count real ▶ Test runs (1, 2, then 3)",
     !steps(RULES)[1].check(built(codeCannon, { testCount: 1 }))
-    && steps(RULES)[5].check(built(codeCannon, { testCount: 3 })));
+    && steps(RULES)[6].check(built(codeCannon, { testCount: 3 })));
   check("the ending step looks for endplay on ANY object (the ⏱ behavior)",
-    !steps(RULES)[4].check({ objects: [codeCannon], fresh: true, testCount: 3 }));
+    !steps(RULES)[5].check({ objects: [codeCannon], fresh: true, testCount: 3 }));
 }
 
 console.log("The lesson window + the Studio's course mode:");

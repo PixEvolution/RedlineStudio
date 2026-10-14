@@ -268,6 +268,11 @@ beam, kept as a one-word tribute.</p>
 (keys aim), 1 = in the air (physics runs), 2 = "that one's done — reset me," and the card's last section
 turns 2 back into 0 with the shot back at the start. One box, three moods, and each rule checks the mood
 before acting. <b>This pattern runs the entire museum</b> — games are made of moods.</p>
+<p><b>The readout.</b> Two small tricks are also in this card, and you'll want both. The machine's
+scoreboard line is <span class="code">set hud.text to "AIM " + aim</span> — the <span class="code">+</span>
+<b>glues words and numbers together</b> into one piece of text, which is how every readout ever drawn
+works. And <span class="code">say "HIT!" for 1</span> makes a thing speak a little bubble for that many
+seconds — the quick way to tell the player something happened.</p>
 ${deeper(`the grown-up name for the mood pattern is a <b>state machine</b>, and velocity/gravity live in
 any intro to <b>game physics</b> — the
 <a href="guide.html#recipes" target="_blank" style="color:#ff8f8c">guide's Recipes section</a> has both in
@@ -284,14 +289,14 @@ make the 4 an 8, and Test. Twice the muzzle velocity, and you knew exactly why b
       title: "Build your own — the things",
       html: `
 <p>Now you build: <b>your own cannon game.</b> Not a copy of the museum's — theirs fires <i>sideways</i>
-with gravity; yours launches <b>straight up</b>, from a cannon you steer along the bottom of the screen,
-at a target that <b>comes back for more</b> — plus the one thing Goldsmith never got: <b>a public
-high-score table.</b></p>
+with gravity bending the arc; yours fires <b>straight up</b> from a fixed cannon, and your aim knob
+<b>leans the shot</b> left or right toward a target that <b>comes back for more</b> — plus the one thing
+Goldsmith never got: <b>a public high-score table.</b></p>
 <p>And here's the promise for these two chapters: <b>nothing new.</b> Every single piece — properties,
-variables, the mood box, the if-bouncer, the dist-circle, rand — is something you already read in
-chapters 6 and 7. Back here you're not learning, you're APPLYING. This chapter places the <i>things</i>;
-the next writes the <i>rules</i>. (Our sentence again. And steps you've already earned stay earned, so
-don't worry when the workspace clears.)</p>`,
+variables, the mood box, the if-bouncer, the aim knob, the dist-circle, rand — is something you already
+read in chapters 6 and 7. Back here you're not learning, you're APPLYING. This chapter places the
+<i>things</i>; the next writes the <i>rules</i>. (Our sentence again. And steps you've already earned
+stay earned, so don't worry when the workspace clears.)</p>`,
       steps: [
         {
           text: `<b>Start fresh.</b> <button class="btn btn-small" data-act="start-fresh">🧹 Clear the workspace</button>
@@ -351,46 +356,10 @@ themselves, and a red underline + message appears under any line with a mistake 
 goes away.</p>`,
       steps: [
         {
-          text: `<b>Version 1 — steering.</b> Type this into the Code section:
+          text: `<b>Version 1 — fire.</b> Type this into the Code section:
 <pre class="codeblock">when start
   set flying to 0
-  say "A AND D SLIDE THE CANNON" for 3
-end
-
-when tick
-  if flying == 0 then
-    if keydown("a") then
-      change self.x by -4
-    end
-    if keydown("d") then
-      change self.x by 4
-    end
-  end
-end</pre>
-          <span class="hint">Now read what you typed, with chapter-6 eyes: a start card that sets one
-          mood box, and a heartbeat card whose bouncer only lets steering happen on the pad.
-          <span class="code">keydown("a")</span> is the one new word of the whole build — it's true the
-          whole time the key is HELD, which is what sliding wants (when-key fires once per press;
-          keydown holds the door open).</span>`,
-          check: (ctx) => {
-            const c = byName(ctx, "cannon");
-            return !!(c && scriptText(c).includes("keydown") && scriptText(c).includes("flying"));
-          }
-        },
-        {
-          text: `<b>▶ Test version 1.</b> A and D slide your cannon along the bottom. That's it — and
-          that's the point: <b>one working rule beats ten imagined ones.</b> Press <b>■ Stop</b> when
-          you've felt it.`,
-          needsTest: true,
-          check: (ctx) => ctx.testCount >= 2
-        },
-        {
-          text: `<b>Version 2 — launch and hit.</b> Swap the Code section for this — it's version 1 plus
-          three new pieces, and swapping whole versions keeps you out of find-the-missing-line misery:
-<pre class="codeblock">when start
-  set flying to 0
-  set score to 0
-  say "A/D AIM · SPACE FIRES" for 4
+  say "SPACE FIRES THE SHOT" for 3
 end
 
 when key "Space"
@@ -400,15 +369,122 @@ when key "Space"
 end
 
 when tick
-  if flying == 0 then
-    if keydown("a") then
-      change self.x by -4
-    end
-    if keydown("d") then
-      change self.x by 4
+  if flying == 1 then
+    change self.y by -6
+    if self.y < -10 then
+      set flying to 2
     end
   end
+  if flying == 2 then
+    set flying to 0
+    set self.y to 320
+  end
+end</pre>
+          <span class="hint">Now read what you typed, with chapter-6 eyes — it's the museum's own cards:
+          a start card writing a mood box, a Space card whose bouncer flips the mood to 1 (writing a
+          number IS firing, remember), and a heartbeat where mood 1 climbs the shot 6 a tick
+          (negative-is-up again), off the top means mood 2, and mood 2 resets to the pad. Same mood
+          ring, your machine.</span>`,
+          check: (ctx) => {
+            const c = byName(ctx, "cannon");
+            return !!(c && scriptText(c).includes("flying") && scriptText(c).includes("Space"));
+          }
+        },
+        {
+          text: `<b>▶ Test version 1.</b> Press SPACE — your shot climbs off the top and comes home.
+          That's it, and that's the point: <b>one working rule beats ten imagined ones.</b> Press
+          <b>■ Stop</b> when you've felt it.`,
+          needsTest: true,
+          check: (ctx) => ctx.testCount >= 2
+        },
+        {
+          text: `<b>Version 2 — the aim knob.</b> The museum aimed with Up/Down before launch; yours
+          aims with Left/Right. Swap the Code section for this — it's version 1 plus the two aim cards
+          and one line in the flight (swapping whole versions keeps you out of find-the-missing-line
+          misery):
+<pre class="codeblock">when start
+  set aim to 0
+  set flying to 0
+  say "LEFT/RIGHT AIM - SPACE FIRES" for 4
+end
+
+when key "ArrowLeft"
+  if flying == 0 then
+    change aim by -1
+    say "AIM " + aim for 1
+  end
+end
+
+when key "ArrowRight"
+  if flying == 0 then
+    change aim by 1
+    say "AIM " + aim for 1
+  end
+end
+
+when key "Space"
+  if flying == 0 then
+    set flying to 1
+  end
+end
+
+when tick
   if flying == 1 then
+    change self.x by aim
+    change self.y by -6
+    if self.y < -10 then
+      set flying to 2
+    end
+  end
+  if flying == 2 then
+    set flying to 0
+    set self.x to 240
+    set self.y to 320
+  end
+end</pre>
+          <span class="hint">These ARE the museum's aim cards with the directions swapped: theirs bent a
+          sideways shot up and down, yours bends an upward shot left and right — same bouncer
+          (<span class="code">if flying == 0</span>), same change-by, same box read back during flight.
+          The <span class="code">say "AIM " + aim</span> line is the museum's readout trick: gluing text
+          and a number together with <span class="code">+</span>, exactly like its hud card.</span>`,
+          check: (ctx) => {
+            const c = byName(ctx, "cannon");
+            return !!(c && scriptText(c).includes("aim"));
+          }
+        },
+        {
+          text: `<b>Version 3 — the hit.</b> One more swap: version 2 plus a score box and the
+          dist-circle inside the flight —
+<pre class="codeblock">when start
+  set aim to 0
+  set flying to 0
+  set score to 0
+  say "LEFT/RIGHT AIM - SPACE FIRES" for 4
+end
+
+when key "ArrowLeft"
+  if flying == 0 then
+    change aim by -1
+    say "AIM " + aim for 1
+  end
+end
+
+when key "ArrowRight"
+  if flying == 0 then
+    change aim by 1
+    say "AIM " + aim for 1
+  end
+end
+
+when key "Space"
+  if flying == 0 then
+    set flying to 1
+  end
+end
+
+when tick
+  if flying == 1 then
+    change self.x by aim
     change self.y by -6
     if dist(self, target1) < 22 then
       explode target1
@@ -422,14 +498,14 @@ when tick
   end
   if flying == 2 then
     set flying to 0
+    set self.x to 240
     set self.y to 320
   end
 end</pre>
-          <span class="hint">Every line is from chapters 6 and 7: Space flips the mood to 1 — writing a
-          number IS firing, remember. Mood 1 climbs the shot 6 a tick (negative-is-up again) and runs
-          the dist-circle hit — <span class="code">explode</span> is Goldsmith's defocus blast. Off the
-          top means mood 2; mood 2 resets to the pad. One new box: <span class="code">score</span> —
-          that name is special, and it pays off in two steps.</span>`,
+          <span class="hint">The new piece is chapter 7's hit, word for word: "a hit" is literally
+          <i>the gap is smaller than 22</i>, and <span class="code">explode</span> is Goldsmith's
+          defocus blast. One new box: <span class="code">score</span> — that name is special, and it
+          pays off in two steps.</span>`,
           check: (ctx) => {
             const c = byName(ctx, "cannon");
             if (!c) return false;
@@ -438,7 +514,7 @@ end</pre>
           }
         },
         {
-          text: `<b>Version 3 — the target comes back.</b> One change inside the hit: right after
+          text: `<b>The target comes back.</b> One change inside the hit: right after
           <span class="code">explode target1</span>, add these two lines, so the target jumps somewhere
           new after every hit — no more free repeat shots on a sitting target:
 <pre class="codeblock">      set target1.x to rand(60, 420)
