@@ -88,7 +88,10 @@
           const open = document.createElement("a");
           open.className = "btn btn-small btn-ghost";
           open.textContent = "Open game";
-          open.href = "play.html?id=" + encodeURIComponent(r.game);
+          const isUni = String(r.game || "").startsWith("universe:");
+          open.textContent = isUni ? "Open universe" : "Open game";
+          open.href = isUni ? "universes.html?id=" + encodeURIComponent(String(r.game).slice(9))
+                            : "play.html?id=" + encodeURIComponent(r.game);
           const done = document.createElement("button");
           done.className = "btn btn-small btn-ghost";
           done.style.marginLeft = "6px";

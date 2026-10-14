@@ -403,6 +403,81 @@ service cloud.firestore {
       allow delete: if isMod();
     }
 
+    // ---------------------------------------------------------- universes
+    // Emergence universes (.emergence files the game exports). The universes
+    // doc is what a card shows plus the seal; the universe itself is split
+    // across universeParts/{id}_{n} (Firestore docs cap at 1 MB). Both are
+    // written in ONE batch by universes.html. Read by everyone — including
+    // the game's BROWSE ONLINE button, which reads logged out over REST.
+    match /universes/{uniId} {
+      allow read: if true;
+
+      allow create: if signedIn()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['format', 'name', 'seed', 'age', 'laws', 'matter', 'kinds',
+             'colonies', 'thumb', 'seal', 'parts', 'size', 'description', 'owner', 'ownerUid',
+             'likes', 'dislikes', 'downloads', 'createdAt'])
+        && request.resource.data.format == 'EMERGENCE1'
+        && request.resource.data.owner is string
+        && request.resource.data.owner.size() >= 1
+        && request.resource.data.owner.size() <= 10
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 40
+        && request.resource.data.description is string
+        && request.resource.data.description.size() <= 500
+        && request.resource.data.thumb is string
+        && request.resource.data.thumb.size() <= 540000
+        && request.resource.data.seal is string
+        && request.resource.data.seal.size() == 32
+        && request.resource.data.parts is int
+        && request.resource.data.parts >= 1
+        && request.resource.data.parts <= 8
+        && request.resource.data.seed is int
+        && request.resource.data.age is int
+        && request.resource.data.laws is int
+        && request.resource.data.matter is int
+        && request.resource.data.kinds is int
+        && request.resource.data.colonies is int
+        && request.resource.data.likes == 0
+        && request.resource.data.dislikes == 0
+        && request.resource.data.downloads == 0
+        && request.resource.data.createdAt == request.time;
+
+      allow update: if
+        // the download counter: anyone, even logged out (the game counts too) — exactly +1
+        (changedKeys().hasOnly(['downloads'])
+          && request.resource.data.downloads == resource.data.downloads + 1)
+        // voting (social.js)
+        || (signedIn() && changedKeys().hasOnly(['votes', 'likes', 'dislikes']))
+        // the owner may fix the description — the universe and its seal never change
+        || (signedIn() && resource.data.ownerUid == request.auth.uid
+            && changedKeys().hasOnly(['description'])
+            && request.resource.data.description is string
+            && request.resource.data.description.size() <= 500);
+
+      allow delete: if isMod() || (signedIn() && resource.data.ownerUid == request.auth.uid);
+    }
+
+    match /universeParts/{partId} {
+      allow read: if true;
+      // a chunk can only be written alongside ITS universe doc, by that doc's
+      // owner, at the id it claims — so nobody can slip a chunk into
+      // someone else's upload
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['uni', 'n', 'data', 'ownerUid'])
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.uni is string
+        && request.resource.data.n is int
+        && request.resource.data.n >= 0
+        && request.resource.data.n < 8
+        && partId == request.resource.data.uni + '_' + string(request.resource.data.n)
+        && request.resource.data.data is string
+        && request.resource.data.data.size() <= 900000
+        && getAfter(/databases/$(database)/documents/universes/$(request.resource.data.uni)).data.ownerUid == request.auth.uid;
+      allow update: if false;
+      allow delete: if isMod() || (signedIn() && resource.data.ownerUid == request.auth.uid);
+    }
+
     // everything else: denied
   }
 }

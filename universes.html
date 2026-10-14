@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RedlineStudio — Emergence Universes</title>
+  <meta name="description" content="Universes discovered in Emergence, shared by the players who found them. Download one and keep it running in your own game.">
+  <link rel="canonical" href="https://redlinestudio.dev/universes.html">
+  <meta property="og:site_name" content="RedlineStudio">
+  <meta property="og:title" content="Emergence Universes">
+  <meta property="og:description" content="Universes discovered in Emergence, shared by the players who found them.">
+  <meta property="og:url" content="https://redlinestudio.dev/universes.html">
+  <meta property="og:type" content="website">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .uni-thumb { width: 100%; aspect-ratio: 240 / 150; border-radius: 6px; background: #05050a; object-fit: cover; display: block; }
+    .uni-card { cursor: pointer; }
+    .uni-sort { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 14px; }
+    .uni-sort .tab { flex: 0 0 auto; padding: 8px 14px; }
+    .uni-detail { display: grid; grid-template-columns: minmax(0, 480px) minmax(0, 1fr); gap: 20px; align-items: start; }
+    .uni-detail .uni-thumb { max-width: 480px; }
+    .uni-stats { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 10px 0; font-size: 14px; }
+    .uni-stats span:nth-child(odd) { color: var(--text-dim); }
+    .uni-desc { white-space: pre-wrap; overflow-wrap: anywhere; margin: 10px 0; }
+    .uni-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+    #up-preview { display: none; gap: 14px; align-items: flex-start; margin-top: 12px; }
+    #up-preview img { width: 200px; }
+    @media (max-width: 760px) { .uni-detail { grid-template-columns: 1fr; } #up-preview { flex-direction: column; } }
+  </style>
+  <script>(window.adsbygoogle = window.adsbygoogle || []).requestNonPersonalizedAds = 1;</script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2208639648972390"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+  <main class="page page-wide">
+    <h1 class="page-title">🌌 Emergence Universes</h1>
+    <p class="page-sub">Universes discovered in Emergence, shared by the players who found them. Download one, then drag
+      the file onto the game window (or use My Universes → IMPORT FILE). The game can also browse and download these
+      itself: My Universes → BROWSE ONLINE.</p>
+
+    <!-- one universe, when the address has ?id= -->
+    <div class="panel" id="detail" style="display:none; margin-bottom:18px"></div>
+
+    <div class="panel" style="margin-bottom:18px">
+      <h2 style="margin-top:0">Share a universe</h2>
+      <p class="hint">In the game: My Universes → <b>EXPORT</b> on the universe's card. The file goes to
+        <span class="code">Documents\Emergence Universes</span>. Pick it here. Max 7 MB.</p>
+      <div id="up-login" class="hint" style="display:none">
+        <a class="btn btn-small" href="login.html">Log in to share</a>
+      </div>
+      <div id="up-form" style="display:none">
+        <input type="file" id="up-file" accept=".emergence">
+        <div id="up-preview">
+          <img class="uni-thumb" id="up-img" alt="">
+          <div style="flex:1; min-width:0">
+            <div class="game-title" id="up-name"></div>
+            <div class="game-meta" id="up-meta"></div>
+            <textarea id="up-desc" rows="3" maxlength="500" placeholder="Anything worth knowing about this universe (optional)" style="margin-top:8px"></textarea>
+            <div class="uni-row">
+              <button class="btn" id="up-go">Upload</button>
+              <span class="hint" id="up-status"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-bottom:18px">
+      <h2 style="margin-top:0">Get Emergence</h2>
+      <p class="hint">Windows. Free.</p>
+      <a class="btn btn-small" href="https://github.com/PixEvolution/Emergence/releases/latest/download/Emergence.exe">DOWNLOAD ⬇</a>
+      <p class="hint">Windows may warn about an unknown publisher the first time — the file isn't code-signed.
+        Click "More info → Run anyway."</p>
+    </div>
+
+    <h2>Shared universes</h2>
+    <div class="uni-sort">
+      <button class="tab active" data-order="createdAt">Newest</button>
+      <button class="tab" data-order="likes">Most liked</button>
+      <button class="tab" data-order="downloads">Most downloaded</button>
+    </div>
+    <div class="games-grid" id="grid"><p class="hint">Loading…</p></div>
+    <div style="text-align:center; margin:18px 0">
+      <button class="btn btn-ghost" id="more" style="display:none">Load more</button>
+    </div>
+  </main>
+
+  <script type="module">
+    import { renderNav, toast, $, fmtDate } from "./js/ui.js";
+    import { currentUser, authReady } from "./js/auth.js";
+    import { renderVotes, renderComments } from "./js/social.js";
+    import { amIMod } from "./js/mod.js";
+    import { wireLevel } from "./js/level.js";
+    import {
+      checkFile, uploadUniverse, listUniverses, getUniverse, downloadUniverse,
+      deleteUniverse, reportUniverse, fmtAge, displayName, thumbOk
+    } from "./js/universes.js";
+
+    renderNav("");
+    const me = currentUser();
+
+    const el = (tag, cls, text) => {
+      const e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (text != null) e.textContent = text;
+      return e;
+    };
+    const thumbImg = (u) => {
+      const img = el("img", "uni-thumb");
+      img.alt = "";
+      if (u.thumb && thumbOk(u.thumb)) img.src = "data:image/png;base64," + u.thumb;
+      return img;
+    };
+    const statLine = (u) => `age ${fmtAge(u.age)} · ${u.laws} laws · ${Number(u.matter).toLocaleString()} matter`;
+
+    // ---------------------------------------------------------- the shelf
+    let order = "createdAt", last = null, loading = false;
+
+    function card(u) {
+      const c = el("div", "game-card uni-card");
+      c.title = displayName(u);
+      c.append(thumbImg(u), el("div", "game-title", displayName(u)), el("div", "game-meta", statLine(u)));
+      const by = el("div", "game-meta", `by ${u.owner || "?"} · ▲ ${u.likes || 0} · ⬇ ${u.downloads || 0}`);
+      c.append(by);
+      c.addEventListener("click", () => openDetail(u.id, u));
+      return c;
+    }
+
+    async function loadShelf(reset) {
+      if (loading) return;
+      loading = true;
+      const grid = $("#grid");
+      if (reset) { last = null; grid.innerHTML = '<p class="hint">Loading…</p>'; }
+      try {
+        const page = await listUniverses(order, last);
+        if (reset) grid.innerHTML = "";
+        page.items.forEach(u => grid.appendChild(card(u)));
+        last = page.last;
+        $("#more").style.display = page.more ? "" : "none";
+        if (reset && page.items.length === 0) grid.innerHTML = '<p class="hint">Nobody has shared a universe yet.</p>';
+      } catch (err) {
+        grid.innerHTML = "";
+        toast("Couldn't load universes: " + err.message, true);
+      }
+      loading = false;
+    }
+
+    document.querySelectorAll(".uni-sort .tab").forEach(b => b.addEventListener("click", () => {
+      document.querySelectorAll(".uni-sort .tab").forEach(x => x.classList.toggle("active", x === b));
+      order = b.dataset.order;
+      loadShelf(true);
+    }));
+    $("#more").addEventListener("click", () => loadShelf(false));
+
+    // ---------------------------------------------------------- one universe
+    async function openDetail(id, known) {
+      const box = $("#detail");
+      box.style.display = "";
+      box.innerHTML = '<p class="hint">Loading…</p>';
+      history.replaceState(null, "", "universes.html?id=" + encodeURIComponent(id));
+      box.scrollIntoView({ behavior: "smooth", block: "start" });
+      let u = known;
+      try { u = await getUniverse(id); } catch (err) { if (!u) { box.innerHTML = ""; toast(err.message, true); return; } }
+      if (!u) { box.innerHTML = '<p class="hint">That universe isn\'t here anymore.</p>'; return; }
+
+      box.innerHTML = "";
+      const grid = el("div", "uni-detail");
+      const left = el("div");
+      left.append(thumbImg(u));
+      const right = el("div");
+      right.append(el("h2", null, displayName(u)));
+      const byLine = el("div", "game-meta");
+      byLine.append("by ");
+      const ownerLink = el("a", null, u.owner || "?");
+      ownerLink.href = "profile.html?u=" + encodeURIComponent(u.owner || "");
+      byLine.append(ownerLink);
+      if (u.owner) wireLevel(ownerLink, u.owner);
+      if (u.createdAt) byLine.append(" · shared " + fmtDate(u.createdAt));
+      right.append(byLine);
+
+      const stats = el("div", "uni-stats");
+      [["Universe", "#" + u.seed], ["Age", fmtAge(u.age)], ["Laws of nature", u.laws],
+       ["Matter", Number(u.matter).toLocaleString()], ["Kinds of matter", u.kinds],
+       ["Colonies", u.colonies], ["Downloads", u.downloads || 0],
+       ["Size", (Number(u.size || 0) / 1e6).toFixed(2) + " MB"]]
+        .forEach(([k, v]) => stats.append(el("span", null, k), el("span", null, String(v))));
+      right.append(stats);
+      if (u.description) right.append(el("div", "uni-desc", u.description));
+
+      const row = el("div", "uni-row");
+      const dl = el("button", "btn", "Download ⬇");
+      dl.addEventListener("click", async () => {
+        dl.disabled = true; dl.textContent = "Downloading…";
+        try { await downloadUniverse(u); toast("Downloaded — drag the file onto the game window to import it."); }
+        catch (err) { toast(err.message, true); }
+        dl.disabled = false; dl.textContent = "Download ⬇";
+      });
+      const votes = el("div");
+      row.append(dl, votes);
+      right.append(row);
+      renderVotes(votes, "universes", u.id, u, me);
+
+      const tools = el("div", "uni-row");
+      if (me && me !== u.owner) {
+        const rep = el("button", "btn btn-small btn-ghost", "⚑ Report");
+        rep.addEventListener("click", async () => {
+          const reason = prompt("What's wrong with this universe? (offensive name or description, broken file…)");
+          if (reason == null || !reason.trim()) return;
+          try { await reportUniverse(u, me, reason); toast("Reported — a moderator will look at it."); }
+          catch (err) { toast(err.message, true); }
+        });
+        tools.append(rep);
+      }
+      await authReady;
+      const mine = me && u.owner === me;
+      if (mine || await amIMod()) {
+        const del = el("button", "btn btn-small btn-ghost", mine ? "Delete my upload" : "🛡 Delete");
+        del.addEventListener("click", async () => {
+          if (!confirm(`Delete "${displayName(u)}" from the shelf? This can't be undone.`)) return;
+          try { await deleteUniverse(u); toast("Deleted."); box.style.display = "none"; history.replaceState(null, "", "universes.html"); loadShelf(true); }
+          catch (err) { toast(err.message, true); }
+        });
+        tools.append(del);
+      }
+      const close = el("button", "btn btn-small btn-ghost", "Close ✕");
+      close.addEventListener("click", () => { box.style.display = "none"; history.replaceState(null, "", "universes.html"); });
+      tools.append(close);
+      right.append(tools);
+
+      grid.append(left, right);
+      const comments = el("div");
+      comments.style.marginTop = "18px";
+      box.append(grid, comments);
+      renderComments(comments, "universes", u.id, me);
+    }
+
+    // ---------------------------------------------------------- uploading
+    let picked = null;
+    if (me) {
+      $("#up-form").style.display = "";
+      $("#up-file").addEventListener("change", async (e) => {
+        picked = null;
+        $("#up-preview").style.display = "none";
+        const file = e.target.files[0];
+        if (!file) return;
+        $("#up-status").textContent = "";
+        try {
+          if (file.size > 8 * 1024 * 1024) throw new Error("That file is too big to share here (7 MB max).");
+          picked = await checkFile(await file.text());
+          $("#up-img").src = picked.thumb ? "data:image/png;base64," + picked.thumb : "";
+          $("#up-name").textContent = displayName(picked);
+          $("#up-meta").textContent = `#${picked.seed} · ${statLine(picked)} · seal ✓`;
+          $("#up-preview").style.display = "flex";
+        } catch (err) {
+          toast(err.message, true);
+          e.target.value = "";
+        }
+      });
+      $("#up-go").addEventListener("click", async () => {
+        if (!picked) return;
+        const btn = $("#up-go");
+        btn.disabled = true;
+        $("#up-status").textContent = "Uploading…";
+        try {
+          await authReady;
+          const id = await uploadUniverse(picked, $("#up-desc").value, me);
+          toast("Shared! Everyone can download it now.");
+          picked = null;
+          $("#up-file").value = "";
+          $("#up-desc").value = "";
+          $("#up-preview").style.display = "none";
+          loadShelf(true);
+          openDetail(id);
+        } catch (err) {
+          toast("Upload failed: " + err.message, true);
+        }
+        $("#up-status").textContent = "";
+        btn.disabled = false;
+      });
+    } else {
+      $("#up-login").style.display = "";
+    }
+
+    loadShelf(true);
+    const want = new URLSearchParams(location.search).get("id");
+    if (want) openDetail(want);
+  </script>
+  <script type="module">import { footAd } from "./js/ads.js"; footAd();</script>
+</body>
+</html>
