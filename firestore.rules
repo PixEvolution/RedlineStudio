@@ -406,9 +406,10 @@ service cloud.firestore {
     // ---------------------------------------------------------- universes
     // Emergence universes (.emergence files the game exports). The universes
     // doc is what a card shows plus the seal; the universe itself is split
-    // across universeParts/{id}_{n} (Firestore docs cap at 1 MB). Both are
-    // written in ONE batch by universes.html. Read by everyone — including
-    // the game's BROWSE ONLINE button, which reads logged out over REST.
+    // across universeParts/{id}_{n} (200 KB each). universes.html writes the
+    // card first with ready:false (hidden everywhere), then each part, then
+    // flips ready to true. Read by everyone — including the game's BROWSE
+    // ONLINE button, which reads logged out over REST.
     match /universes/{uniId} {
       allow read: if true;
 
@@ -416,7 +417,8 @@ service cloud.firestore {
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.keys().hasOnly(['format', 'name', 'seed', 'age', 'laws', 'matter', 'kinds',
              'colonies', 'thumb', 'seal', 'parts', 'size', 'description', 'owner', 'ownerUid',
-             'likes', 'dislikes', 'downloads', 'createdAt'])
+             'likes', 'dislikes', 'downloads', 'createdAt', 'ready'])
+        && request.resource.data.ready == false
         && request.resource.data.format == 'EMERGENCE1'
         && request.resource.data.owner is string
         && request.resource.data.owner.size() >= 1
@@ -431,7 +433,7 @@ service cloud.firestore {
         && request.resource.data.seal.size() == 32
         && request.resource.data.parts is int
         && request.resource.data.parts >= 1
-        && request.resource.data.parts <= 8
+        && request.resource.data.parts <= 36
         && request.resource.data.seed is int
         && request.resource.data.age is int
         && request.resource.data.laws is int
@@ -449,6 +451,11 @@ service cloud.firestore {
           && request.resource.data.downloads == resource.data.downloads + 1)
         // voting (social.js)
         || (signedIn() && changedKeys().hasOnly(['votes', 'likes', 'dislikes']))
+        // the owner finishing an upload: every part has landed, show it
+        || (signedIn() && resource.data.ownerUid == request.auth.uid
+            && changedKeys().hasOnly(['ready'])
+            && resource.data.ready == false
+            && request.resource.data.ready == true)
         // the owner may fix the description — the universe and its seal never change
         || (signedIn() && resource.data.ownerUid == request.auth.uid
             && changedKeys().hasOnly(['description'])
@@ -460,20 +467,22 @@ service cloud.firestore {
 
     match /universeParts/{partId} {
       allow read: if true;
-      // a chunk can only be written alongside ITS universe doc, by that doc's
-      // owner, at the id it claims — so nobody can slip a chunk into
-      // someone else's upload
+      // a part can only be written by its universe's owner, at the id it
+      // claims, while that universe is still uploading (ready:false) — so
+      // nobody can slip a part into someone else's upload, or change one later
       allow create: if signedIn()
         && request.resource.data.keys().hasOnly(['uni', 'n', 'data', 'ownerUid'])
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.uni is string
         && request.resource.data.n is int
         && request.resource.data.n >= 0
-        && request.resource.data.n < 8
+        && request.resource.data.n < 36
         && partId == request.resource.data.uni + '_' + string(request.resource.data.n)
         && request.resource.data.data is string
-        && request.resource.data.data.size() <= 900000
-        && getAfter(/databases/$(database)/documents/universes/$(request.resource.data.uni)).data.ownerUid == request.auth.uid;
+        && request.resource.data.data.size() <= 200000
+        && get(/databases/$(database)/documents/universes/$(request.resource.data.uni)).data.ownerUid == request.auth.uid
+        && get(/databases/$(database)/documents/universes/$(request.resource.data.uni)).data.ready == false
+        && request.resource.data.n < get(/databases/$(database)/documents/universes/$(request.resource.data.uni)).data.parts;
       allow update: if false;
       allow delete: if isMod() || (signedIn() && resource.data.ownerUid == request.auth.uid);
     }

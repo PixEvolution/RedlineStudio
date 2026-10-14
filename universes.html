@@ -263,7 +263,9 @@
         $("#up-status").textContent = "Uploading…";
         try {
           await authReady;
-          const id = await uploadUniverse(picked, $("#up-desc").value, me);
+          const id = await uploadUniverse(picked, $("#up-desc").value, me, (done, total) => {
+            $("#up-status").textContent = `Uploading… ${Math.round(100 * done / total)}%`;
+          });
           toast("Shared! Everyone can download it now.");
           picked = null;
           $("#up-file").value = "";
