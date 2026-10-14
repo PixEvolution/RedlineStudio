@@ -13,19 +13,23 @@
 //
 // STORAGE: Firestore docs cap at 1 MB, so a universe is split across
 //   universes/{id}                 — what a card shows (+ the seal), light
-//   universeParts/{id}_{n}         — the universe itself, ≤ 900 KB per part
-// Both are written in ONE batch, so an upload lands whole or not at all.
+//   universeParts/{id}_{n}         — the universe itself, ≤ 200 KB per part
+// Written as many SMALL writes (one giant write can stall on some
+// connections without ever erroring). The card starts as ready:false —
+// hidden everywhere — and flips to ready:true only once the server has
+// confirmed every part. A failed upload cleans up after itself.
 
 import { db } from "./firebase.js";
 import { auth } from "./auth.js";
 import {
   collection, doc, getDoc, getDocs, query, orderBy, limit, startAfter,
-  writeBatch, serverTimestamp, increment, updateDoc, addDoc
+  writeBatch, serverTimestamp, increment, updateDoc, addDoc, setDoc, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 export const FORMAT = "EMERGENCE1";
-export const PART = 900000;          // characters per chunk (keep in sync with the game: SHARE_PART)
-export const MAX_PARTS = 8;          // ~7 MB of universe (game: SHARE_MAX_PARTS)
+export const PART = 200000;          // characters per chunk (keep in sync with the game: SHARE_PART)
+export const MAX_PARTS = 36;         // ~7 MB of universe (game: SHARE_MAX_PARTS)
+const WRITE_TIMEOUT = 60000;         // one small write that takes a full minute has stalled
 export const MAX_DESC = 500;
 const MAX_THUMB = 540000;            // base64 characters (~400 KB PNG — the game's own cap)
 const PAGE = 24;
@@ -97,7 +101,18 @@ export async function checkFile(text) {
 }
 
 // ---- uploading -------------------------------------------------------------
-export async function uploadUniverse(f, description, username) {
+// A write the server never confirms would leave the button spinning forever,
+// so every write gets a deadline.
+function withTimeout(promise, what) {
+  let t;
+  const timer = new Promise((_, reject) => {
+    t = setTimeout(() => reject(new Error(`the connection stalled while sending ${what} — check your internet and try again`)), WRITE_TIMEOUT);
+  });
+  return Promise.race([promise, timer]).finally(() => clearTimeout(t));
+}
+
+// onProgress(done, total) is called as parts land.
+export async function uploadUniverse(f, description, username, onProgress = () => {}) {
   const uid = auth.currentUser?.uid;
   if (!uid || !username) throw new Error("Log in to share a universe.");
   description = String(description || "").trim().slice(0, MAX_DESC);
@@ -106,18 +121,35 @@ export async function uploadUniverse(f, description, username) {
   if (parts.length < 1 || parts.length > MAX_PARTS) throw new Error("That universe is too big to share here.");
 
   const ref = doc(collection(db, "universes"));
-  const batch = writeBatch(db);
-  batch.set(ref, {
+  const total = parts.length + 2;
+  onProgress(0, total);
+  // 1. the card, hidden until everything else has landed
+  await withTimeout(setDoc(ref, {
     format: FORMAT, name: f.name, seed: f.seed, age: f.age, laws: f.laws, matter: f.matter,
     kinds: f.kinds, colonies: f.colonies, thumb: f.thumb, seal: f.seal,
     parts: parts.length, size: f.data.length, description,
-    owner: username, ownerUid: uid,
+    owner: username, ownerUid: uid, ready: false,
     likes: 0, dislikes: 0, downloads: 0, createdAt: serverTimestamp()
-  });
-  parts.forEach((data, n) => {
-    batch.set(doc(db, "universeParts", ref.id + "_" + n), { uni: ref.id, n, data, ownerUid: uid });
-  });
-  await batch.commit();
+  }), "the universe's card");
+  onProgress(1, total);
+  let sent = 0;
+  try {
+    // 2. the universe itself, one small part at a time
+    for (let n = 0; n < parts.length; n++) {
+      await withTimeout(setDoc(doc(db, "universeParts", ref.id + "_" + n),
+        { uni: ref.id, n, data: parts[n], ownerUid: uid }), `part ${n + 1} of ${parts.length}`);
+      sent = n + 1;
+      onProgress(n + 2, total);
+    }
+    // 3. everything is on the server: show it
+    await withTimeout(updateDoc(ref, { ready: true }), "the finishing touch");
+    onProgress(total, total);
+  } catch (err) {
+    // leave nothing half-uploaded behind
+    for (let n = 0; n < sent; n++) deleteDoc(doc(db, "universeParts", ref.id + "_" + n)).catch(() => {});
+    deleteDoc(ref).catch(() => {});
+    throw err;
+  }
   return ref.id;
 }
 
@@ -129,7 +161,7 @@ export async function listUniverses(order = "createdAt", after = null) {
   if (after) parts.push(startAfter(after));
   parts.push(limit(PAGE));
   const snap = await getDocs(query(...parts));
-  const items = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(u => !u.unlisted);
+  const items = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(u => !u.unlisted && u.ready !== false);
   return { items, last: snap.docs[snap.docs.length - 1] || null, more: snap.docs.length === PAGE };
 }
 
@@ -168,11 +200,11 @@ export async function downloadUniverse(u) {
 
 // ---- owner / moderator -----------------------------------------------------
 export async function deleteUniverse(u) {
-  const batch = writeBatch(db);
-  const n = Number(u.parts) || 0;
-  for (let i = 0; i < Math.min(n, MAX_PARTS); i++) batch.delete(doc(db, "universeParts", u.id + "_" + i));
-  batch.delete(doc(db, "universes", u.id));
-  await batch.commit();
+  const n = Math.min(Number(u.parts) || 0, MAX_PARTS);
+  for (let i = 0; i < n; i++) {
+    await deleteDoc(doc(db, "universeParts", u.id + "_" + i)).catch(() => {});
+  }
+  await deleteDoc(doc(db, "universes", u.id));
 }
 
 export async function editDescription(id, description) {
