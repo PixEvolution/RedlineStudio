@@ -68,7 +68,7 @@
     <div class="panel" style="margin-bottom:18px">
       <h2 style="margin-top:0">Get Emergence</h2>
       <p class="hint">Windows. Free.</p>
-      <a class="btn btn-small" href="https://github.com/PixEvolution/RedlineStudio/releases/download/V1.0.0/Emergence.exe">DOWNLOAD ⬇</a>
+      <a class="btn btn-small" href="https://github.com/PixEvolution/RedlineStudio/releases/latest/download/Emergence.exe">DOWNLOAD ⬇</a>
       <p class="hint">Windows may warn about an unknown publisher the first time — the file isn't code-signed.
         Click "More info → Run anyway."</p>
     </div>
@@ -263,9 +263,7 @@
         $("#up-status").textContent = "Uploading…";
         try {
           await authReady;
-          const id = await uploadUniverse(picked, $("#up-desc").value, me, (done, total) => {
-            $("#up-status").textContent = `Uploading… ${Math.round(100 * done / total)}%`;
-          });
+          const id = await uploadUniverse(picked, $("#up-desc").value, me);
           toast("Shared! Everyone can download it now.");
           picked = null;
           $("#up-file").value = "";
