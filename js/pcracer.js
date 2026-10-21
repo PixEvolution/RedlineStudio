@@ -42,13 +42,21 @@ export const KINDS = { body: "🚗 Body", rim: "⚙ Rim", tire: "⬤ Tire" };
 const DRIVES = ["fwd", "rwd", "awd"];
 const PROFILES = ["low", "mid", "tall"];
 
-// The tracks the game submits times for (ids are pinned in the rules too).
+// The boards the game submits times for — a FIXED list, pinned in the rules
+// too, so no junk boards can ever exist. 3 drag + 20 weight pull + 15 track.
 export const DRAG_TRACKS = [
+  ["quarter", "¼ mile · 1320 ft"],
   ["eighth", "⅛ mile · 660 ft"],
-  ["thousand", "1000 ft"],
-  ["quarter", "¼ mile · 1320 ft"]
+  ["thousand", "1000 ft"]
 ];
 export const WP_CLASSES = ["street", "sportsman", "limited", "prostock", "unlimited"];
+export const WP_FEET = [[660, "⅛ mile"], [1320, "¼ mile"], [2640, "½ mile"], [5280, "1 mile"]];
+export const CIRCUITS = [
+  ["lakeside_oval", "Lakeside Oval"],
+  ["redline_circuit", "Redline Circuit"],
+  ["grand_prix_circuit", "Grand Prix Circuit"]
+];
+export const TRACK_LAPS = [1, 2, 3, 5, 10];
 
 // ---- the seal ---------------------------------------------------------------
 export async function sha32(text) {
