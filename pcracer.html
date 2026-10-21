@@ -29,9 +29,12 @@
     .lb-row + .lb-row { border-top: 1px solid rgba(255,255,255,.06); }
     .lb-rank { flex: 0 0 2.2em; text-align: right; }
     .lb-time { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 6.5em; }
-    .lb-name { min-width: 8em; }
+    .lb-name { min-width: 8em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lb-car { min-width: 8em; font-size: .85em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .lb-hw { color: var(--text-dim); font-size: .85em; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lb-head { display: flex; gap: 10px; padding: 4px 8px; color: var(--text-dim); font-size: .72em; text-transform: uppercase; letter-spacing: 1px; }
     .lb-pick { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 8px 0 12px; }
+    @media (max-width: 700px) { .lb-car { display: none; } .lb-head .lb-car { display: none; } }
     .price-tag { font-weight: 800; }
     @media (max-width: 760px) { .uni-detail { grid-template-columns: 1fr; } #up-preview { flex-direction: column; } }
   </style>
@@ -61,17 +64,24 @@
       <h2 style="margin-top:0">★ Leaderboards</h2>
       <p class="hint">Personal bests, one row per racer, forever — with the machine that ran it. Times come straight
         from the game when you're logged in.</p>
-      <div class="uni-sort" id="lb-tabs">
-        <button class="tab active" data-track="quarter">¼ mile</button>
-        <button class="tab" data-track="eighth">⅛ mile</button>
-        <button class="tab" data-track="thousand">1000 ft</button>
-        <button class="tab" data-track="wp">Weight pull</button>
+      <div class="uni-sort" id="lb-groups">
+        <button class="tab active" data-group="drag">🏁 Drag</button>
+        <button class="tab" data-group="wp">🏋 Weight pull</button>
+        <button class="tab" data-group="track">🏎 Track</button>
       </div>
-      <div class="lb-pick" id="wp-pick" style="display:none">
+      <div class="lb-pick" id="pick-drag"></div>
+      <div class="lb-pick" id="pick-wp" style="display:none">
         <select id="wp-class"></select>
-        <input type="number" id="wp-feet" min="10" max="99999" step="10" value="2640" style="width:7em" title="Pull distance in feet">
-        <span class="hint">feet</span>
-        <button class="btn btn-small" id="wp-go">Show</button>
+        <select id="wp-feet"></select>
+      </div>
+      <div class="lb-pick" id="pick-track" style="display:none">
+        <select id="tr-circuit"></select>
+        <select id="tr-laps"></select>
+      </div>
+      <div class="lb-head">
+        <span class="lb-rank">#</span><span class="lb-time">Time</span>
+        <span class="lb-name">Racer</span><span class="lb-car">Car</span>
+        <span class="lb-hw">PC it ran on</span>
       </div>
       <div id="lb-list"><p class="hint">Loading…</p></div>
     </div>
@@ -135,7 +145,8 @@
     import { wireLevel } from "./js/level.js";
     import { addPanelSpeakers } from "./js/speech.js";
     import {
-      KINDS, DRAG_TRACKS, WP_CLASSES, checkPart, drawThumb, uploadPart, listParts, listMine, listBought,
+      KINDS, DRAG_TRACKS, WP_CLASSES, WP_FEET, CIRCUITS, TRACK_LAPS,
+      checkPart, drawThumb, uploadPart, listParts, listMine, listBought,
       getPart, ownsPart, buyPart, downloadPart, setListing, deletePart, reportPart,
       loadTimes, strikeTime, fmtMs, thumbOk, displayName, MAX_PRICE
     } from "./js/pcracer.js";
@@ -159,10 +170,33 @@
     const priceLabel = (p) => p.price > 0 ? `${COIN} ${p.price}` : "FREE";
 
     // ------------------------------------------------------- leaderboards
-    let isMod = false;
-    for (const c of WP_CLASSES) $("#wp-class").append(new Option(c.toUpperCase(), c));
+    // Every board is from the game's FIXED list — no typed-in ids anywhere.
+    let isMod = false, group = "drag", dragTrack = DRAG_TRACKS[0][0];
 
-    async function showBoard(trackId) {
+    for (const [id, label] of DRAG_TRACKS) {
+      const b = el("button", "tab" + (id === dragTrack ? " active" : ""), label);
+      b.addEventListener("click", () => {
+        dragTrack = id;
+        document.querySelectorAll("#pick-drag .tab").forEach(x => x.classList.toggle("active", x === b));
+        showBoard();
+      });
+      $("#pick-drag").appendChild(b);
+    }
+    for (const c of WP_CLASSES) $("#wp-class").append(new Option(c.toUpperCase(), c));
+    for (const [ft, label] of WP_FEET) $("#wp-feet").append(new Option(`${label.toUpperCase()} · ${ft} FT`, ft));
+    for (const [id, label] of CIRCUITS) $("#tr-circuit").append(new Option(label.toUpperCase(), id));
+    for (const n of TRACK_LAPS) $("#tr-laps").append(new Option(`${n} LAP${n === 1 ? "" : "S"}`, n));
+    for (const sel of ["#wp-class", "#wp-feet", "#tr-circuit", "#tr-laps"]) {
+      $(sel).addEventListener("change", () => showBoard());
+    }
+
+    const currentBoard = () =>
+      group === "drag" ? dragTrack
+      : group === "wp" ? `wp_${$("#wp-class").value}_${$("#wp-feet").value}`
+      : `track_${$("#tr-circuit").value}_${$("#tr-laps").value}`;
+
+    async function showBoard() {
+      const trackId = currentBoard();
       const mount = $("#lb-list");
       mount.innerHTML = '<p class="hint">Loading…</p>';
       try {
@@ -177,13 +211,16 @@
           name.href = "profile.html?u=" + encodeURIComponent(r.user || "");
           wireLevel(name, r.user);
           row.append(name);
-          row.append(el("span", "lb-hw", `${r.car || ""}${r.hw ? " · " + r.hw : ""}`));
+          row.append(el("span", "lb-car", r.car || "—"));
+          // the PC that set THIS time — a new PB from a different machine
+          // rewrites the row, so the board always shows what actually ran it
+          row.append(el("span", "lb-hw", r.hw || "—"));
           if (isMod) {
             const x = el("button", "blk-mini blk-del", "✕");
             x.title = "Strike this time (moderation)";
             x.addEventListener("click", async () => {
               if (!confirm(`Strike ${r.user}'s ${fmtMs(r.ms)}?`)) return;
-              try { await strikeTime(trackId, r.id); toast("Struck."); showBoard(trackId); }
+              try { await strikeTime(trackId, r.id); toast("Struck."); showBoard(); }
               catch (err) { toast(err.message, true); }
             });
             row.append(x);
@@ -196,16 +233,15 @@
       }
     }
 
-    document.querySelectorAll("#lb-tabs .tab").forEach(b => b.addEventListener("click", () => {
-      document.querySelectorAll("#lb-tabs .tab").forEach(x => x.classList.toggle("active", x === b));
-      const t = b.dataset.track;
-      $("#wp-pick").style.display = t === "wp" ? "" : "none";
-      if (t === "wp") showBoard(`wp_${$("#wp-class").value}_${Math.max(10, Math.floor(Number($("#wp-feet").value) || 2640))}`);
-      else showBoard(t);
+    document.querySelectorAll("#lb-groups .tab").forEach(b => b.addEventListener("click", () => {
+      document.querySelectorAll("#lb-groups .tab").forEach(x => x.classList.toggle("active", x === b));
+      group = b.dataset.group;
+      $("#pick-drag").style.display = group === "drag" ? "" : "none";
+      $("#pick-wp").style.display = group === "wp" ? "" : "none";
+      $("#pick-track").style.display = group === "track" ? "" : "none";
+      showBoard();
     }));
-    $("#wp-go").addEventListener("click", () =>
-      showBoard(`wp_${$("#wp-class").value}_${Math.max(10, Math.floor(Number($("#wp-feet").value) || 2640))}`));
-    showBoard("quarter");
+    showBoard();
     authReady.then(async () => { isMod = await amIMod().catch(() => false); });
 
     // ------------------------------------------------------- the market
