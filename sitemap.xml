@@ -11,6 +11,7 @@
   <url><loc>https://redlinestudio.dev/profiles.html</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
   <url><loc>https://redlinestudio.dev/universes.html</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://redlinestudio.dev/packs.html</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://redlinestudio.dev/pcracer.html</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
   <url><loc>https://redlinestudio.dev/forums.html</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
   <url><loc>https://redlinestudio.dev/guide.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://redlinestudio.dev/othergames.html</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>

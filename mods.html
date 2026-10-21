@@ -90,9 +90,11 @@
           open.textContent = "Open game";
           const isUni = String(r.game || "").startsWith("universe:");
           const isPack = String(r.game || "").startsWith("pack:");
-          open.textContent = isUni ? "Open universe" : (isPack ? "Open sprite pack" : "Open game");
+          const isPcr = String(r.game || "").startsWith("pcrpart:");
+          open.textContent = isUni ? "Open universe" : (isPack ? "Open sprite pack" : (isPcr ? "Open PC Racer part" : "Open game"));
           open.href = isUni ? "universes.html?id=" + encodeURIComponent(String(r.game).slice(9))
                     : isPack ? "packs.html?id=" + encodeURIComponent(String(r.game).slice(5))
+                    : isPcr ? "pcracer.html?id=" + encodeURIComponent(String(r.game).slice(8))
                             : "play.html?id=" + encodeURIComponent(r.game);
           const done = document.createElement("button");
           done.className = "btn btn-small btn-ghost";

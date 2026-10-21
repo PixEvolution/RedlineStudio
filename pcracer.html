@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RedlineStudio — PC Racer</title>
+  <meta name="description" content="PC Racer leaderboards and the parts market: race what your real PC can do, see the fastest machines, and share or sell bodies, rims and tires.">
+  <link rel="canonical" href="https://redlinestudio.dev/pcracer.html">
+  <meta property="og:site_name" content="RedlineStudio">
+  <meta property="og:title" content="PC Racer — leaderboards &amp; parts market">
+  <meta property="og:description" content="Race what your real PC can do. Leaderboards, plus player-made bodies, rims and tires — shared free or sold for coins.">
+  <meta property="og:url" content="https://redlinestudio.dev/pcracer.html">
+  <meta property="og:type" content="website">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .uni-thumb { width: 100%; aspect-ratio: 240 / 150; border-radius: 6px; background: #05050a; object-fit: cover; display: block; image-rendering: pixelated; }
+    .uni-card { cursor: pointer; }
+    .uni-sort { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 14px; }
+    .uni-sort .tab { flex: 0 0 auto; padding: 8px 14px; }
+    .uni-detail { display: grid; grid-template-columns: minmax(0, 480px) minmax(0, 1fr); gap: 20px; align-items: start; }
+    .uni-detail .uni-thumb { max-width: 480px; }
+    .uni-stats { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 10px 0; font-size: 14px; }
+    .uni-stats span:nth-child(odd) { color: var(--text-dim); }
+    .uni-desc { white-space: pre-wrap; overflow-wrap: anywhere; margin: 10px 0; }
+    .uni-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+    #up-preview { display: none; gap: 14px; align-items: flex-start; margin-top: 12px; }
+    #up-preview canvas { width: 200px; }
+    .lb-row { display: flex; align-items: baseline; gap: 10px; padding: 7px 8px; border-radius: 8px; }
+    .lb-row + .lb-row { border-top: 1px solid rgba(255,255,255,.06); }
+    .lb-rank { flex: 0 0 2.2em; text-align: right; }
+    .lb-time { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 6.5em; }
+    .lb-name { min-width: 8em; }
+    .lb-hw { color: var(--text-dim); font-size: .85em; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lb-pick { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 8px 0 12px; }
+    .price-tag { font-weight: 800; }
+    @media (max-width: 760px) { .uni-detail { grid-template-columns: 1fr; } #up-preview { flex-direction: column; } }
+  </style>
+  <script>(window.adsbygoogle = window.adsbygoogle || []).requestNonPersonalizedAds = 1;</script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2208639648972390"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+  <main class="page page-wide">
+    <h1 class="page-title">🏁 PC Racer</h1>
+    <p class="page-sub">The drag racer where your PC is the car — it measures your actual hardware and turns it into
+      speed on the strip. These are the fastest machines on earth (well, the fastest that showed up), and the parts
+      market: player-made bodies, rims and tires, shared free or sold for coins. <b>Parts only change looks, never
+      speed</b> — the boards stay honest.</p>
+
+    <div class="panel" style="margin-bottom:18px">
+      <h2 style="margin-top:0">Get PC Racer</h2>
+      <p class="hint">Windows. Free. Log into your RedlineStudio account from the game's ACCOUNT screen and your best
+        runs land here by themselves.</p>
+      <a class="btn btn-small" href="https://github.com/PixEvolution/RedlineStudio/releases/download/pc-racer/PC_Racer.exe">DOWNLOAD ⬇</a>
+      <p class="hint">Windows may warn about an unknown publisher the first time — the file isn't code-signed.
+        Click "More info → Run anyway."</p>
+    </div>
+
+    <!-- ------------------------------------------------ leaderboards -->
+    <div class="panel" style="margin-bottom:18px">
+      <h2 style="margin-top:0">★ Leaderboards</h2>
+      <p class="hint">Personal bests, one row per racer, forever — with the machine that ran it. Times come straight
+        from the game when you're logged in.</p>
+      <div class="uni-sort" id="lb-tabs">
+        <button class="tab active" data-track="quarter">¼ mile</button>
+        <button class="tab" data-track="eighth">⅛ mile</button>
+        <button class="tab" data-track="thousand">1000 ft</button>
+        <button class="tab" data-track="wp">Weight pull</button>
+      </div>
+      <div class="lb-pick" id="wp-pick" style="display:none">
+        <select id="wp-class"></select>
+        <input type="number" id="wp-feet" min="10" max="99999" step="10" value="2640" style="width:7em" title="Pull distance in feet">
+        <span class="hint">feet</span>
+        <button class="btn btn-small" id="wp-go">Show</button>
+      </div>
+      <div id="lb-list"><p class="hint">Loading…</p></div>
+    </div>
+
+    <!-- one part, when the address has ?id= -->
+    <div class="panel" id="detail" style="display:none; margin-bottom:18px"></div>
+
+    <!-- ------------------------------------------------ share a part -->
+    <div class="panel" style="margin-bottom:18px">
+      <h2 style="margin-top:0">Share a part</h2>
+      <p class="hint">In the game: <b>GARAGE</b> → your body, rim or tire → <b>EXPORT</b>. Pick the
+        <span class="code">.pcrpart</span> file here. After it's up, use <b>My garage</b> below to list it —
+        free, or for coins. Max 400 KB.</p>
+      <div id="up-login" class="hint" style="display:none">
+        <a class="btn btn-small" href="login.html">Log in to share</a>
+      </div>
+      <div id="up-form" style="display:none">
+        <input type="file" id="up-file" accept=".pcrpart">
+        <div id="up-preview">
+          <canvas class="uni-thumb" id="up-img"></canvas>
+          <div style="flex:1; min-width:0">
+            <div class="game-title" id="up-name"></div>
+            <div class="game-meta" id="up-meta"></div>
+            <textarea id="up-desc" rows="3" maxlength="500" placeholder="Anything worth knowing about this part (optional)" style="margin-top:8px"></textarea>
+            <div class="uni-row">
+              <button class="btn" id="up-go">Upload</button>
+              <span class="hint" id="up-status"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ------------------------------------------------ my garage -->
+    <div class="panel" id="garage-panel" style="display:none; margin-bottom:18px">
+      <h2 style="margin-top:0">🔧 My garage</h2>
+      <p class="hint">Your uploads (list them to put them on the market) and the parts you've bought.
+        The game's garage shows everything you own here once you're logged in there.</p>
+      <div id="garage-list"><p class="hint">Loading…</p></div>
+    </div>
+
+    <!-- ------------------------------------------------ the market -->
+    <h2>Parts market</h2>
+    <div class="uni-sort">
+      <button class="tab active" data-order="createdAt">Newest</button>
+      <button class="tab" data-order="likes">Most liked</button>
+      <button class="tab" data-order="downloads">Most downloaded</button>
+    </div>
+    <div class="games-grid" id="grid"><p class="hint">Loading…</p></div>
+    <div style="text-align:center; margin:18px 0">
+      <button class="btn btn-ghost" id="more" style="display:none">Load more</button>
+    </div>
+  </main>
+
+  <script type="module">
+    import { renderNav, toast, $, fmtDate, setNavCoins, COIN } from "./js/ui.js";
+    import { currentUser, authReady } from "./js/auth.js";
+    import { getCoins } from "./js/economy.js";
+    import { renderVotes, renderComments } from "./js/social.js";
+    import { amIMod } from "./js/mod.js";
+    import { wireLevel } from "./js/level.js";
+    import { addPanelSpeakers } from "./js/speech.js";
+    import {
+      KINDS, DRAG_TRACKS, WP_CLASSES, checkPart, drawThumb, uploadPart, listParts, listMine, listBought,
+      getPart, ownsPart, buyPart, downloadPart, setListing, deletePart, reportPart,
+      loadTimes, strikeTime, fmtMs, thumbOk, displayName, MAX_PRICE
+    } from "./js/pcracer.js";
+
+    renderNav("");
+    addPanelSpeakers();
+    const me = currentUser();
+
+    const el = (tag, cls, text) => {
+      const e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (text != null) e.textContent = text;
+      return e;
+    };
+    const thumbImg = (p) => {
+      const img = el("img", "uni-thumb");
+      img.alt = "";
+      if (p.thumb && thumbOk(p.thumb)) img.src = "data:image/png;base64," + p.thumb;
+      return img;
+    };
+    const priceLabel = (p) => p.price > 0 ? `${COIN} ${p.price}` : "FREE";
+
+    // ------------------------------------------------------- leaderboards
+    let isMod = false;
+    for (const c of WP_CLASSES) $("#wp-class").append(new Option(c.toUpperCase(), c));
+
+    async function showBoard(trackId) {
+      const mount = $("#lb-list");
+      mount.innerHTML = '<p class="hint">Loading…</p>';
+      try {
+        const rows = await loadTimes(trackId, 25);
+        mount.innerHTML = "";
+        if (rows.length === 0) { mount.innerHTML = '<p class="hint">No times on this board yet — the strip is open.</p>'; return; }
+        rows.forEach((r, i) => {
+          const row = el("div", "lb-row" + (me && r.user === me ? " mine" : ""));
+          row.append(el("span", "lb-rank", ["🥇", "🥈", "🥉"][i] || `${i + 1}.`));
+          row.append(el("span", "lb-time", fmtMs(r.ms)));
+          const name = el("a", "lb-name", r.user || "?");
+          name.href = "profile.html?u=" + encodeURIComponent(r.user || "");
+          wireLevel(name, r.user);
+          row.append(name);
+          row.append(el("span", "lb-hw", `${r.car || ""}${r.hw ? " · " + r.hw : ""}`));
+          if (isMod) {
+            const x = el("button", "blk-mini blk-del", "✕");
+            x.title = "Strike this time (moderation)";
+            x.addEventListener("click", async () => {
+              if (!confirm(`Strike ${r.user}'s ${fmtMs(r.ms)}?`)) return;
+              try { await strikeTime(trackId, r.id); toast("Struck."); showBoard(trackId); }
+              catch (err) { toast(err.message, true); }
+            });
+            row.append(x);
+          }
+          mount.appendChild(row);
+        });
+      } catch (err) {
+        mount.innerHTML = "";
+        toast("Couldn't load the board: " + err.message, true);
+      }
+    }
+
+    document.querySelectorAll("#lb-tabs .tab").forEach(b => b.addEventListener("click", () => {
+      document.querySelectorAll("#lb-tabs .tab").forEach(x => x.classList.toggle("active", x === b));
+      const t = b.dataset.track;
+      $("#wp-pick").style.display = t === "wp" ? "" : "none";
+      if (t === "wp") showBoard(`wp_${$("#wp-class").value}_${Math.max(10, Math.floor(Number($("#wp-feet").value) || 2640))}`);
+      else showBoard(t);
+    }));
+    $("#wp-go").addEventListener("click", () =>
+      showBoard(`wp_${$("#wp-class").value}_${Math.max(10, Math.floor(Number($("#wp-feet").value) || 2640))}`));
+    showBoard("quarter");
+    authReady.then(async () => { isMod = await amIMod().catch(() => false); });
+
+    // ------------------------------------------------------- the market
+    let order = "createdAt", last = null, loading = false;
+
+    function card(p) {
+      const c = el("div", "game-card uni-card");
+      c.title = displayName(p);
+      c.append(thumbImg(p), el("div", "game-title", displayName(p)));
+      c.append(el("div", "game-meta", `${KINDS[p.kind] || p.kind} · ${priceLabel(p)}`));
+      c.append(el("div", "game-meta", `by ${p.owner || "?"} · ▲ ${p.likes || 0} · ⬇ ${p.downloads || 0}`));
+      c.addEventListener("click", () => openDetail(p.id, p));
+      return c;
+    }
+
+    async function loadShelf(reset) {
+      if (loading) return;
+      loading = true;
+      const grid = $("#grid");
+      if (reset) { last = null; grid.innerHTML = '<p class="hint">Loading…</p>'; }
+      try {
+        const page = await listParts(order, last);
+        if (reset) grid.innerHTML = "";
+        page.items.forEach(p => grid.appendChild(card(p)));
+        last = page.last;
+        $("#more").style.display = page.more ? "" : "none";
+        if (reset && page.items.length === 0 && !$("#grid").children.length)
+          grid.innerHTML = '<p class="hint">Nothing on the market yet — export a part from the game\'s garage and be first.</p>';
+      } catch (err) {
+        grid.innerHTML = "";
+        toast("Couldn't load the market: " + err.message, true);
+      }
+      loading = false;
+    }
+
+    document.querySelectorAll(".uni-sort .tab[data-order]").forEach(b => b.addEventListener("click", () => {
+      document.querySelectorAll(".uni-sort .tab[data-order]").forEach(x => x.classList.toggle("active", x === b));
+      order = b.dataset.order;
+      loadShelf(true);
+    }));
+    $("#more").addEventListener("click", () => loadShelf(false));
+
+    // ------------------------------------------------------- one part
+    async function openDetail(id, known) {
+      const box = $("#detail");
+      box.style.display = "";
+      box.innerHTML = '<p class="hint">Loading…</p>';
+      history.replaceState(null, "", "pcracer.html?id=" + encodeURIComponent(id));
+      box.scrollIntoView({ behavior: "smooth", block: "start" });
+      let p = known;
+      try { p = await getPart(id); } catch (err) { if (!p) { box.innerHTML = ""; toast(err.message, true); return; } }
+      if (!p) { box.innerHTML = '<p class="hint">That part isn\'t here anymore.</p>'; return; }
+
+      box.innerHTML = "";
+      const grid = el("div", "uni-detail");
+      const left = el("div");
+      left.append(thumbImg(p));
+      const right = el("div");
+      right.append(el("h2", null, displayName(p)));
+      const byLine = el("div", "game-meta");
+      byLine.append((KINDS[p.kind] || p.kind) + " · by ");
+      const ownerLink = el("a", null, p.owner || "?");
+      ownerLink.href = "profile.html?u=" + encodeURIComponent(p.owner || "");
+      byLine.append(ownerLink);
+      if (p.owner) wireLevel(ownerLink, p.owner);
+      if (p.createdAt) byLine.append(" · " + fmtDate(p.createdAt));
+      right.append(byLine);
+
+      const stats = el("div", "uni-stats");
+      [["Price", priceLabel(p)], ["Downloads", p.downloads || 0],
+       ["Size", (Number(p.size || 0) / 1e3).toFixed(0) + " KB"]]
+        .forEach(([k, v]) => stats.append(el("span", null, k), el("span", null, String(v))));
+      right.append(stats);
+      if (p.description) right.append(el("div", "uni-desc", p.description));
+
+      await authReady;
+      const owned = await ownsPart(p);
+
+      const row = el("div", "uni-row");
+      if (p.price > 0 && !owned) {
+        if (me) {
+          const buy = el("button", "btn", `Buy for ${COIN} ${p.price}`);
+          buy.addEventListener("click", async () => {
+            if (!confirm(`Buy "${displayName(p)}" for ${COIN} ${p.price}? Coins go straight to ${p.owner}.`)) return;
+            buy.disabled = true;
+            try {
+              await buyPart(p, me);
+              toast("Yours! Downloading…");
+              getCoins(me).then(n => setNavCoins(n)).catch(() => {});
+              openDetail(p.id);
+              await downloadPart(p);
+            } catch (err) { toast(err.message, true); }
+            buy.disabled = false;
+          });
+          row.append(buy);
+        } else {
+          const log = el("a", "btn", `Log in to buy · ${COIN} ${p.price}`);
+          log.href = "login.html";
+          row.append(log);
+        }
+      } else {
+        const dl = el("button", "btn", "Download ⬇");
+        dl.addEventListener("click", async () => {
+          dl.disabled = true; dl.textContent = "Downloading…";
+          try { await downloadPart(p); toast("Downloaded — drag the file onto the game window (or GARAGE → IMPORT)."); }
+          catch (err) { toast(err.message, true); }
+          dl.disabled = false; dl.textContent = "Download ⬇";
+        });
+        row.append(dl);
+      }
+      const votes = el("div");
+      row.append(votes);
+      right.append(row);
+      renderVotes(votes, "pcrParts", p.id, p, me);
+
+      const tools = el("div", "uni-row");
+      if (me && me !== p.owner) {
+        const rep = el("button", "btn btn-small btn-ghost", "⚑ Report");
+        rep.addEventListener("click", async () => {
+          const reason = prompt("What's wrong with this part? (offensive picture, name or description…)");
+          if (reason == null || !reason.trim()) return;
+          try { await reportPart(p, me, reason); toast("Reported — a moderator will look at it."); }
+          catch (err) { toast(err.message, true); }
+        });
+        tools.append(rep);
+      }
+      if ((me && p.owner === me) || await amIMod()) {
+        const del = el("button", "btn btn-small btn-ghost", me && p.owner === me ? "Delete my upload" : "🛡 Delete");
+        del.addEventListener("click", async () => {
+          if (!confirm(`Delete "${displayName(p)}"? Buyers keep their downloads; this can't be undone.`)) return;
+          try { await deletePart(p); toast("Deleted."); box.style.display = "none"; history.replaceState(null, "", "pcracer.html"); loadShelf(true); loadGarage(); }
+          catch (err) { toast(err.message, true); }
+        });
+        tools.append(del);
+      }
+      const close = el("button", "btn btn-small btn-ghost", "Close ✕");
+      close.addEventListener("click", () => { box.style.display = "none"; history.replaceState(null, "", "pcracer.html"); });
+      tools.append(close);
+      right.append(tools);
+
+      grid.append(left, right);
+      const comments = el("div");
+      comments.style.marginTop = "18px";
+      box.append(grid, comments);
+      renderComments(comments, "pcrParts", p.id, me);
+    }
+
+    // ------------------------------------------------------- my garage
+    async function loadGarage() {
+      if (!me) return;
+      $("#garage-panel").style.display = "";
+      const mount = $("#garage-list");
+      try {
+        await authReady;
+        const [mine, bought] = await Promise.all([listMine(), listBought()]);
+        mount.innerHTML = "";
+        if (!mine.length && !bought.length) { mount.innerHTML = '<p class="hint">Nothing here yet — upload a part above, or buy one off the market.</p>'; return; }
+        for (const p of mine) {
+          const row = el("div", "my-game-row");
+          const info = el("div");
+          const t = el("strong", null, displayName(p));
+          const meta = el("span", "hint",
+            `  ${KINDS[p.kind] || p.kind} · ${p.ready === false ? "⚠ upload incomplete" : (p.listed ? "LISTED for " + priceLabel(p) : "private")} · ⬇ ${p.downloads || 0}`);
+          info.append(t, meta);
+          const actions = el("div");
+          actions.style.cssText = "display:flex;align-items:center;gap:6px";
+          const open = el("button", "blk-mini", "Open");
+          open.addEventListener("click", () => openDetail(p.id, p));
+          actions.append(open);
+          if (p.ready !== false) {
+            const list = el("button", "blk-mini", p.listed ? "Unlist" : "List");
+            list.addEventListener("click", async () => {
+              try {
+                if (p.listed) { await setListing(p.id, false, 0, p.description); toast("Off the market."); }
+                else {
+                  const ans = prompt(`Price in coins for "${displayName(p)}"? (0 = free, max ${MAX_PRICE})`, String(p.price || 0));
+                  if (ans == null) return;
+                  await setListing(p.id, true, Number(ans) || 0, p.description);
+                  toast("On the market!");
+                }
+                loadGarage(); loadShelf(true);
+              } catch (err) { toast(err.message, true); }
+            });
+            actions.append(list);
+          }
+          row.append(info, actions);
+          mount.appendChild(row);
+        }
+        for (const r of bought) {
+          const row = el("div", "my-game-row");
+          const info = el("div");
+          info.append(el("strong", null, "🧾 bought part"), el("span", "hint", `  paid ${COIN} ${r.price} · ${new Date(r.at).toLocaleDateString()}`));
+          const actions = el("div");
+          const open = el("button", "blk-mini", "Open");
+          open.addEventListener("click", () => openDetail(r.part));
+          actions.append(open);
+          row.append(info, actions);
+          mount.appendChild(row);
+        }
+      } catch (err) {
+        mount.innerHTML = "";
+        toast("Couldn't load your garage: " + err.message, true);
+      }
+    }
+
+    // ------------------------------------------------------- uploading
+    let picked = null, thumb = "";
+    if (me) {
+      $("#up-form").style.display = "";
+      $("#up-file").addEventListener("change", async (e) => {
+        picked = null;
+        $("#up-preview").style.display = "none";
+        const file = e.target.files[0];
+        if (!file) return;
+        $("#up-status").textContent = "";
+        try {
+          if (file.size > 500 * 1024) throw new Error("That part file is too big to share here (400 KB max).");
+          picked = await checkPart(await file.text());
+          thumb = drawThumb(picked.file, $("#up-img"));
+          $("#up-name").textContent = displayName(picked.file.part);
+          $("#up-meta").textContent = `${KINDS[picked.file.kind]} · seal ✓`;
+          $("#up-preview").style.display = "flex";
+        } catch (err) {
+          toast(err.message, true);
+          e.target.value = "";
+        }
+      });
+      $("#up-go").addEventListener("click", async () => {
+        if (!picked) return;
+        const btn = $("#up-go");
+        btn.disabled = true;
+        try {
+          await authReady;
+          const id = await uploadPart(picked, thumb, $("#up-desc").value, me,
+            (done, total) => { $("#up-status").textContent = `Uploading… ${done}/${total}`; });
+          toast("Uploaded! It's in My garage — hit List to put it on the market.");
+          picked = null;
+          $("#up-file").value = "";
+          $("#up-desc").value = "";
+          $("#up-preview").style.display = "none";
+          loadGarage();
+          openDetail(id);
+        } catch (err) {
+          toast("Upload failed: " + err.message, true);
+        }
+        $("#up-status").textContent = "";
+        btn.disabled = false;
+      });
+    } else {
+      $("#up-login").style.display = "";
+    }
+
+    loadShelf(true);
+    loadGarage();
+    const want = new URLSearchParams(location.search).get("id");
+    if (want) openDetail(want);
+  </script>
+  <script type="module">import { footAd } from "./js/ads.js"; footAd();</script>
+</body>
+</html>
