@@ -58,7 +58,7 @@
         <div class="game-meta">Windows · free · log in from the game for leaderboards</div>
         <div class="price-badge">BOARDS &amp; DOWNLOAD →</div>
       </a>
-      <a class="game-card" href="https://github.com/PixEvolution/RedlineStudio/releases/latest/download/Emergence.exe">
+      <a class="game-card" data-dl="emergence" href="https://github.com/PixEvolution/RedlineStudio/releases/download/V1.0.3/Emergence.exe">
         <div class="game-title">EMERGENCE</div>
         <div class="game-desc full">A universe sandbox where the laws of physics are random. Every universe starts
           as a single point with one law, and new laws appear on their own over time. Send ships, settle worlds,
@@ -91,6 +91,7 @@
     import { addPanelSpeakers } from "./js/speech.js";
     renderNav("");
     addPanelSpeakers();
+    import("./js/downloads.js").then(m => m.wireDownloadLinks()).catch(() => {});
   </script>
   <script type="module">import { footAd } from "./js/ads.js"; footAd();</script>
 </body>
