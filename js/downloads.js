@@ -1,34 +1,70 @@
-// downloads.js — the DOWNLOAD buttons for Redline Digital's desktop games.
-// Each button names the game's file (data-asset="PC_Racer.exe") and always gets
-// the most recently uploaded copy of that file from GitHub Releases, whatever
-// the release's tag is. (Several games share one repo, so GitHub's own
-// "latest release" link could point at the wrong game.) If GitHub can't be
-// reached, the button just opens the Releases page instead.
+// downloads.js — the download links as a SETTING, not hard-coded HTML.
+// One tiny Firestore doc (config/downloads) says which GitHub release tag and
+// file name each game's DOWNLOAD button points at. Every page reads it on
+// load; the Mod Desk has a panel that edits it. Ship a new version = upload
+// the exe to GitHub, then type the new tag into Mod Desk — no file edits.
+//
+// If the doc is missing or the database is unreachable, the buttons keep the
+// pinned fallback links baked into the pages, so downloads never go dark.
 
-const REPO = "PixEvolution/RedlineStudio";
+import { db } from "./firebase.js";
+import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-async function newest(name) {
-  const r = await fetch(`https://api.github.com/repos/${REPO}/releases?per_page=50`);
-  if (!r.ok) return null;
-  let best = null;
-  for (const rel of await r.json()) {
-    if (rel.draft || rel.prerelease) continue;
-    for (const a of rel.assets || []) {
-      if (String(a.name).toLowerCase() === name.toLowerCase() && (!best || a.updated_at > best.updated_at)) best = a;
+const REPO = "https://github.com/PixEvolution/RedlineStudio/releases/download";
+const REF = () => doc(db, "config", "downloads");
+
+// the games this controls — ids match the data-dl="" attribute on the pages
+export const GAMES = { pcracer: "PC Racer", emergence: "Emergence" };
+export const DEFAULTS = {
+  pcracer: { tag: "V1.4", file: "PC_Racer.exe" },
+  emergence: { tag: "V1.0.3", file: "Emergence.exe" }
+};
+
+const TAG_RE = /^[A-Za-z0-9._-]{1,40}$/;
+const FILE_RE = /^[A-Za-z0-9._ -]{1,60}$/;
+
+export const linkFor = (e) => `${REPO}/${encodeURIComponent(e.tag)}/${encodeURIComponent(e.file)}`;
+
+// current settings, with the defaults filling any gap
+export async function getDownloads() {
+  const out = JSON.parse(JSON.stringify(DEFAULTS));
+  try {
+    const snap = await getDoc(REF());
+    if (snap.exists()) {
+      const d = snap.data();
+      for (const k of Object.keys(GAMES)) {
+        const e = d[k];
+        if (e && TAG_RE.test(String(e.tag || "")) && FILE_RE.test(String(e.file || ""))) {
+          out[k] = { tag: String(e.tag), file: String(e.file) };
+        }
+      }
     }
+  } catch {}
+  return out;
+}
+
+// point every <a data-dl="pcracer|emergence"> at the configured release.
+// Call it once per page; the baked-in href stays until (and unless) this lands.
+export async function wireDownloadLinks(root = document) {
+  const cfg = await getDownloads();
+  for (const a of root.querySelectorAll("[data-dl]")) {
+    const e = cfg[a.dataset.dl];
+    if (e) a.href = linkFor(e);
   }
-  return best ? best.browser_download_url : null;
+  return cfg;
 }
 
-export function wireDownloads(root = document) {
-  root.querySelectorAll("a[data-asset]").forEach(a => {
-    a.addEventListener("click", async (e) => {
-      e.preventDefault();
-      let url = null;
-      try { url = await newest(a.dataset.asset); } catch { url = null; }
-      window.location.href = url || `https://github.com/${REPO}/releases`;
-    });
-  });
+// Mod Desk saves the whole doc (the rules only let moderators write it)
+export async function saveDownloads(cfg) {
+  const clean = {};
+  for (const k of Object.keys(GAMES)) {
+    const e = cfg[k] || {};
+    const tag = String(e.tag || "").trim();
+    const file = String(e.file || "").trim();
+    if (!TAG_RE.test(tag)) throw new Error(`${GAMES[k]}: that tag doesn't look like a release tag (letters, numbers, dots and dashes only).`);
+    if (!FILE_RE.test(file)) throw new Error(`${GAMES[k]}: that file name doesn't look right.`);
+    clean[k] = { tag, file };
+  }
+  await setDoc(REF(), clean);
+  return clean;
 }
-
-wireDownloads();
