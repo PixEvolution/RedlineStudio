@@ -47,7 +47,9 @@ const PROFILES = ["low", "mid", "tall"];
 export const DRAG_TRACKS = [
   ["quarter", "¼ mile · 1320 ft"],
   ["eighth", "⅛ mile · 660 ft"],
-  ["thousand", "1000 ft"]
+  ["thousand", "1000 ft"],
+  ["half", "½ mile · 2640 ft"],
+  ["mile", "1 mile · 5280 ft"]
 ];
 export const WP_CLASSES = ["street", "sportsman", "limited", "prostock", "unlimited"];
 export const WP_FEET = [[660, "⅛ mile"], [1320, "¼ mile"], [2640, "½ mile"], [5280, "1 mile"]];
