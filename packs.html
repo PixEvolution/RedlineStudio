@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RedlineStudio — Emergence Sprite Packs</title>
-  <meta name="description" content="Sprite packs for Emergence: player-made pixel trees, rocks, plants and ships. Download one and switch it on in your game.">
+  <meta name="description" content="Sprite packs for Emergence: player-made pixel trees, rocks, plants, creatures, tools, buildings and ships. Download one and switch it on in your game.">
   <link rel="canonical" href="https://redlinestudio.dev/packs.html">
   <meta property="og:site_name" content="RedlineStudio">
   <meta property="og:title" content="Emergence Sprite Packs">
@@ -34,7 +34,7 @@
 <body>
   <main class="page page-wide">
     <h1 class="page-title">🎨 Emergence Sprite Packs</h1>
-    <p class="page-sub">Like texture packs: player-made pixel trees, rocks, plants and ship looks for Emergence. They change
+    <p class="page-sub">Like texture packs: player-made pixel trees, rocks, plants, creatures, tools and guns, buildings and ship looks for Emergence. They change
       how things look, never how the game plays. Download one, then drag the file onto the game window (or Sprite Packs →
       IMPORT). The game can also browse and download these itself: Sprite Packs → BROWSE ONLINE.</p>
 
@@ -68,7 +68,7 @@
     <div class="panel" style="margin-bottom:18px">
       <h2 style="margin-top:0">Get Emergence</h2>
       <p class="hint">Windows. Free.</p>
-      <a class="btn btn-small" data-dl="emergence" href="https://github.com/PixEvolution/RedlineStudio/releases/download/V1.0.3/Emergence.exe">DOWNLOAD ⬇</a>
+      <a class="btn btn-small" href="https://github.com/PixEvolution/RedlineStudio/releases/latest/download/Emergence.exe">DOWNLOAD ⬇</a>
       <p class="hint">Windows may warn about an unknown publisher the first time — the file isn't code-signed.
         Click "More info → Run anyway."</p>
     </div>
@@ -95,7 +95,6 @@
              thumbOk, displayName } from "./js/packs.js";
 
     renderNav("");
-    import("./js/downloads.js").then(m => m.wireDownloadLinks()).catch(() => {});
     const me = currentUser();
 
     const el = (tag, cls, text) => {
@@ -110,7 +109,7 @@
       if (p.thumb && thumbOk(p.thumb)) img.src = "data:image/png;base64," + p.thumb;
       return img;
     };
-    const statLine = (p) => `${p.objects || 0} world object${p.objects === 1 ? "" : "s"} · ${p.ships || 0} ship look${p.ships === 1 ? "" : "s"}`;
+    const statLine = (p) => `${p.objects || 0} picture${p.objects === 1 ? "" : "s"} · ${p.ships || 0} ship look${p.ships === 1 ? "" : "s"}`;
 
     // ---------------------------------------------------------- the shelf
     let order = "createdAt", last = null, loading = false;
@@ -177,7 +176,7 @@
       right.append(byLine);
 
       const stats = el("div", "uni-stats");
-      [["Made by", p.author || "—"], ["World objects", p.objects || 0], ["Ship looks", p.ships || 0],
+      [["Made by", p.author || "—"], ["Pictures", p.objects || 0], ["Ship looks", p.ships || 0],
        ["Downloads", p.downloads || 0], ["Size", (Number(p.size || 0) / 1e3).toFixed(0) + " KB"]]
         .forEach(([k, v]) => stats.append(el("span", null, k), el("span", null, String(v))));
       right.append(stats);
@@ -245,7 +244,7 @@
           picked = await checkPack(await file.text());
           thumb = drawThumb(picked.pack, $("#up-img"));
           $("#up-name").textContent = displayName(picked.pack);
-          $("#up-meta").textContent = `${statLine({ objects: (picked.pack.objects || []).length, ships: (picked.pack.ships || []).length })} · seal ✓`;
+          $("#up-meta").textContent = `${statLine({ objects: ["objects", "creatures", "hand", "builds"].reduce((n, k) => n + (picked.pack[k] || []).length, 0), ships: (picked.pack.ships || []).length })} · seal ✓`;
           $("#up-preview").style.display = "flex";
         } catch (err) {
           toast(err.message, true);
