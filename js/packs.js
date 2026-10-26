@@ -1,6 +1,7 @@
 // packs.js — Emergence sprite packs: the .emergencepack files players make in
 // the game (main menu → SPRITE PACKS) and share here. Like texture packs:
-// they change how planet objects and starting ships LOOK, never the game.
+// they change how planet objects, creatures, hand items, buildings and
+// starting ships LOOK, never the game.
 //
 // THE PROMISE (same idea as universes.js): a pack is DATA.
 //   1. The SEAL — SHA-256 over the file's exact text (first 32 hex). Edited or
@@ -29,7 +30,10 @@ export const MAX_DESC = 500;
 const MAX_THUMB = 200000;
 const WRITE_TIMEOUT = 60000;
 const PAGE = 24;
-const CANVASES = ["16x16", "24x24", "16x32", "32x32", "32x48"];
+const CANVASES = ["16x16", "24x24", "16x32", "32x32", "32x48", "24x16", "32x24", "48x32"];
+const TEMPERS = ["passive", "neutral", "hostile"];
+const HAND_SLOTS = ["hand", "axe", "pick", "shovel", "spear", "drill", "blaster"];
+const BUILD_SLOTS = ["campfire", "shelter", "storage", "lamp", "wall", "beacon", "hut"];
 const SIZES = ["tiny", "small", "medium", "large", "huge"];
 const COMMON = ["rare", "normal", "common"];
 const TYPES = ["any", "jungle", "ocean", "desert", "rocky", "ice", "lava", "toxic", "barren"];
@@ -69,7 +73,23 @@ export async function checkPack(text) {
   if (typeof p.name !== "string" || p.name.length > 40) throw new Error("That pack's name is too long.");
   const objs = Array.isArray(p.objects) ? p.objects : [];
   const ships = Array.isArray(p.ships) ? p.ships : [];
-  if (objs.length > 300 || ships.length > 300) throw new Error("That pack has too many pieces (300 of each max).");
+  const crits = Array.isArray(p.creatures) ? p.creatures : [];
+  const hand = Array.isArray(p.hand) ? p.hand : [];
+  const builds = Array.isArray(p.builds) ? p.builds : [];
+  if ([objs, ships, crits, hand, builds].some(l => l.length > 300)) throw new Error("That pack has too many pieces (300 of each max).");
+  const pixelsOk = (o) => o && CANVASES.includes(`${o.w}x${o.h}`) && isB64(o.rgba) && atob(o.rgba).length === o.w * o.h * 4;
+  for (const o of crits) {
+    if (!pixelsOk(o)) throw new Error("A creature's pixels are damaged.");
+    if (typeof o.name !== "string" || o.name.length > 30) throw new Error("A creature's name is too long.");
+    if (!SIZES.includes(o.size) || !COMMON.includes(o.common) || !TEMPERS.includes(o.temper)) throw new Error("A creature has odd settings.");
+    if (!Array.isArray(o.where) || o.where.some(t => !TYPES.includes(t))) throw new Error("A creature has odd settings.");
+  }
+  for (const o of hand) {
+    if (!pixelsOk(o) || !HAND_SLOTS.includes(o.slot)) throw new Error("A hand item is damaged.");
+  }
+  for (const o of builds) {
+    if (!pixelsOk(o) || !BUILD_SLOTS.includes(o.slot)) throw new Error("A building is damaged.");
+  }
   for (const o of objs) {
     if (!o || !CANVASES.includes(`${o.w}x${o.h}`)) throw new Error("A world object has an odd canvas size.");
     if (!isB64(o.rgba) || atob(o.rgba).length !== o.w * o.h * 4) throw new Error("A world object's pixels are damaged.");
@@ -83,7 +103,9 @@ export async function checkPack(text) {
       throw new Error("A ship look is damaged.");
     }
   }
-  if (!objs.length && !ships.length) throw new Error("That pack is empty - add some world objects or ship looks first.");
+  if (!objs.length && !ships.length && !crits.length && !hand.length && !builds.length) {
+    throw new Error("That pack is empty - add some world objects, creatures, hand items, buildings or ship looks first.");
+  }
   return { text, pack: p, seal: await sealOf(text) };
 }
 
@@ -95,7 +117,7 @@ export function drawThumb(pack, canvas) {
   g.imageSmoothingEnabled = false;
   g.fillStyle = "#304060"; g.fillRect(0, 0, W, H);
   g.fillStyle = "#3c6a3a"; g.fillRect(0, H - 24, W, 24);
-  const objs = (pack.objects || []).slice(0, 8);
+  const objs = [...(pack.objects || []), ...(pack.creatures || []), ...(pack.builds || []), ...(pack.hand || [])].slice(0, 8);
   let x = 8;
   for (const o of objs) {
     const img = g.createImageData(o.w, o.h);
@@ -145,7 +167,8 @@ export async function uploadPack(checked, thumb, description, username, onProgre
   onProgress(0, total);
   await withTimeout(setDoc(ref, {
     format: FORMAT, name: clean(pack.name, 40) || "Sprite pack", author: clean(pack.author, 40), packId: pack.id,
-    objects: (pack.objects || []).length, ships: (pack.ships || []).length, thumb, seal,
+    objects: ["objects", "creatures", "hand", "builds"].reduce((n, k) => n + (pack[k] || []).length, 0),
+    ships: (pack.ships || []).length, thumb, seal,
     parts: parts.length, size: text.length, description,
     owner: username, ownerUid: uid, ready: false,
     likes: 0, dislikes: 0, downloads: 0, createdAt: serverTimestamp()
