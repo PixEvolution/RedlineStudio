@@ -1,0 +1,165 @@
+    // ---------------------------------------------------------- PC Racer times
+    // One row per player per board — their personal best, FOREVER. Times get
+    // better by going DOWN, so an update may only LOWER ms. The row's id must
+    // be the writer's OWN account doc and the name on it their real username.
+    // Written by the game over REST (logged in); world-readable so the site
+    // and the game show boards logged out. Board ids are MADE BY THE GAME:
+    //   drag_<feet>                e.g. drag_1320
+    //   wp_<class>_<feet>          classes pinned below
+    //   track_<slug>_<laps>        e.g. track_redline_circuit_3
+    match /pcrTimes/{trackId}/entries/{entryId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && trackId.matches('^(drag_[0-9]{3,5}|wp_(street|sportsman|limited|prostock|unlimited)_[0-9]{3,5}|track_[a-z0-9_]{3,40}_[0-9]{1,3})$')
+        && get(/databases/$(database)/documents/users/$(entryId)).data.uid == request.auth.uid
+        && request.resource.data.user == get(/databases/$(database)/documents/users/$(entryId)).data.username
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['user', 'uid', 'ms', 'car', 'hw', 'at'])
+        && request.resource.data.ms is int
+        && request.resource.data.ms > 0
+        && request.resource.data.car is string
+        && request.resource.data.car.size() <= 40
+        && request.resource.data.hw is string
+        && request.resource.data.hw.size() <= 80
+        && request.resource.data.at is int;
+      allow update: if signedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.user == resource.data.user
+        && request.resource.data.keys().hasOnly(['user', 'uid', 'ms', 'car', 'hw', 'at'])
+        && request.resource.data.ms is int
+        && request.resource.data.ms > 0
+        && request.resource.data.ms < resource.data.ms
+        && request.resource.data.car is string
+        && request.resource.data.car.size() <= 40
+        && request.resource.data.hw is string
+        && request.resource.data.hw.size() <= 80
+        && request.resource.data.at is int;
+      allow delete: if isMod();   // striking a cheated time
+    }
+
+    // ---------------------------------------------------------- PC Racer parts
+    // .pcrpart files (LOOKS ONLY — coins never buy speed). pcrParts/{id} is the
+    // card (+ seal and thumb); the file text splits across pcrPartParts/{id}_{n}
+    // (200 KB each, max 2 = the 400 KB file cap). Card first with ready:false,
+    // then parts, then ready:true. Selling: the owner sets listed + price; a
+    // PRICED part's text chunks are readable only by the owner, buyers and
+    // mods — the thumb is the public preview. ownerDoc is the seller's
+    // users-doc id, pinned at create so the buy transaction can pay them.
+    match /pcrParts/{partId} {
+      allow read: if true;
+
+      allow create: if signedIn()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['format', 'kind', 'name', 'thumb', 'seal', 'parts', 'size',
+             'description', 'owner', 'ownerUid', 'ownerDoc', 'listed', 'price',
+             'likes', 'dislikes', 'downloads', 'createdAt', 'ready'])
+        && request.resource.data.ready == false
+        && request.resource.data.format == 'PCRPART1'
+        && request.resource.data.kind in ['body', 'rim', 'tire']
+        && request.resource.data.owner is string
+        && request.resource.data.owner.size() >= 1
+        && request.resource.data.owner.size() <= 10
+        && get(/databases/$(database)/documents/users/$(request.resource.data.ownerDoc)).data.uid == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 40
+        && request.resource.data.description is string
+        && request.resource.data.description.size() <= 500
+        && request.resource.data.thumb is string
+        && request.resource.data.thumb.size() <= 200000
+        && request.resource.data.seal is string
+        && request.resource.data.seal.size() == 32
+        && request.resource.data.parts is int
+        && request.resource.data.parts >= 1
+        && request.resource.data.parts <= 2
+        && request.resource.data.size is int
+        && request.resource.data.listed == false
+        && request.resource.data.price == 0
+        && request.resource.data.likes == 0
+        && request.resource.data.dislikes == 0
+        && request.resource.data.downloads == 0
+        && request.resource.data.createdAt == request.time;
+
+      allow update: if
+        // the download counter: anyone, even logged out (the game counts too) — exactly +1
+        (changedKeys().hasOnly(['downloads'])
+          && request.resource.data.downloads == resource.data.downloads + 1)
+        // voting (social.js)
+        || (signedIn() && changedKeys().hasOnly(['votes', 'likes', 'dislikes']))
+        // the owner finishing an upload
+        || (signedIn() && resource.data.ownerUid == request.auth.uid
+            && changedKeys().hasOnly(['ready'])
+            && resource.data.ready == false
+            && request.resource.data.ready == true)
+        // the owner running their stall: list/unlist, set a sane price, edit the blurb
+        || (signedIn() && resource.data.ownerUid == request.auth.uid
+            && changedKeys().hasOnly(['listed', 'price', 'description'])
+            && request.resource.data.listed is bool
+            && request.resource.data.price is int
+            && request.resource.data.price >= 0
+            && request.resource.data.price <= 100000
+            && request.resource.data.description is string
+            && request.resource.data.description.size() <= 500)
+        // a moderator may unlist — and touch NOTHING else
+        || (isMod() && changedKeys().hasOnly(['listed']));
+
+      allow delete: if isMod() || (signedIn() && resource.data.ownerUid == request.auth.uid);
+    }
+
+    match /pcrPartParts/{chunkId} {
+      // a FREE part's text is public; a PRICED part's text is for the owner,
+      // its buyers (receipt below) and mods — everyone else gets the thumbnail
+      allow read: if
+        get(/databases/$(database)/documents/pcrParts/$(resource.data.part)).data.get('price', 0) == 0
+        || isMod()
+        || (signedIn() && (
+          get(/databases/$(database)/documents/pcrParts/$(resource.data.part)).data.ownerUid == request.auth.uid
+          || exists(/databases/$(database)/documents/pcrOwned/$(resource.data.part + '_' + request.auth.uid))));
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['part', 'n', 'data', 'ownerUid'])
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.part is string
+        && request.resource.data.n is int
+        && request.resource.data.n >= 0
+        && request.resource.data.n < 2
+        && chunkId == request.resource.data.part + '_' + string(request.resource.data.n)
+        && request.resource.data.data is string
+        && request.resource.data.data.size() <= 200000
+        && get(/databases/$(database)/documents/pcrParts/$(request.resource.data.part)).data.ownerUid == request.auth.uid
+        && get(/databases/$(database)/documents/pcrParts/$(request.resource.data.part)).data.ready == false
+        && request.resource.data.n < get(/databases/$(database)/documents/pcrParts/$(request.resource.data.part)).data.parts;
+      allow update: if false;
+      allow delete: if isMod() || (signedIn() && resource.data.ownerUid == request.auth.uid);
+    }
+
+    // ------------------------------------------------- PC Racer part purchases
+    // A buy is ONE transaction: buyer's coins down by the price, seller's up by
+    // the same price, and this receipt written — conservation, like the casino.
+    // The receipt id is <partId>_<buyer's auth uid>, which is what unlocks the
+    // part's text chunks above. Receipts are PRIVATE: readable only by their
+    // owner (the game queries "what do I own" with the login token) and mods.
+    match /pcrOwned/{receiptId} {
+      allow read: if isMod() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['part', 'uid', 'user', 'buyerDoc', 'price', 'at'])
+        && request.resource.data.uid == request.auth.uid
+        && receiptId == request.resource.data.part + '_' + request.auth.uid
+        && get(/databases/$(database)/documents/pcrParts/$(request.resource.data.part)).data.listed == true
+        && get(/databases/$(database)/documents/pcrParts/$(request.resource.data.part)).data.ready == true
+        && get(/databases/$(database)/documents/pcrParts/$(request.resource.data.part)).data.ownerUid != request.auth.uid
+        && request.resource.data.price == get(/databases/$(database)/documents/pcrParts/$(request.resource.data.part)).data.price
+        && request.resource.data.price > 0
+        && request.resource.data.at is int
+        // the buyer really is the named account, and really paid, this same transaction
+        && get(/databases/$(database)/documents/users/$(request.resource.data.buyerDoc)).data.uid == request.auth.uid
+        && request.resource.data.user == get(/databases/$(database)/documents/users/$(request.resource.data.buyerDoc)).data.username
+        && getAfter(/databases/$(database)/documents/users/$(request.resource.data.buyerDoc)).data.coins
+           == get(/databases/$(database)/documents/users/$(request.resource.data.buyerDoc)).data.coins
+              - request.resource.data.price
+        // …and the seller really received it, same transaction
+        && getAfter(/databases/$(database)/documents/users/$(get(/databases/$(database)/documents/pcrParts/$(request.resource.data.part)).data.ownerDoc)).data.coins
+           == get(/databases/$(database)/documents/users/$(get(/databases/$(database)/documents/pcrParts/$(request.resource.data.part)).data.ownerDoc)).data.coins
+              + request.resource.data.price;
+      allow update: if false;
+      allow delete: if isMod();
+    }

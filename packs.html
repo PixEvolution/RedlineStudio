@@ -68,7 +68,7 @@
     <div class="panel" style="margin-bottom:18px">
       <h2 style="margin-top:0">Get Emergence</h2>
       <p class="hint">Windows. Free.</p>
-      <a class="btn btn-small" href="https://github.com/PixEvolution/RedlineStudio/releases/latest/download/Emergence.exe">DOWNLOAD ⬇</a>
+      <a class="btn btn-small" href="https://github.com/PixEvolution/RedlineStudio/releases" data-asset="Emergence.exe">DOWNLOAD ⬇</a>
       <p class="hint">Windows may warn about an unknown publisher the first time — the file isn't code-signed.
         Click "More info → Run anyway."</p>
     </div>
@@ -280,6 +280,7 @@
     const want = new URLSearchParams(location.search).get("id");
     if (want) openDetail(want);
   </script>
+  <script type="module" src="./js/downloads.js"></script>
   <script type="module">import { footAd } from "./js/ads.js"; footAd();</script>
 </body>
 </html>
