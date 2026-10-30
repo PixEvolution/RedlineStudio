@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RedlineStudio — PC Racer</title>
-  <meta name="description" content="PC Racer leaderboards and the parts market: race what your real PC can do, see the fastest machines, and share or sell bodies, rims and tires.">
+  <meta name="description" content="PC Racer leaderboards and the parts market: race what your real PC can do, see the fastest machines, and share or sell bodies, rims, tires and exhausts.">
   <link rel="canonical" href="https://redlinestudio.dev/pcracer.html">
   <meta property="og:site_name" content="RedlineStudio">
   <meta property="og:title" content="PC Racer — leaderboards &amp; parts market">
-  <meta property="og:description" content="Race what your real PC can do. Leaderboards, plus player-made bodies, rims and tires — shared free or sold for coins.">
+  <meta property="og:description" content="Race what your real PC can do. Leaderboards, plus player-made bodies, rims, tires and exhausts — shared free or sold for coins.">
   <meta property="og:url" content="https://redlinestudio.dev/pcracer.html">
   <meta property="og:type" content="website">
   <link rel="stylesheet" href="css/style.css">
@@ -47,14 +47,14 @@
     <h1 class="page-title">🏁 PC Racer</h1>
     <p class="page-sub">The drag racer where your PC is the car — it measures your actual hardware and turns it into
       speed on the strip. These are the fastest machines on earth (well, the fastest that showed up), and the parts
-      market: player-made bodies, rims and tires, shared free or sold for coins. <b>Parts only change looks, never
-      speed</b> — the boards stay honest.</p>
+      market: player-made bodies, rims, tires and exhausts, shared free or sold for coins. <b>Parts only change
+      looks and sound, never speed</b> — the boards stay honest.</p>
 
     <div class="panel" style="margin-bottom:18px">
       <h2 style="margin-top:0">Get PC Racer</h2>
       <p class="hint">Windows. Free. Log into your RedlineStudio account from the game's ACCOUNT screen and your best
         runs land here by themselves.</p>
-      <a class="btn btn-small" data-dl="pcracer" href="https://github.com/PixEvolution/RedlineStudio/releases/download/V1.4/PC_Racer.exe">DOWNLOAD ⬇</a>
+      <a class="btn btn-small" data-asset="PC_Racer.exe" href="https://github.com/PixEvolution/RedlineStudio/releases">DOWNLOAD ⬇</a>
       <p class="hint">Windows may warn about an unknown publisher the first time — the file isn't code-signed.
         Click "More info → Run anyway."</p>
     </div>
@@ -92,7 +92,7 @@
     <!-- ------------------------------------------------ share a part -->
     <div class="panel" style="margin-bottom:18px">
       <h2 style="margin-top:0">Share a part</h2>
-      <p class="hint">In the game: <b>GARAGE</b> → your body, rim or tire → <b>EXPORT</b>. Pick the
+      <p class="hint">In the game: <b>GARAGE</b> → your body, rim, tire or exhaust → <b>EXPORT</b>. Pick the
         <span class="code">.pcrpart</span> file here. After it's up, use <b>My garage</b> below to list it —
         free, or for coins. Max 400 KB.</p>
       <div id="up-login" class="hint" style="display:none">
@@ -153,7 +153,6 @@
 
     renderNav("");
     addPanelSpeakers();
-    import("./js/downloads.js").then(m => m.wireDownloadLinks()).catch(() => {});
     const me = currentUser();
 
     const el = (tag, cls, text) => {
@@ -500,6 +499,7 @@
     const want = new URLSearchParams(location.search).get("id");
     if (want) openDetail(want);
   </script>
+  <script type="module" src="./js/downloads.js"></script>
   <script type="module">import { footAd } from "./js/ads.js"; footAd();</script>
 </body>
 </html>

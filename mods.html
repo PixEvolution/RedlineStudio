@@ -26,23 +26,6 @@
     </div>
 
     <div class="panel">
-      <h2>⬇ Download links</h2>
-      <p class="hint">Which GitHub release each game's DOWNLOAD buttons point at — every page reads this,
-      so changing it here updates the whole site at once. Ship a new version by uploading the exe to a
-      release on GitHub, then putting that release's <b>tag</b> (the label next to the 🏷 on the release,
-      like <span class="code">V1.4</span>) and the exe's exact <b>file name</b> here. Test the shown link
-      before saving.</p>
-      <div id="dl-form" style="display:grid; grid-template-columns:auto 1fr 1fr; gap:8px 10px; align-items:center; max-width:640px">
-        <span class="hint">game</span><span class="hint">release tag</span><span class="hint">file name</span>
-      </div>
-      <div class="uni-row" style="display:flex; gap:8px; align-items:center; margin-top:10px">
-        <button class="btn" id="btn-dl-save">Save links</button>
-        <span class="hint" id="dl-status"></span>
-      </div>
-      <div class="hint" id="dl-preview" style="margin-top:6px"></div>
-    </div>
-
-    <div class="panel">
       <h2>🔒 Age brackets → private</h2>
       <p class="hint">Accounts from before Sept 25 still carry their age bracket on the PUBLIC account record
       until they visit again. This moves every remaining one into the private <span class="code">ages</span>
@@ -169,55 +152,6 @@
       }
     }
     loadInbox();
-
-    // ------------------------------------------ ⬇ download links panel
-    import("./js/downloads.js").then(async (dl) => {
-      const form = $("#dl-form"), status = $("#dl-status"), preview = $("#dl-preview");
-      const inputs = {};
-      const cfg = await dl.getDownloads();
-      for (const [id, label] of Object.entries(dl.GAMES)) {
-        const name = document.createElement("strong");
-        name.textContent = label;
-        const tag = document.createElement("input");
-        tag.value = cfg[id].tag; tag.spellcheck = false; tag.placeholder = "V1.4";
-        const file = document.createElement("input");
-        file.value = cfg[id].file; file.spellcheck = false; file.placeholder = "Game.exe";
-        inputs[id] = { tag, file };
-        form.append(name, tag, file);
-        tag.addEventListener("input", showPreview);
-        file.addEventListener("input", showPreview);
-      }
-      function showPreview() {
-        preview.innerHTML = "";
-        for (const [id, label] of Object.entries(dl.GAMES)) {
-          const link = dl.linkFor({ tag: inputs[id].tag.value.trim(), file: inputs[id].file.value.trim() });
-          const row = document.createElement("div");
-          row.append(label + " → ");
-          const a = document.createElement("a");
-          a.href = link; a.textContent = link; a.target = "_blank"; a.rel = "noopener";
-          a.style.color = "#8dffa9";
-          row.append(a);
-          preview.append(row);
-        }
-      }
-      showPreview();
-      $("#btn-dl-save").addEventListener("click", async () => {
-        const btn = $("#btn-dl-save");
-        btn.disabled = true;
-        status.textContent = "Saving…";
-        try {
-          const out = {};
-          for (const id of Object.keys(dl.GAMES)) out[id] = { tag: inputs[id].tag.value, file: inputs[id].file.value };
-          await dl.saveDownloads(out);
-          status.textContent = "Saved — every page uses the new links now.";
-          toast("Download links updated.");
-        } catch (err) {
-          status.textContent = "";
-          toast("Couldn't save: " + err.message, true);
-        }
-        btn.disabled = false;
-      });
-    }).catch(() => { $("#dl-status").textContent = "Couldn't load the links module."; });
 
     $("#btn-ages").addEventListener("click", async () => {
       const btn = $("#btn-ages"), status = $("#ages-status");
