@@ -1,6 +1,7 @@
 // pcracer.js — PC Racer on the site: leaderboards (pcrTimes) and the parts
-// market (.pcrpart files — bodies, rims and tires made in the game's garage).
-// Parts are LOOKS ONLY: coins never buy speed, so the boards stay honest.
+// market (.pcrpart files — bodies, rims, tires and exhausts made in the
+// game's garage). Parts are LOOKS AND SOUND ONLY: coins never buy speed,
+// so the boards stay honest.
 //
 // THE PROMISE (same idea as universes/packs): a part is DATA.
 //   1. The SEAL — SHA-256 (first 32 hex) of the part object's JSON exactly as
@@ -38,9 +39,20 @@ const MAX_THUMB = 200000;
 const WRITE_TIMEOUT = 60000;
 const PAGE = 24;
 
-export const KINDS = { body: "🚗 Body", rim: "⚙ Rim", tire: "⬤ Tire" };
+export const KINDS = { body: "🚗 Body", rim: "⚙ Rim", tire: "⬤ Tire", exhaust: "💨 Exhaust" };
 const DRIVES = ["fwd", "rwd", "awd"];
 const PROFILES = ["low", "mid", "tall"];
+
+// An exhaust is all numbers — the game clamps each one to these same ranges
+// when it exports, so a sealed file is always inside them. chambers is whole.
+const EXHAUST_FIELDS = {
+  header_len: [10, 60], header_ring: [0, 100], collector_len: [20, 100],
+  tailpipe_len: [40, 300], pipe_open: [0, 100], chambers: [0, 6],
+  chamber_size: [2, 20], muffler_damp: [0, 100], intake_len: [3, 80],
+  intake_noise: [0, 100], intake_vol: [0, 100], exhaust_vol: [0, 100],
+  vibration: [0, 100], punch: [0, 100], lumpy: [0, 100], pops: [0, 100],
+  turbo_whistle: [0, 100], bov: [0, 100], master: [0, 100]
+};
 
 // The boards the game submits times for — a FIXED list, pinned in the rules
 // too, so no junk boards can ever exist. 3 drag + 20 weight pull + 15 track.
@@ -129,6 +141,14 @@ export async function checkPart(text) {
     if (!Number.isInteger(p.spokes) || p.spokes < 0 || p.spokes > 32) throw new Error("That rim has odd settings.");
     if (!rgbOk(p.base)) throw new Error("That rim's base color is damaged.");
     if (!pixelsOk(p.pixels, 128, 128, 5000)) throw new Error("That rim's pixels are damaged.");
+  } else if (f.kind === "exhaust") {
+    for (const [k, [lo, hi]] of Object.entries(EXHAUST_FIELDS)) {
+      const v = p[k];
+      if (typeof v !== "number" || !Number.isFinite(v) || v < lo || v > hi) {
+        throw new Error("That exhaust's settings are damaged.");
+      }
+    }
+    if (!Number.isInteger(p.chambers)) throw new Error("That exhaust's settings are damaged.");
   } else {
     if (!Number.isInteger(p.diameter) || p.diameter < 10 || p.diameter > 40) throw new Error("That tire has an odd diameter.");
     if (!PROFILES.includes(p.profile)) throw new Error("That tire has an odd profile.");
@@ -153,6 +173,57 @@ export function drawThumb(file, canvas) {
   g.fillStyle = "#101522"; g.fillRect(0, 0, W, H);
   g.fillStyle = "#1c2433"; g.fillRect(0, H - 26, W, 26);
   const p = file.part;
+  if (file.kind === "exhaust") {
+    // An exhaust has no pixels — draw the pipe itself from its own numbers,
+    // so every exhaust's card looks like what it is. Side view, left to right:
+    // headers merge into the collector, down the tailpipe (with a muffler when
+    // it has chambers), out the tip — sized by the part's real settings.
+    const num = (v, lo, hi, d) => { v = Number(v); return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d; };
+    const header = num(p.header_len, 10, 60, 30), coll = num(p.collector_len, 20, 100, 60),
+          tail = num(p.tailpipe_len, 40, 300, 120), open = num(p.pipe_open, 0, 100, 50),
+          chambers = num(p.chambers, 0, 6, 0), chSize = num(p.chamber_size, 2, 20, 8);
+    const s = (W - 70) / (header + coll + tail);   // this pipe fills the card
+    let x = 18;
+    const y = (H - 26) / 2 + 4;
+    // four header pipes
+    g.fillStyle = "#8d97a8";
+    for (let i = -2; i < 2; i++) g.fillRect(x, y + i * 6 + 1, header * s, 4);
+    x += header * s;
+    // the collector
+    g.fillStyle = "#a7b2c4";
+    g.fillRect(x, y - 6, coll * s, 12);
+    x += coll * s;
+    // the tailpipe
+    g.fillStyle = "#97a1b3";
+    g.fillRect(x, y - 4, tail * s, 8);
+    if (chambers > 0) {
+      const mw = Math.min(tail * s * 0.7, 26 + chSize * 2.4), mh = 12 + chSize;
+      g.fillStyle = "#6e7888";
+      g.beginPath(); g.ellipse(x + (tail * s) / 2, y, mw / 2, mh / 2, 0, 0, Math.PI * 2); g.fill();
+    }
+    x += tail * s;
+    // the tip — a more open pipe gets a bigger mouth
+    const tipR = 4 + open / 16;
+    g.fillStyle = "#39404e";
+    g.beginPath(); g.ellipse(x, y, 3.5, tipR, 0, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = "#c3ccda"; g.lineWidth = 2;
+    g.beginPath(); g.ellipse(x, y, 3.5, tipR, 0, 0, Math.PI * 2); g.stroke();
+    // the attitude: smoke puffs, orange when it pops, a whistle when it's turbo'd
+    const pops = num(p.pops, 0, 100, 0) > 50, whistle = num(p.turbo_whistle, 0, 100, 0) > 50;
+    for (let i = 0; i < 3; i++) {
+      g.fillStyle = pops && i === 0 ? "rgba(255,157,74,.9)" : "rgba(143,160,180,.35)";
+      g.beginPath(); g.arc(x + 9 + i * 10, y - i * 2, 2.5 + i * 1.6, 0, Math.PI * 2); g.fill();
+    }
+    if (whistle) {
+      g.strokeStyle = "rgba(141,255,169,.8)"; g.lineWidth = 1.5;
+      for (let i = 0; i < 3; i++) {
+        g.beginPath(); g.arc(x + 6, y, 8 + i * 5, -0.6, 0.6); g.stroke();
+      }
+    }
+    const url0 = canvas.toDataURL("image/png");
+    const b640 = url0.slice(url0.indexOf(",") + 1);
+    return b640.length <= MAX_THUMB ? b640 : "";
+  }
   const entries = Object.entries(p.pixels || {});
   // where the drawing actually lives
   let minX = 1e9, minY = 1e9, maxX = -1, maxY = -1;
