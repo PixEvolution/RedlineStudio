@@ -17,10 +17,10 @@
 // every part has landed.
 
 import { db } from "./firebase.js";
-import { auth } from "./auth.js";
+import { auth, userDocId } from "./auth.js";
 import {
-  collection, doc, getDoc, getDocs, query, orderBy, limit, startAfter,
-  serverTimestamp, increment, updateDoc, addDoc, setDoc, deleteDoc
+  collection, doc, getDoc, getDocs, query, where, orderBy, limit, startAfter,
+  serverTimestamp, increment, updateDoc, addDoc, setDoc, deleteDoc, runTransaction
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 export const FORMAT = "EMERGENCEPACK1";
@@ -170,7 +170,8 @@ export async function uploadPack(checked, thumb, description, username, onProgre
     objects: ["objects", "creatures", "hand", "builds"].reduce((n, k) => n + (pack[k] || []).length, 0),
     ships: (pack.ships || []).length, thumb, seal,
     parts: parts.length, size: text.length, description,
-    owner: username, ownerUid: uid, ready: false,
+    owner: username, ownerUid: uid, ownerDoc: userDocId(username),
+    listed: false, price: 0, ready: false,
     likes: 0, dislikes: 0, downloads: 0, createdAt: serverTimestamp()
   }), "the pack's card");
   onProgress(1, total);
@@ -211,7 +212,14 @@ export async function fetchPackText(p) {
   if (n < 1 || n > MAX_PARTS) throw new Error("That upload is incomplete.");
   const chunks = [];
   for (let i = 0; i < n; i++) {
-    const s = await getDoc(doc(db, "packParts", p.id + "_" + i));
+    let s;
+    try { s = await getDoc(doc(db, "packParts", p.id + "_" + i)); }
+    catch (err) {
+      if (String(err.code || err.message || "").includes("permission")) {
+        throw new Error("This pack is sold for coins — buy it first, then the download is yours forever.");
+      }
+      throw err;
+    }
     if (!s.exists() || typeof s.data().data !== "string") throw new Error("That upload is incomplete.");
     chunks.push(s.data().data);
   }
@@ -230,6 +238,66 @@ export async function downloadPack(p) {
   a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
   updateDoc(doc(db, "packs", p.id), { downloads: increment(1) }).catch(() => {});
+}
+
+// ---- the market -------------------------------------------------------------
+// Same as universes and the PC Racer parts market: the owner sets a price (or
+// back to free), a PRICED pack's data is readable only by the owner, buyers
+// and mods, and a buy is ONE coin-conserving transaction with a receipt
+// (packOwned/{packId}_{buyerUid}). The database rules enforce every coin.
+export const MAX_PRICE = 100000;
+
+export async function listMine() {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return [];
+  const snap = await getDocs(query(collection(db, "packs"), where("ownerUid", "==", uid)));
+  const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  items.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+  return items;
+}
+
+export async function listBought() {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return [];
+  const snap = await getDocs(query(collection(db, "packOwned"), where("uid", "==", uid)));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function ownsPack(p) {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return false;
+  if (p.ownerUid === uid) return true;
+  try { return (await getDoc(doc(db, "packOwned", p.id + "_" + uid))).exists(); } catch { return false; }
+}
+
+export async function setSale(id, price, username) {
+  price = Math.max(0, Math.min(MAX_PRICE, Math.floor(Number(price) || 0)));
+  await updateDoc(doc(db, "packs", id), {
+    listed: price > 0, price, ownerDoc: userDocId(username)
+  });
+}
+
+export async function buyPack(p, buyerUsername) {
+  const uid = auth.currentUser?.uid;
+  if (!uid || !buyerUsername) throw new Error("Log in to buy.");
+  if (p.ownerUid === uid) throw new Error("That's already yours — you shared it.");
+  const price = Number(p.price) || 0;
+  if (!p.listed || price <= 0) throw new Error("That one isn't for sale.");
+  if (!p.ownerDoc) throw new Error("This upload is too old to buy — ask the owner to re-set its price.");
+  const buyerRef = doc(db, "users", userDocId(buyerUsername));
+  const sellerRef = doc(db, "users", p.ownerDoc);
+  const receiptRef = doc(db, "packOwned", p.id + "_" + uid);
+  await runTransaction(db, async (t) => {
+    const b = await t.get(buyerRef);
+    const s = await t.get(sellerRef);
+    if (!b.exists()) throw new Error("Your account wasn't found.");
+    if (!s.exists()) throw new Error("The seller's account wasn't found.");
+    const coins = Number(b.data().coins) || 0;
+    if (coins < price) throw new Error(`Not enough coins — that costs ◎${price} and you have ◎${coins}.`);
+    t.update(buyerRef, { coins: coins - price });
+    t.update(sellerRef, { coins: (Number(s.data().coins) || 0) + price });
+    t.set(receiptRef, { item: p.id, uid, user: buyerUsername, buyerDoc: userDocId(buyerUsername), price, at: Date.now() });
+  });
 }
 
 export async function deletePack(p) {
