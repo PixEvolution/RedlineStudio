@@ -1,70 +1,91 @@
-// downloads.js — the download links as a SETTING, not hard-coded HTML.
-// One tiny Firestore doc (config/downloads) says which GitHub release tag and
-// file name each game's DOWNLOAD button points at. Every page reads it on
-// load; the Mod Desk has a panel that edits it. Ship a new version = upload
-// the exe to GitHub, then type the new tag into Mod Desk — no file edits.
-//
-// If the doc is missing or the database is unreachable, the buttons keep the
-// pinned fallback links baked into the pages, so downloads never go dark.
+// downloads.js — the DOWNLOAD buttons for Redline Digital's desktop games.
+// Each button names the game's file (data-asset="PC_Racer.exe"). What it serves
+// is decided by the Mod Desk's ⬇ Download links setting (config/downloads):
+//   · tag "auto"  — the most recently uploaded copy of that exact file across
+//     every GitHub release. Several games share one repo, so GitHub's own
+//     "latest release" link could point at the wrong game — this looks for
+//     each game's file BY NAME, so updating one game can't break the other.
+//   · tag "V1.4"  — pinned: that release's copy, until the tag goes back to auto.
+// If GitHub or the setting can't be reached, the button opens the Releases page.
 
 import { db } from "./firebase.js";
 import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const REPO = "https://github.com/PixEvolution/RedlineStudio/releases/download";
-const REF = () => doc(db, "config", "downloads");
+const REPO = "PixEvolution/RedlineStudio";
 
-// the games this controls — ids match the data-dl="" attribute on the pages
-export const GAMES = { pcracer: "PC Racer", emergence: "Emergence" };
-export const DEFAULTS = {
-  pcracer: { tag: "V1.4", file: "PC_Racer.exe" },
-  emergence: { tag: "V1.0.3", file: "Emergence.exe" }
+// the games and their exact exe names — a new game gets a row here
+export const GAMES = {
+  emergence: { label: "Emergence", file: "Emergence.exe" },
+  pcracer: { label: "PC Racer", file: "PC_Racer.exe" }
 };
 
-const TAG_RE = /^[A-Za-z0-9._-]{1,40}$/;
-const FILE_RE = /^[A-Za-z0-9._ -]{1,60}$/;
+export const linkFor = ({ tag, file }) =>
+  `https://github.com/${REPO}/releases/download/${encodeURIComponent(tag)}/${encodeURIComponent(file)}`;
 
-export const linkFor = (e) => `${REPO}/${encodeURIComponent(e.tag)}/${encodeURIComponent(e.file)}`;
-
-// current settings, with the defaults filling any gap
+// the saved setting, with "auto" filled in wherever nothing is saved
 export async function getDownloads() {
-  const out = JSON.parse(JSON.stringify(DEFAULTS));
-  try {
-    const snap = await getDoc(REF());
-    if (snap.exists()) {
-      const d = snap.data();
-      for (const k of Object.keys(GAMES)) {
-        const e = d[k];
-        if (e && TAG_RE.test(String(e.tag || "")) && FILE_RE.test(String(e.file || ""))) {
-          out[k] = { tag: String(e.tag), file: String(e.file) };
-        }
-      }
-    }
-  } catch {}
+  let data = {};
+  try { data = (await getDoc(doc(db, "config", "downloads"))).data() || {}; } catch {}
+  const out = {};
+  for (const [id, g] of Object.entries(GAMES)) {
+    const c = data[id] || {};
+    out[id] = {
+      tag: typeof c.tag === "string" && c.tag.trim() ? c.tag.trim() : "auto",
+      file: typeof c.file === "string" && c.file.trim() ? c.file.trim() : g.file
+    };
+  }
   return out;
 }
 
-// point every <a data-dl="pcracer|emergence"> at the configured release.
-// Call it once per page; the baked-in href stays until (and unless) this lands.
-export async function wireDownloadLinks(root = document) {
-  const cfg = await getDownloads();
-  for (const a of root.querySelectorAll("[data-dl]")) {
-    const e = cfg[a.dataset.dl];
-    if (e) a.href = linkFor(e);
+// Mod Desk saves it — the database rules only let a moderator write this
+export async function saveDownloads(cfg) {
+  const out = {};
+  for (const [id, g] of Object.entries(GAMES)) {
+    const c = cfg[id] || {};
+    out[id] = {
+      tag: String(c.tag || "auto").trim() || "auto",
+      file: String(c.file || g.file).trim() || g.file
+    };
   }
-  return cfg;
+  await setDoc(doc(db, "config", "downloads"), out);
 }
 
-// Mod Desk saves the whole doc (the rules only let moderators write it)
-export async function saveDownloads(cfg) {
-  const clean = {};
-  for (const k of Object.keys(GAMES)) {
-    const e = cfg[k] || {};
-    const tag = String(e.tag || "").trim();
-    const file = String(e.file || "").trim();
-    if (!TAG_RE.test(tag)) throw new Error(`${GAMES[k]}: that tag doesn't look like a release tag (letters, numbers, dots and dashes only).`);
-    if (!FILE_RE.test(file)) throw new Error(`${GAMES[k]}: that file name doesn't look right.`);
-    clean[k] = { tag, file };
+async function newest(name) {
+  const r = await fetch(`https://api.github.com/repos/${REPO}/releases?per_page=50`);
+  if (!r.ok) return null;
+  let best = null;
+  for (const rel of await r.json()) {
+    if (rel.draft || rel.prerelease) continue;
+    for (const a of rel.assets || []) {
+      if (String(a.name).toLowerCase() === name.toLowerCase() && (!best || a.updated_at > best.updated_at)) best = a;
+    }
   }
-  await setDoc(REF(), clean);
-  return clean;
+  return best ? best.browser_download_url : null;
 }
+
+let cfgOnce = null;   // the setting is read once per page, on the first click
+
+async function resolve(asset) {
+  cfgOnce = cfgOnce || getDownloads();
+  const cfg = await cfgOnce;
+  const want = String(asset).toLowerCase();
+  for (const [id, g] of Object.entries(GAMES)) {
+    if (cfg[id].file.toLowerCase() !== want && g.file.toLowerCase() !== want) continue;
+    if (cfg[id].tag.toLowerCase() !== "auto") return linkFor({ tag: cfg[id].tag, file: cfg[id].file });
+    return await newest(cfg[id].file);
+  }
+  return await newest(asset);   // a button for a game with no row here yet
+}
+
+export function wireDownloads(root = document) {
+  root.querySelectorAll("a[data-asset]").forEach(a => {
+    a.addEventListener("click", async (e) => {
+      e.preventDefault();
+      let url = null;
+      try { url = await resolve(a.dataset.asset); } catch { url = null; }
+      window.location.href = url || `https://github.com/${REPO}/releases`;
+    });
+  });
+}
+
+wireDownloads();
