@@ -35,7 +35,8 @@
   <main class="page page-wide">
     <h1 class="page-title">🎨 Emergence Sprite Packs</h1>
     <p class="page-sub">Like texture packs: player-made pixel trees, rocks, plants, creatures, tools and guns, buildings and ship looks for Emergence. They change
-      how things look, never how the game plays. Download one, then drag the file onto the game window (or Sprite Packs →
+      how things look, never how the game plays. Shared free, or sold for coins — the coins go straight to the maker.
+      Download one, then drag the file onto the game window (or Sprite Packs →
       IMPORT). The game can also browse and download these itself: Sprite Packs → BROWSE ONLINE.</p>
 
     <!-- one pack, when the address has ?id= -->
@@ -65,6 +66,14 @@
       </div>
     </div>
 
+    <!-- ------------------------------------------------ my packs -->
+    <div class="panel" id="inv-panel" style="display:none; margin-bottom:18px">
+      <h2 style="margin-top:0">🧰 My packs</h2>
+      <p class="hint">Your uploads (set a price to sell them, or keep them free) and the ones you've bought —
+        yours to download again anytime, on any computer.</p>
+      <div id="inv-list"><p class="hint">Loading…</p></div>
+    </div>
+
     <div class="panel" style="margin-bottom:18px">
       <h2 style="margin-top:0">Get Emergence</h2>
       <p class="hint">Windows. Free.</p>
@@ -86,16 +95,19 @@
   </main>
 
   <script type="module">
-    import { renderNav, toast, $, fmtDate } from "./js/ui.js";
+    import { renderNav, toast, $, fmtDate, setNavCoins, COIN } from "./js/ui.js";
     import { currentUser, authReady } from "./js/auth.js";
+    import { getCoins } from "./js/economy.js";
     import { renderVotes, renderComments } from "./js/social.js";
     import { amIMod } from "./js/mod.js";
     import { wireLevel } from "./js/level.js";
     import { checkPack, drawThumb, uploadPack, listPacks, getPack, downloadPack, deletePack, reportPack,
-             thumbOk, displayName } from "./js/packs.js";
+             thumbOk, displayName,
+             listMine, listBought, ownsPack, buyPack, setSale, MAX_PRICE } from "./js/packs.js";
 
     renderNav("");
     const me = currentUser();
+    const priceOf = (p) => (p.listed && p.price > 0) ? `${COIN} ${p.price}` : "FREE";
 
     const el = (tag, cls, text) => {
       const e = document.createElement(tag);
@@ -118,7 +130,8 @@
       const c = el("div", "game-card uni-card");
       c.title = displayName(p);
       c.append(thumbImg(p), el("div", "game-title", displayName(p)), el("div", "game-meta", statLine(p)));
-      c.append(el("div", "game-meta", `by ${p.owner || "?"} · ▲ ${p.likes || 0} · ⬇ ${p.downloads || 0}`));
+      c.append(el("div", "game-meta",
+        `${p.listed && p.price > 0 ? COIN + " " + p.price + " · " : ""}by ${p.owner || "?"} · ▲ ${p.likes || 0} · ⬇ ${p.downloads || 0}`));
       c.addEventListener("click", () => openDetail(p.id, p));
       return c;
     }
@@ -176,22 +189,50 @@
       right.append(byLine);
 
       const stats = el("div", "uni-stats");
-      [["Made by", p.author || "—"], ["Pictures", p.objects || 0], ["Ship looks", p.ships || 0],
+      [["Price", priceOf(p)], ["Made by", p.author || "—"], ["Pictures", p.objects || 0], ["Ship looks", p.ships || 0],
        ["Downloads", p.downloads || 0], ["Size", (Number(p.size || 0) / 1e3).toFixed(0) + " KB"]]
         .forEach(([k, v]) => stats.append(el("span", null, k), el("span", null, String(v))));
       right.append(stats);
       if (p.description) right.append(el("div", "uni-desc", p.description));
 
+      await authReady;
+      const owned = await ownsPack(p);
+
       const row = el("div", "uni-row");
-      const dl = el("button", "btn", "Download ⬇");
-      dl.addEventListener("click", async () => {
-        dl.disabled = true; dl.textContent = "Downloading…";
-        try { await downloadPack(p); toast("Downloaded — drag the file onto the game window to install it."); }
-        catch (err) { toast(err.message, true); }
-        dl.disabled = false; dl.textContent = "Download ⬇";
-      });
+      if (p.listed && p.price > 0 && !owned) {
+        if (me) {
+          const buy = el("button", "btn", `Buy for ${COIN} ${p.price}`);
+          buy.addEventListener("click", async () => {
+            if (!confirm(`Buy "${displayName(p)}" for ${COIN} ${p.price}? Coins go straight to ${p.owner}.`)) return;
+            buy.disabled = true;
+            try {
+              await buyPack(p, me);
+              toast("Yours! Downloading…");
+              getCoins(me).then(n => setNavCoins(n)).catch(() => {});
+              openDetail(p.id);
+              loadInventory();
+              await downloadPack(p);
+            } catch (err) { toast(err.message, true); }
+            buy.disabled = false;
+          });
+          row.append(buy);
+        } else {
+          const log = el("a", "btn", `Log in to buy · ${COIN} ${p.price}`);
+          log.href = "login.html";
+          row.append(log);
+        }
+      } else {
+        const dl = el("button", "btn", "Download ⬇");
+        dl.addEventListener("click", async () => {
+          dl.disabled = true; dl.textContent = "Downloading…";
+          try { await downloadPack(p); toast("Downloaded — drag the file onto the game window to install it."); }
+          catch (err) { toast(err.message, true); }
+          dl.disabled = false; dl.textContent = "Download ⬇";
+        });
+        row.append(dl);
+      }
       const votes = el("div");
-      row.append(dl, votes);
+      row.append(votes);
       right.append(row);
       renderVotes(votes, "packs", p.id, p, me);
 
@@ -212,7 +253,7 @@
         const del = el("button", "btn btn-small btn-ghost", mine ? "Delete my upload" : "🛡 Delete");
         del.addEventListener("click", async () => {
           if (!confirm(`Delete "${displayName(p)}" from the shelf? This can't be undone.`)) return;
-          try { await deletePack(p); toast("Deleted."); box.style.display = "none"; history.replaceState(null, "", "packs.html"); loadShelf(true); }
+          try { await deletePack(p); toast("Deleted."); box.style.display = "none"; history.replaceState(null, "", "packs.html"); loadShelf(true); loadInventory(); }
           catch (err) { toast(err.message, true); }
         });
         tools.append(del);
@@ -227,6 +268,70 @@
       comments.style.marginTop = "18px";
       box.append(grid, comments);
       renderComments(comments, "packs", p.id, me);
+    }
+
+    // ---------------------------------------------------------- my packs
+    async function loadInventory() {
+      if (!me) return;
+      $("#inv-panel").style.display = "";
+      const mount = $("#inv-list");
+      try {
+        await authReady;
+        const [mine, bought] = await Promise.all([listMine(), listBought()]);
+        mount.innerHTML = "";
+        if (!mine.length && !bought.length) {
+          mount.innerHTML = '<p class="hint">Nothing here yet — share a pack above, or buy one off the shelf.</p>';
+          return;
+        }
+        for (const p of mine) {
+          const row = el("div", "my-game-row");
+          const info = el("div");
+          info.append(el("strong", null, displayName(p)),
+            el("span", "hint", `  ${p.ready === false ? "⚠ upload incomplete" : (p.listed && p.price > 0 ? "FOR SALE · " + COIN + " " + p.price : "free")} · ⬇ ${p.downloads || 0}`));
+          const actions = el("div");
+          actions.style.cssText = "display:flex;align-items:center;gap:6px";
+          const open = el("button", "blk-mini", "Open");
+          open.addEventListener("click", () => openDetail(p.id, p));
+          actions.append(open);
+          if (p.ready !== false) {
+            const sell = el("button", "blk-mini", p.listed && p.price > 0 ? "Make free" : "Sell");
+            sell.addEventListener("click", async () => {
+              try {
+                if (p.listed && p.price > 0) {
+                  await setSale(p.id, 0, me);
+                  toast("Free again — anyone can download it.");
+                } else {
+                  const ans = prompt(`Price in coins for "${displayName(p)}"? (max ${MAX_PRICE})`, String(p.price || 100));
+                  if (ans == null) return;
+                  const n = Math.floor(Number(ans) || 0);
+                  if (n <= 0) { toast("Type a price above 0 — or leave it free.", true); return; }
+                  await setSale(p.id, n, me);
+                  toast("On sale! Buyers' coins go straight to you.");
+                }
+                loadInventory(); loadShelf(true);
+              } catch (err) { toast(err.message, true); }
+            });
+            actions.append(sell);
+          }
+          row.append(info, actions);
+          mount.appendChild(row);
+        }
+        for (const r of bought) {
+          const row = el("div", "my-game-row");
+          const info = el("div");
+          info.append(el("strong", null, "🧾 bought pack"),
+            el("span", "hint", `  paid ${COIN} ${r.price} · ${new Date(r.at).toLocaleDateString()}`));
+          const actions = el("div");
+          const open = el("button", "blk-mini", "Open");
+          open.addEventListener("click", () => openDetail(r.item));
+          actions.append(open);
+          row.append(info, actions);
+          mount.appendChild(row);
+        }
+      } catch (err) {
+        mount.innerHTML = "";
+        toast("Couldn't load your packs: " + err.message, true);
+      }
     }
 
     // ---------------------------------------------------------- uploading
@@ -265,6 +370,7 @@
           $("#up-desc").value = "";
           $("#up-preview").style.display = "none";
           loadShelf(true);
+          loadInventory();
           openDetail(id);
         } catch (err) {
           toast("Upload failed: " + err.message, true);
@@ -277,6 +383,7 @@
     }
 
     loadShelf(true);
+    loadInventory();
     const want = new URLSearchParams(location.search).get("id");
     if (want) openDetail(want);
   </script>

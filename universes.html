@@ -34,9 +34,9 @@
 <body>
   <main class="page page-wide">
     <h1 class="page-title">🌌 Emergence Universes</h1>
-    <p class="page-sub">Universes discovered in Emergence, shared by the players who found them. Download one, then drag
-      the file onto the game window (or use My Universes → IMPORT FILE). The game can also browse and download these
-      itself: My Universes → BROWSE ONLINE.</p>
+    <p class="page-sub">Universes discovered in Emergence, shared by the players who found them — free, or sold for
+      coins (the coins go straight to the finder). Download one, then drag the file onto the game window (or use
+      My Universes → IMPORT FILE). The game can also browse and download these itself: My Universes → BROWSE ONLINE.</p>
 
     <!-- one universe, when the address has ?id= -->
     <div class="panel" id="detail" style="display:none; margin-bottom:18px"></div>
@@ -65,10 +65,18 @@
       </div>
     </div>
 
+    <!-- ------------------------------------------------ my universes -->
+    <div class="panel" id="inv-panel" style="display:none; margin-bottom:18px">
+      <h2 style="margin-top:0">🧰 My universes</h2>
+      <p class="hint">Your uploads (set a price to sell them, or keep them free) and the ones you've bought —
+        yours to download again anytime, on any computer.</p>
+      <div id="inv-list"><p class="hint">Loading…</p></div>
+    </div>
+
     <div class="panel" style="margin-bottom:18px">
       <h2 style="margin-top:0">Get Emergence</h2>
       <p class="hint">Windows. Free.</p>
-      <a class="btn btn-small" data-dl="emergence" href="https://github.com/PixEvolution/RedlineStudio/releases/download/V1.0.3/Emergence.exe">DOWNLOAD ⬇</a>
+      <a class="btn btn-small" href="https://github.com/PixEvolution/RedlineStudio/releases" data-asset="Emergence.exe">DOWNLOAD ⬇</a>
       <p class="hint">Windows may warn about an unknown publisher the first time — the file isn't code-signed.
         Click "More info → Run anyway."</p>
     </div>
@@ -86,19 +94,21 @@
   </main>
 
   <script type="module">
-    import { renderNav, toast, $, fmtDate } from "./js/ui.js";
+    import { renderNav, toast, $, fmtDate, setNavCoins, COIN } from "./js/ui.js";
     import { currentUser, authReady } from "./js/auth.js";
+    import { getCoins } from "./js/economy.js";
     import { renderVotes, renderComments } from "./js/social.js";
     import { amIMod } from "./js/mod.js";
     import { wireLevel } from "./js/level.js";
     import {
       checkFile, uploadUniverse, listUniverses, getUniverse, downloadUniverse,
-      deleteUniverse, reportUniverse, fmtAge, displayName, thumbOk
+      deleteUniverse, reportUniverse, fmtAge, displayName, thumbOk,
+      listMine, listBought, ownsUniverse, buyUniverse, setSale, MAX_PRICE
     } from "./js/universes.js";
 
     renderNav("");
-    import("./js/downloads.js").then(m => m.wireDownloadLinks()).catch(() => {});
     const me = currentUser();
+    const priceOf = (u) => (u.listed && u.price > 0) ? `${COIN} ${u.price}` : "FREE";
 
     const el = (tag, cls, text) => {
       const e = document.createElement(tag);
@@ -121,7 +131,8 @@
       const c = el("div", "game-card uni-card");
       c.title = displayName(u);
       c.append(thumbImg(u), el("div", "game-title", displayName(u)), el("div", "game-meta", statLine(u)));
-      const by = el("div", "game-meta", `by ${u.owner || "?"} · ▲ ${u.likes || 0} · ⬇ ${u.downloads || 0}`);
+      const by = el("div", "game-meta",
+        `${u.listed && u.price > 0 ? COIN + " " + u.price + " · " : ""}by ${u.owner || "?"} · ▲ ${u.likes || 0} · ⬇ ${u.downloads || 0}`);
       c.append(by);
       c.addEventListener("click", () => openDetail(u.id, u));
       return c;
@@ -180,7 +191,7 @@
       right.append(byLine);
 
       const stats = el("div", "uni-stats");
-      [["Universe", "#" + u.seed], ["Age", fmtAge(u.age)], ["Laws of nature", u.laws],
+      [["Price", priceOf(u)], ["Universe", "#" + u.seed], ["Age", fmtAge(u.age)], ["Laws of nature", u.laws],
        ["Matter", Number(u.matter).toLocaleString()], ["Kinds of matter", u.kinds],
        ["Colonies", u.colonies], ["Downloads", u.downloads || 0],
        ["Size", (Number(u.size || 0) / 1e6).toFixed(2) + " MB"]]
@@ -188,16 +199,44 @@
       right.append(stats);
       if (u.description) right.append(el("div", "uni-desc", u.description));
 
+      await authReady;
+      const owned = await ownsUniverse(u);
+
       const row = el("div", "uni-row");
-      const dl = el("button", "btn", "Download ⬇");
-      dl.addEventListener("click", async () => {
-        dl.disabled = true; dl.textContent = "Downloading…";
-        try { await downloadUniverse(u); toast("Downloaded — drag the file onto the game window to import it."); }
-        catch (err) { toast(err.message, true); }
-        dl.disabled = false; dl.textContent = "Download ⬇";
-      });
+      if (u.listed && u.price > 0 && !owned) {
+        if (me) {
+          const buy = el("button", "btn", `Buy for ${COIN} ${u.price}`);
+          buy.addEventListener("click", async () => {
+            if (!confirm(`Buy "${displayName(u)}" for ${COIN} ${u.price}? Coins go straight to ${u.owner}.`)) return;
+            buy.disabled = true;
+            try {
+              await buyUniverse(u, me);
+              toast("Yours! Downloading…");
+              getCoins(me).then(n => setNavCoins(n)).catch(() => {});
+              openDetail(u.id);
+              loadInventory();
+              await downloadUniverse(u);
+            } catch (err) { toast(err.message, true); }
+            buy.disabled = false;
+          });
+          row.append(buy);
+        } else {
+          const log = el("a", "btn", `Log in to buy · ${COIN} ${u.price}`);
+          log.href = "login.html";
+          row.append(log);
+        }
+      } else {
+        const dl = el("button", "btn", "Download ⬇");
+        dl.addEventListener("click", async () => {
+          dl.disabled = true; dl.textContent = "Downloading…";
+          try { await downloadUniverse(u); toast("Downloaded — drag the file onto the game window to import it."); }
+          catch (err) { toast(err.message, true); }
+          dl.disabled = false; dl.textContent = "Download ⬇";
+        });
+        row.append(dl);
+      }
       const votes = el("div");
-      row.append(dl, votes);
+      row.append(votes);
       right.append(row);
       renderVotes(votes, "universes", u.id, u, me);
 
@@ -218,7 +257,7 @@
         const del = el("button", "btn btn-small btn-ghost", mine ? "Delete my upload" : "🛡 Delete");
         del.addEventListener("click", async () => {
           if (!confirm(`Delete "${displayName(u)}" from the shelf? This can't be undone.`)) return;
-          try { await deleteUniverse(u); toast("Deleted."); box.style.display = "none"; history.replaceState(null, "", "universes.html"); loadShelf(true); }
+          try { await deleteUniverse(u); toast("Deleted."); box.style.display = "none"; history.replaceState(null, "", "universes.html"); loadShelf(true); loadInventory(); }
           catch (err) { toast(err.message, true); }
         });
         tools.append(del);
@@ -233,6 +272,70 @@
       comments.style.marginTop = "18px";
       box.append(grid, comments);
       renderComments(comments, "universes", u.id, me);
+    }
+
+    // ---------------------------------------------------------- my universes
+    async function loadInventory() {
+      if (!me) return;
+      $("#inv-panel").style.display = "";
+      const mount = $("#inv-list");
+      try {
+        await authReady;
+        const [mine, bought] = await Promise.all([listMine(), listBought()]);
+        mount.innerHTML = "";
+        if (!mine.length && !bought.length) {
+          mount.innerHTML = '<p class="hint">Nothing here yet — share a universe above, or buy one off the shelf.</p>';
+          return;
+        }
+        for (const u of mine) {
+          const row = el("div", "my-game-row");
+          const info = el("div");
+          info.append(el("strong", null, displayName(u)),
+            el("span", "hint", `  ${u.ready === false ? "⚠ upload incomplete" : (u.listed && u.price > 0 ? "FOR SALE · " + COIN + " " + u.price : "free")} · ⬇ ${u.downloads || 0}`));
+          const actions = el("div");
+          actions.style.cssText = "display:flex;align-items:center;gap:6px";
+          const open = el("button", "blk-mini", "Open");
+          open.addEventListener("click", () => openDetail(u.id, u));
+          actions.append(open);
+          if (u.ready !== false) {
+            const sell = el("button", "blk-mini", u.listed && u.price > 0 ? "Make free" : "Sell");
+            sell.addEventListener("click", async () => {
+              try {
+                if (u.listed && u.price > 0) {
+                  await setSale(u.id, 0, me);
+                  toast("Free again — anyone can download it.");
+                } else {
+                  const ans = prompt(`Price in coins for "${displayName(u)}"? (max ${MAX_PRICE})`, String(u.price || 100));
+                  if (ans == null) return;
+                  const n = Math.floor(Number(ans) || 0);
+                  if (n <= 0) { toast("Type a price above 0 — or leave it free.", true); return; }
+                  await setSale(u.id, n, me);
+                  toast("On sale! Buyers' coins go straight to you.");
+                }
+                loadInventory(); loadShelf(true);
+              } catch (err) { toast(err.message, true); }
+            });
+            actions.append(sell);
+          }
+          row.append(info, actions);
+          mount.appendChild(row);
+        }
+        for (const r of bought) {
+          const row = el("div", "my-game-row");
+          const info = el("div");
+          info.append(el("strong", null, "🧾 bought universe"),
+            el("span", "hint", `  paid ${COIN} ${r.price} · ${new Date(r.at).toLocaleDateString()}`));
+          const actions = el("div");
+          const open = el("button", "blk-mini", "Open");
+          open.addEventListener("click", () => openDetail(r.item));
+          actions.append(open);
+          row.append(info, actions);
+          mount.appendChild(row);
+        }
+      } catch (err) {
+        mount.innerHTML = "";
+        toast("Couldn't load your universes: " + err.message, true);
+      }
     }
 
     // ---------------------------------------------------------- uploading
@@ -271,6 +374,7 @@
           $("#up-desc").value = "";
           $("#up-preview").style.display = "none";
           loadShelf(true);
+          loadInventory();
           openDetail(id);
         } catch (err) {
           toast("Upload failed: " + err.message, true);
@@ -283,9 +387,11 @@
     }
 
     loadShelf(true);
+    loadInventory();
     const want = new URLSearchParams(location.search).get("id");
     if (want) openDetail(want);
   </script>
+  <script type="module" src="./js/downloads.js"></script>
   <script type="module">import { footAd } from "./js/ads.js"; footAd();</script>
 </body>
 </html>
