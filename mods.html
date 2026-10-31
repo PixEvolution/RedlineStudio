@@ -26,6 +26,24 @@
     </div>
 
     <div class="panel">
+      <h2>⬇ Download links</h2>
+      <p class="hint">What the games' DOWNLOAD buttons serve. <b>auto</b> = the newest uploaded copy of
+      that exe on GitHub, found automatically — each button looks for its own file BY NAME, so updating
+      one game can't break the other anymore. To pin a game to one exact release instead, type that
+      release's <b>tag</b> (the label next to the 🏷, like <span class="code">V1.4</span>); type
+      <span class="code">auto</span> to go back. The <b>file name</b> must match the exe's name on the
+      release exactly. Test the shown link before saving.</p>
+      <div id="dl-form" style="display:grid; grid-template-columns:auto 1fr 1fr; gap:8px 10px; align-items:center; max-width:640px">
+        <span class="hint">game</span><span class="hint">release tag (or auto)</span><span class="hint">file name</span>
+      </div>
+      <div class="uni-row" style="display:flex; gap:8px; align-items:center; margin-top:10px">
+        <button class="btn" id="btn-dl-save">Save links</button>
+        <span class="hint" id="dl-status"></span>
+      </div>
+      <div class="hint" id="dl-preview" style="margin-top:6px"></div>
+    </div>
+
+    <div class="panel">
       <h2>🔒 Age brackets → private</h2>
       <p class="hint">Accounts from before Sept 25 still carry their age bracket on the PUBLIC account record
       until they visit again. This moves every remaining one into the private <span class="code">ages</span>
@@ -45,14 +63,6 @@
       <span class="hint" id="backfill-status" style="margin-left:10px"></span>
     </div>
 
-    <div class="panel">
-      <h2>What you can do from here (and from any game page)</h2>
-      <p class="hint">On any game's page you get a 🛡 row: unlist/relist, re-rate, or delete it. Comments and
-      forum posts grow a mod ✕. Removing a whole ACCOUNT stays deliberate, console-only work: Firebase console →
-      Firestore → <span class="code">users</span> → delete that doc, then Authentication → that user → delete.
-      Handing out or removing mod status is console-only too: the <span class="code">mods</span> collection,
-      one doc per uid — the site itself can never write it.</p>
-    </div>
   </main>
 
   <script type="module">
@@ -152,6 +162,62 @@
       }
     }
     loadInbox();
+
+    // ------------------------------------------ ⬇ download links panel
+    import("./js/downloads.js").then(async (dl) => {
+      const form = $("#dl-form"), status = $("#dl-status"), preview = $("#dl-preview");
+      const inputs = {};
+      const cfg = await dl.getDownloads();
+      for (const [id, g] of Object.entries(dl.GAMES)) {
+        const name = document.createElement("strong");
+        name.textContent = g.label;
+        const tag = document.createElement("input");
+        tag.value = cfg[id].tag; tag.spellcheck = false; tag.placeholder = "auto";
+        const file = document.createElement("input");
+        file.value = cfg[id].file; file.spellcheck = false; file.placeholder = g.file;
+        inputs[id] = { tag, file };
+        form.append(name, tag, file);
+        tag.addEventListener("input", showPreview);
+        file.addEventListener("input", showPreview);
+      }
+      function showPreview() {
+        preview.innerHTML = "";
+        for (const [id, g] of Object.entries(dl.GAMES)) {
+          const t = inputs[id].tag.value.trim(), f = inputs[id].file.value.trim() || g.file;
+          const row = document.createElement("div");
+          row.append(g.label + " → ");
+          if (!t || t.toLowerCase() === "auto") {
+            row.append(`automatic — always the newest ${f} on GitHub`);
+          } else {
+            const link = dl.linkFor({ tag: t, file: f });
+            const a = document.createElement("a");
+            a.href = link; a.textContent = link; a.target = "_blank"; a.rel = "noopener";
+            a.style.color = "#8dffa9";
+            row.append(a);
+          }
+          preview.append(row);
+        }
+      }
+      showPreview();
+      $("#btn-dl-save").addEventListener("click", async () => {
+        const btn = $("#btn-dl-save");
+        btn.disabled = true;
+        status.textContent = "Saving…";
+        try {
+          const out = {};
+          for (const [id, g] of Object.entries(dl.GAMES)) {
+            out[id] = { tag: inputs[id].tag.value.trim() || "auto", file: inputs[id].file.value.trim() || g.file };
+          }
+          await dl.saveDownloads(out);
+          status.textContent = "Saved — every DOWNLOAD button on the site serves this now.";
+          toast("Download links updated.");
+        } catch (err) {
+          status.textContent = "";
+          toast("Couldn't save: " + err.message, true);
+        }
+        btn.disabled = false;
+      });
+    }).catch(() => { $("#dl-status").textContent = "Couldn't load the links module."; });
 
     $("#btn-ages").addEventListener("click", async () => {
       const btn = $("#btn-ages"), status = $("#ages-status");
