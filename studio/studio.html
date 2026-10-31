@@ -300,7 +300,7 @@
 
   <script type="module">
     import { renderNav, toast, $, fmtDate } from "../js/ui.js";
-    import { requireLogin } from "../js/auth.js";
+    import { currentUser } from "../js/auth.js";
     import { publishGame, updateGame, deleteGame, listGamesBy } from "../js/games.js";
     import { Engine, drawFrame, makeObject, CANVAS_W, CANVAS_H } from "../js/engine.js";
     import { describeEra } from "../js/hardware.js";
@@ -387,8 +387,17 @@
     import { getProfile, savePageScene } from "../js/profiles.js";
 
     renderNav("../");
-    const user = requireLogin("../login.html");
-    if (!user) throw new Error("redirecting");
+    // THE STUDIO IS OPEN. Anyone can build, play, load every example, download
+    // their game and the offline Studio — no account. `user` is null for a
+    // guest; only the ONLINE buttons (publish, save models/behaviors, My Page)
+    // ask for a login, at the moment they're clicked. A guest's work autosaves
+    // to this browser like anyone's, so logging in later loses nothing.
+    const user = currentUser();
+    const askLogin = (what) => {
+      if (confirm(`Log in to ${what}?\n\nAccounts are free — just a name and password, no email. Your work stays saved in this browser and will still be here.`)) {
+        window.location.href = "../login.html";
+      }
+    };
 
     // casino machines have no per-play price — the bet is the price
     const typeSel = $("#g-type");
@@ -572,6 +581,8 @@ Enter (in chat/answer boxes)   send</pre>
     // ---- mode: "game" (default) or "page" (the Page Studio — same editor
     // and same powers, but it saves to your profile page, not the games list) ----
     const pageMode = new URLSearchParams(location.search).get("mode") === "page";
+    // My Page lives on an account by nature — that one mode still needs a login
+    if (pageMode && !user) { window.location.href = "../login.html"; throw new Error("redirecting"); }
     // ---- course mode: studio.html?course=<id> is a SEPARATE studio with the
     // lesson docked as a panel and its own draft — normal work stays untouched
     const courseId = pageMode ? null : (new URLSearchParams(location.search).get("course") || null);
@@ -1142,7 +1153,7 @@ Enter (in chat/answer boxes)   send</pre>
       }));
       testCtl = testCtl || new BroadcastChannel("rl_test_ctl:" + testId);
       testCtl.postMessage({ k: "game" });   // open player windows reboot fresh
-      testWire = attachLocalParty(eng, "rl_wire:" + testId, 1, testSeats, user);
+      testWire = attachLocalParty(eng, "rl_wire:" + testId, 1, testSeats, user || "GUEST");
       playerBtn.style.display = "";
     }
     function stopLocalWire() {
@@ -1305,6 +1316,7 @@ Enter (in chat/answer boxes)   send</pre>
       .map(e => { const h = errorHint(e); return h ? e + "\n   💡 " + h : e; }).join("\n");
 
     $("#btn-publish").addEventListener("click", async () => {
+      if (!user) { askLogin("publish your game to the site"); return; }
       const btn = $("#btn-publish");
       btn.disabled = true;
       try {
@@ -1676,6 +1688,7 @@ Enter (in chat/answer boxes)   send</pre>
     // it joins the ✨ menu, works on any object in any game, and can be
     // listed on the Market like any model
     $("#btn-save-behavior").addEventListener("click", async () => {
+      if (!user) { askLogin("save behaviors to your account"); return; }
       const o = selObj();
       if (!o) { toast("Select the object whose script you want to save.", true); return; }
       const st = scriptStats(o.script);
@@ -1846,7 +1859,7 @@ Enter (in chat/answer boxes)   send</pre>
             try {
               if (localStorage.getItem("rl_tour_done")) return;
               if (scenes.game.objects.length === 0 && scenes.screen.objects.length === 0) {
-                const mine = await listGamesBy(user).catch(() => [{}]);
+                const mine = user ? await listGamesBy(user).catch(() => [{}]) : [];
                 if (mine.length === 0) { startTour(); return; }
               }
               toast("New here? The 🎓 button up top walks you through everything.");
@@ -1858,6 +1871,7 @@ Enter (in chat/answer boxes)   send</pre>
 
     // ------------------------------------------------------------ models
     $("#btn-save-model").addEventListener("click", async () => {
+      if (!user) { askLogin("save models to your account"); return; }
       let objs = scene.objects.filter(o => checkedIds.has(o.id));
       if (objs.length === 0 && selObj()) objs = [selObj()];
       if (objs.length === 0) { toast("Check some objects in the Explorer first.", true); return; }
@@ -1889,7 +1903,10 @@ Enter (in chat/answer boxes)   send</pre>
     // ⬆ Import a .rlmodel the OFFLINE Studio saved: the seal is checked, every
     // object is rebuilt from the schema whitelist, and it lands in the normal
     // inventory — insertable here, sellable on the Market like any model.
-    $("#btn-import-model").addEventListener("click", () => $("#model-file").click());
+    $("#btn-import-model").addEventListener("click", () => {
+      if (!user) { askLogin("import models to your account"); return; }
+      $("#model-file").click();
+    });
     $("#model-file").addEventListener("change", () => {
       const f = $("#model-file").files[0];
       $("#model-file").value = "";
@@ -1908,6 +1925,11 @@ Enter (in chat/answer boxes)   send</pre>
 
     async function loadModels() {
       const mount = $("#model-list");
+      if (!user) {
+        mount.className = "hint";
+        mount.textContent = "Models and behaviors you save live on your account, so they follow you to any computer — log in to use this shelf.";
+        return;
+      }
       try {
         const models = await listMyModels(user);
         // the player's 🧩 behaviors feed the ✨ menu
@@ -1957,6 +1979,10 @@ Enter (in chat/answer boxes)   send</pre>
     // ------------------------------------------------------------ my games
     async function loadMyGames() {
       const list = $("#my-games-list");
+      if (!user) {
+        list.innerHTML = '<p class="hint">Log in to publish — the games you put on the site will show up here.</p>';
+        return;
+      }
       try {
         const games = await listGamesBy(user);
         list.innerHTML = "";
