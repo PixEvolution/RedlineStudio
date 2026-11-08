@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RedlineStudio — Emergence</title>
+  <meta name="description" content="Emergence: a universe sandbox where the laws of physics are random. Download the game, browse shared universes and sprite packs — free or sold for coins.">
+  <link rel="canonical" href="https://redlinestudio.dev/emergence.html">
+  <meta property="og:site_name" content="RedlineStudio">
+  <meta property="og:title" content="Emergence — the game, the universes, the sprite packs">
+  <meta property="og:description" content="A universe sandbox where the laws of physics are random. Download the game, then browse player-shared universes and sprite packs.">
+  <meta property="og:url" content="https://redlinestudio.dev/emergence.html">
+  <meta property="og:type" content="website">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .uni-thumb { width: 100%; aspect-ratio: 240 / 150; border-radius: 6px; background: #05050a; object-fit: cover; display: block; }
+    .uni-thumb.pix { image-rendering: pixelated; }
+    .uni-card { cursor: pointer; }
+    .uni-sort { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 14px; }
+    .uni-sort .tab { flex: 0 0 auto; padding: 8px 14px; }
+    .uni-detail { display: grid; grid-template-columns: minmax(0, 480px) minmax(0, 1fr); gap: 20px; align-items: start; }
+    .uni-detail .uni-thumb { max-width: 480px; }
+    .uni-stats { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 10px 0; font-size: 14px; }
+    .uni-stats span:nth-child(odd) { color: var(--text-dim); }
+    .uni-desc { white-space: pre-wrap; overflow-wrap: anywhere; margin: 10px 0; }
+    .uni-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+    .up-preview { display: none; gap: 14px; align-items: flex-start; margin-top: 12px; }
+    .up-preview img, .up-preview canvas { width: 200px; }
+    @media (max-width: 760px) { .uni-detail { grid-template-columns: 1fr; } .up-preview { flex-direction: column; } }
+    /* ---- the gallery ---- */
+    .em-gal { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+    .em-gal img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; display: block;
+      cursor: pointer; background: #05050a; transition: transform .12s; }
+    .em-gal img:hover { transform: scale(1.03); }
+    .em-light { position: fixed; inset: 0; background: rgba(3, 4, 8, .94); z-index: 60; display: none;
+      align-items: center; justify-content: center; flex-direction: column; gap: 10px; padding: 18px; }
+    .em-light.show { display: flex; }
+    .em-light img { max-width: 96vw; max-height: 84vh; border-radius: 10px; }
+    .em-light .em-cap { color: #c7d0dc; font-size: 14px; }
+    .em-light .em-nav { display: flex; gap: 10px; align-items: center; }
+  </style>
+  <script>(window.adsbygoogle = window.adsbygoogle || []).requestNonPersonalizedAds = 1;</script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2208639648972390"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+  <main class="page page-wide">
+    <h1 class="page-title">🌌 Emergence</h1>
+    <p class="page-sub">A universe sandbox where the laws of physics are random. Every universe starts as a single
+      point with one law, and new laws appear on their own over time. Send ships, settle worlds, mine matter — then
+      share what you find: <b>universes</b> and <b>sprite packs</b>, free or sold for coins, all on this page.</p>
+
+    <div class="panel" style="margin-bottom:18px">
+      <h2 style="margin-top:0">Get Emergence</h2>
+      <p class="hint">Windows. Free. Everything below plugs into the game.</p>
+      <a class="btn btn-small" href="https://github.com/PixEvolution/RedlineStudio/releases" data-asset="Emergence.exe">DOWNLOAD ⬇</a>
+      <p class="hint">Windows may warn about an unknown publisher the first time — the file isn't code-signed.
+        Click "More info → Run anyway."</p>
+    </div>
+
+    <!-- ------------------------------------------------ the gallery -->
+    <div class="panel" style="margin-bottom:18px">
+      <h2 style="margin-top:0">📸 From inside the universes</h2>
+      <p class="hint">Every one of these places grew on its own, or was built by players — nothing here was
+        hand-placed by us. Click a picture to see it full size.</p>
+      <div class="em-gal" id="em-gal"></div>
+    </div>
+    <div class="em-light" id="em-light">
+      <img id="em-light-img" alt="">
+      <div class="em-cap" id="em-light-cap"></div>
+      <div class="em-nav">
+        <button class="btn btn-small btn-ghost" id="em-prev">← Previous</button>
+        <button class="btn btn-small btn-ghost" id="em-next">Next →</button>
+        <button class="btn btn-small btn-ghost" id="em-close">Close ✕</button>
+      </div>
+    </div>
+
+    <!-- ================================================= UNIVERSES ==== -->
+    <h2>🌍 Shared universes</h2>
+    <p class="hint" style="margin:0 0 10px">Universes discovered in the game, shared by the players who found
+      them — the coins from a sale go straight to the finder. Download one, then drag the file onto the game
+      window (or My Universes → IMPORT FILE). The game can also browse these itself: My Universes → BROWSE ONLINE.</p>
+
+    <!-- one universe, when the address has ?uni= -->
+    <div class="panel" id="u-detail" style="display:none; margin-bottom:18px"></div>
+
+    <div class="uni-sort" id="u-sort">
+      <button class="tab active" data-order="createdAt">Newest</button>
+      <button class="tab" data-order="likes">Most liked</button>
+      <button class="tab" data-order="downloads">Most downloaded</button>
+    </div>
+    <div class="games-grid" id="u-grid"><p class="hint">Loading…</p></div>
+    <div style="text-align:center; margin:18px 0">
+      <button class="btn btn-ghost" id="u-more" style="display:none">Load more</button>
+    </div>
+
+    <div class="panel" style="margin-bottom:18px">
+      <h2 style="margin-top:0">Share a universe</h2>
+      <p class="hint">In the game: My Universes → <b>EXPORT</b> on the universe's card. The file goes to
+        <span class="code">Documents\Emergence Universes</span>. Pick it here. Max 7 MB.</p>
+      <div id="u-up-login" class="hint" style="display:none">
+        <a class="btn btn-small" href="login.html">Log in to share</a>
+      </div>
+      <div id="u-up-form" style="display:none">
+        <input type="file" id="u-up-file" accept=".emergence">
+        <div class="up-preview" id="u-up-preview">
+          <img class="uni-thumb" id="u-up-img" alt="">
+          <div style="flex:1; min-width:0">
+            <div class="game-title" id="u-up-name"></div>
+            <div class="game-meta" id="u-up-meta"></div>
+            <textarea id="u-up-desc" rows="3" maxlength="500" placeholder="Anything worth knowing about this universe (optional)" style="margin-top:8px"></textarea>
+            <div class="uni-row">
+              <button class="btn" id="u-up-go">Upload</button>
+              <span class="hint" id="u-up-status"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="u-inv-panel" style="display:none; margin-bottom:18px">
+      <h2 style="margin-top:0">🧰 My universes</h2>
+      <p class="hint">Your uploads (set a price to sell them, or keep them free) and the ones you've bought —
+        yours to download again anytime, on any computer.</p>
+      <div id="u-inv-list"><p class="hint">Loading…</p></div>
+    </div>
+
+    <!-- ================================================= SPRITE PACKS ==== -->
+    <h2>🎨 Sprite packs</h2>
+    <p class="hint" style="margin:0 0 10px">Like texture packs: player-made pixel trees, rocks, plants, creatures,
+      tools and guns, buildings and ship looks. They change how things look, never how the game plays — the coins
+      from a sale go straight to the maker. Download one, then drag the file onto the game window (or Sprite
+      Packs → IMPORT). The game can also browse these itself: Sprite Packs → BROWSE ONLINE.</p>
+
+    <!-- one pack, when the address has ?pack= -->
+    <div class="panel" id="k-detail" style="display:none; margin-bottom:18px"></div>
+
+    <div class="uni-sort" id="k-sort">
+      <button class="tab active" data-order="createdAt">Newest</button>
+      <button class="tab" data-order="likes">Most liked</button>
+      <button class="tab" data-order="downloads">Most downloaded</button>
+    </div>
+    <div class="games-grid" id="k-grid"><p class="hint">Loading…</p></div>
+    <div style="text-align:center; margin:18px 0">
+      <button class="btn btn-ghost" id="k-more" style="display:none">Load more</button>
+    </div>
+
+    <div class="panel" style="margin-bottom:18px">
+      <h2 style="margin-top:0">Share a pack</h2>
+      <p class="hint">In the game: main menu → <b>SPRITE PACKS</b> → <b>SHARE FILE</b> on your pack. The files live in
+        <span class="code">Documents\Emergence Sprite Packs</span>. Pick yours here. Max 6 MB.</p>
+      <div id="k-up-login" class="hint" style="display:none">
+        <a class="btn btn-small" href="login.html">Log in to share</a>
+      </div>
+      <div id="k-up-form" style="display:none">
+        <input type="file" id="k-up-file" accept=".emergencepack">
+        <div class="up-preview" id="k-up-preview">
+          <canvas class="uni-thumb pix" id="k-up-img"></canvas>
+          <div style="flex:1; min-width:0">
+            <div class="game-title" id="k-up-name"></div>
+            <div class="game-meta" id="k-up-meta"></div>
+            <textarea id="k-up-desc" rows="3" maxlength="500" placeholder="What's in this pack? (optional)" style="margin-top:8px"></textarea>
+            <div class="uni-row">
+              <button class="btn" id="k-up-go">Upload</button>
+              <span class="hint" id="k-up-status"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="k-inv-panel" style="display:none; margin-bottom:18px">
+      <h2 style="margin-top:0">🧰 My packs</h2>
+      <p class="hint">Your uploads (set a price to sell them, or keep them free) and the ones you've bought —
+        yours to download again anytime, on any computer.</p>
+      <div id="k-inv-list"><p class="hint">Loading…</p></div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { renderNav, toast, $, fmtDate, setNavCoins, COIN } from "./js/ui.js";
+    import { currentUser, authReady } from "./js/auth.js";
+    import { getCoins } from "./js/economy.js";
+    import { renderVotes, renderComments } from "./js/social.js";
+    import { amIMod } from "./js/mod.js";
+    import { wireLevel } from "./js/level.js";
+    import { addPanelSpeakers } from "./js/speech.js";
+    import {
+      checkFile, uploadUniverse, listUniverses, getUniverse, downloadUniverse,
+      deleteUniverse, reportUniverse, fmtAge,
+      displayName as uniName, thumbOk as uniThumbOk,
+      listMine as myUniverses, listBought as boughtUniverses,
+      ownsUniverse, buyUniverse, setSale as setUniSale, MAX_PRICE
+    } from "./js/universes.js";
+    import {
+      checkPack, drawThumb, uploadPack, listPacks, getPack, downloadPack,
+      deletePack, reportPack,
+      displayName as packName, thumbOk as packThumbOk,
+      listMine as myPacks, listBought as boughtPacks,
+      ownsPack, buyPack, setSale as setPackSale
+    } from "./js/packs.js";
+
+    renderNav("");
+    addPanelSpeakers();
+    const me = currentUser();
+    const priceOf = (x) => (x.listed && x.price > 0) ? `${COIN} ${x.price}` : "FREE";
+
+    const el = (tag, cls, text) => {
+      const e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (text != null) e.textContent = text;
+      return e;
+    };
+    const uniThumb = (u) => {
+      const img = el("img", "uni-thumb");
+      img.alt = "";
+      if (u.thumb && uniThumbOk(u.thumb)) img.src = "data:image/png;base64," + u.thumb;
+      return img;
+    };
+    const packThumb = (p) => {
+      const img = el("img", "uni-thumb pix");
+      img.alt = "";
+      if (p.thumb && packThumbOk(p.thumb)) img.src = "data:image/png;base64," + p.thumb;
+      return img;
+    };
+    const uniStat = (u) => `age ${fmtAge(u.age)} · ${u.laws} laws · ${Number(u.matter).toLocaleString()} matter`;
+    const packStat = (p) => `${p.objects || 0} picture${p.objects === 1 ? "" : "s"} · ${p.ships || 0} ship look${p.ships === 1 ? "" : "s"}`;
+    const clearAddr = () => history.replaceState(null, "", "emergence.html");
+
+    // ================================================= UNIVERSES ====
+    let uOrder = "createdAt", uLast = null, uLoading = false;
+
+    function uniCard(u) {
+      const c = el("div", "game-card uni-card");
+      c.title = uniName(u);
+      c.append(uniThumb(u), el("div", "game-title", uniName(u)), el("div", "game-meta", uniStat(u)));
+      c.append(el("div", "game-meta",
+        `${u.listed && u.price > 0 ? COIN + " " + u.price + " · " : ""}by ${u.owner || "?"} · ▲ ${u.likes || 0} · ⬇ ${u.downloads || 0}`));
+      c.addEventListener("click", () => openUni(u.id, u));
+      return c;
+    }
+
+    async function loadUniShelf(reset) {
+      if (uLoading) return;
+      uLoading = true;
+      const grid = $("#u-grid");
+      if (reset) { uLast = null; grid.innerHTML = '<p class="hint">Loading…</p>'; }
+      try {
+        const page = await listUniverses(uOrder, uLast);
+        if (reset) grid.innerHTML = "";
+        page.items.forEach(u => grid.appendChild(uniCard(u)));
+        uLast = page.last;
+        $("#u-more").style.display = page.more ? "" : "none";
+        if (reset && page.items.length === 0) grid.innerHTML = '<p class="hint">Nobody has shared a universe yet.</p>';
+      } catch (err) {
+        grid.innerHTML = "";
+        toast("Couldn't load universes: " + err.message, true);
+      }
+      uLoading = false;
+    }
+
+    document.querySelectorAll("#u-sort .tab").forEach(b => b.addEventListener("click", () => {
+      document.querySelectorAll("#u-sort .tab").forEach(x => x.classList.toggle("active", x === b));
+      uOrder = b.dataset.order;
+      loadUniShelf(true);
+    }));
+    $("#u-more").addEventListener("click", () => loadUniShelf(false));
+
+    async function openUni(id, known) {
+      const box = $("#u-detail");
+      box.style.display = "";
+      box.innerHTML = '<p class="hint">Loading…</p>';
+      history.replaceState(null, "", "emergence.html?uni=" + encodeURIComponent(id));
+      box.scrollIntoView({ behavior: "smooth", block: "start" });
+      let u = known;
+      try { u = await getUniverse(id); } catch (err) { if (!u) { box.innerHTML = ""; toast(err.message, true); return; } }
+      if (!u) { box.innerHTML = '<p class="hint">That universe isn\'t here anymore.</p>'; return; }
+
+      box.innerHTML = "";
+      const grid = el("div", "uni-detail");
+      const left = el("div");
+      left.append(uniThumb(u));
+      const right = el("div");
+      right.append(el("h2", null, uniName(u)));
+      const byLine = el("div", "game-meta");
+      byLine.append("by ");
+      const ownerLink = el("a", null, u.owner || "?");
+      ownerLink.href = "profile.html?u=" + encodeURIComponent(u.owner || "");
+      byLine.append(ownerLink);
+      if (u.owner) wireLevel(ownerLink, u.owner);
+      if (u.createdAt) byLine.append(" · shared " + fmtDate(u.createdAt));
+      right.append(byLine);
+
+      const stats = el("div", "uni-stats");
+      [["Price", priceOf(u)], ["Universe", "#" + u.seed], ["Age", fmtAge(u.age)], ["Laws of nature", u.laws],
+       ["Matter", Number(u.matter).toLocaleString()], ["Kinds of matter", u.kinds],
+       ["Colonies", u.colonies], ["Downloads", u.downloads || 0],
+       ["Size", (Number(u.size || 0) / 1e6).toFixed(2) + " MB"]]
+        .forEach(([k, v]) => stats.append(el("span", null, k), el("span", null, String(v))));
+      right.append(stats);
+      if (u.description) right.append(el("div", "uni-desc", u.description));
+
+      await authReady;
+      const owned = await ownsUniverse(u);
+
+      const row = el("div", "uni-row");
+      if (u.listed && u.price > 0 && !owned) {
+        if (me) {
+          const buy = el("button", "btn", `Buy for ${COIN} ${u.price}`);
+          buy.addEventListener("click", async () => {
+            if (!confirm(`Buy "${uniName(u)}" for ${COIN} ${u.price}? Coins go straight to ${u.owner}.`)) return;
+            buy.disabled = true;
+            try {
+              await buyUniverse(u, me);
+              toast("Yours! Downloading…");
+              getCoins(me).then(n => setNavCoins(n)).catch(() => {});
+              openUni(u.id);
+              loadUniInv();
+              await downloadUniverse(u);
+            } catch (err) { toast(err.message, true); }
+            buy.disabled = false;
+          });
+          row.append(buy);
+        } else {
+          const log = el("a", "btn", `Log in to buy · ${COIN} ${u.price}`);
+          log.href = "login.html";
+          row.append(log);
+        }
+      } else {
+        const dl = el("button", "btn", "Download ⬇");
+        dl.addEventListener("click", async () => {
+          dl.disabled = true; dl.textContent = "Downloading…";
+          try { await downloadUniverse(u); toast("Downloaded — drag the file onto the game window to import it."); }
+          catch (err) { toast(err.message, true); }
+          dl.disabled = false; dl.textContent = "Download ⬇";
+        });
+        row.append(dl);
+      }
+      const votes = el("div");
+      row.append(votes);
+      right.append(row);
+      renderVotes(votes, "universes", u.id, u, me);
+
+      const tools = el("div", "uni-row");
+      if (me && me !== u.owner) {
+        const rep = el("button", "btn btn-small btn-ghost", "⚑ Report");
+        rep.addEventListener("click", async () => {
+          const reason = prompt("What's wrong with this universe? (offensive name or description, broken file…)");
+          if (reason == null || !reason.trim()) return;
+          try { await reportUniverse(u, me, reason); toast("Reported — a moderator will look at it."); }
+          catch (err) { toast(err.message, true); }
+        });
+        tools.append(rep);
+      }
+      const mine = me && u.owner === me;
+      if (mine || await amIMod()) {
+        const del = el("button", "btn btn-small btn-ghost", mine ? "Delete my upload" : "🛡 Delete");
+        del.addEventListener("click", async () => {
+          if (!confirm(`Delete "${uniName(u)}" from the shelf? This can't be undone.`)) return;
+          try { await deleteUniverse(u); toast("Deleted."); box.style.display = "none"; clearAddr(); loadUniShelf(true); loadUniInv(); }
+          catch (err) { toast(err.message, true); }
+        });
+        tools.append(del);
+      }
+      const close = el("button", "btn btn-small btn-ghost", "Close ✕");
+      close.addEventListener("click", () => { box.style.display = "none"; clearAddr(); });
+      tools.append(close);
+      right.append(tools);
+
+      grid.append(left, right);
+      const comments = el("div");
+      comments.style.marginTop = "18px";
+      box.append(grid, comments);
+      renderComments(comments, "universes", u.id, me);
+    }
+
+    async function loadUniInv() {
+      if (!me) return;
+      $("#u-inv-panel").style.display = "";
+      const mount = $("#u-inv-list");
+      try {
+        await authReady;
+        const [mine, bought] = await Promise.all([myUniverses(), boughtUniverses()]);
+        mount.innerHTML = "";
+        if (!mine.length && !bought.length) {
+          mount.innerHTML = '<p class="hint">Nothing here yet — share a universe below, or buy one off the shelf.</p>';
+          return;
+        }
+        for (const u of mine) {
+          const row = el("div", "my-game-row");
+          const info = el("div");
+          info.append(el("strong", null, uniName(u)),
+            el("span", "hint", `  ${u.ready === false ? "⚠ upload incomplete" : (u.listed && u.price > 0 ? "FOR SALE · " + COIN + " " + u.price : "free")} · ⬇ ${u.downloads || 0}`));
+          const actions = el("div");
+          actions.style.cssText = "display:flex;align-items:center;gap:6px";
+          const open = el("button", "blk-mini", "Open");
+          open.addEventListener("click", () => openUni(u.id, u));
+          actions.append(open);
+          if (u.ready !== false) {
+            const sell = el("button", "blk-mini", u.listed && u.price > 0 ? "Make free" : "Sell");
+            sell.addEventListener("click", async () => {
+              try {
+                if (u.listed && u.price > 0) {
+                  await setUniSale(u.id, 0, me);
+                  toast("Free again — anyone can download it.");
+                } else {
+                  const ans = prompt(`Price in coins for "${uniName(u)}"? (max ${MAX_PRICE})`, String(u.price || 100));
+                  if (ans == null) return;
+                  const n = Math.floor(Number(ans) || 0);
+                  if (n <= 0) { toast("Type a price above 0 — or leave it free.", true); return; }
+                  await setUniSale(u.id, n, me);
+                  toast("On sale! Buyers' coins go straight to you.");
+                }
+                loadUniInv(); loadUniShelf(true);
+              } catch (err) { toast(err.message, true); }
+            });
+            actions.append(sell);
+          }
+          row.append(info, actions);
+          mount.appendChild(row);
+        }
+        for (const r of bought) {
+          const row = el("div", "my-game-row");
+          const info = el("div");
+          info.append(el("strong", null, "🧾 bought universe"),
+            el("span", "hint", `  paid ${COIN} ${r.price} · ${new Date(r.at).toLocaleDateString()}`));
+          const actions = el("div");
+          const open = el("button", "blk-mini", "Open");
+          open.addEventListener("click", () => openUni(r.item));
+          actions.append(open);
+          row.append(info, actions);
+          mount.appendChild(row);
+        }
+      } catch (err) {
+        mount.innerHTML = "";
+        toast("Couldn't load your universes: " + err.message, true);
+      }
+    }
+
+    let uPicked = null;
+    if (me) {
+      $("#u-up-form").style.display = "";
+      $("#u-up-file").addEventListener("change", async (e) => {
+        uPicked = null;
+        $("#u-up-preview").style.display = "none";
+        const file = e.target.files[0];
+        if (!file) return;
+        $("#u-up-status").textContent = "";
+        try {
+          if (file.size > 8 * 1024 * 1024) throw new Error("That file is too big to share here (7 MB max).");
+          uPicked = await checkFile(await file.text());
+          $("#u-up-img").src = uPicked.thumb ? "data:image/png;base64," + uPicked.thumb : "";
+          $("#u-up-name").textContent = uniName(uPicked);
+          $("#u-up-meta").textContent = `#${uPicked.seed} · ${uniStat(uPicked)} · seal ✓`;
+          $("#u-up-preview").style.display = "flex";
+        } catch (err) {
+          toast(err.message, true);
+          e.target.value = "";
+        }
+      });
+      $("#u-up-go").addEventListener("click", async () => {
+        if (!uPicked) return;
+        const btn = $("#u-up-go");
+        btn.disabled = true;
+        $("#u-up-status").textContent = "Uploading…";
+        try {
+          await authReady;
+          const id = await uploadUniverse(uPicked, $("#u-up-desc").value, me);
+          toast("Shared! Everyone can download it now.");
+          uPicked = null;
+          $("#u-up-file").value = "";
+          $("#u-up-desc").value = "";
+          $("#u-up-preview").style.display = "none";
+          loadUniShelf(true);
+          loadUniInv();
+          openUni(id);
+        } catch (err) {
+          toast("Upload failed: " + err.message, true);
+        }
+        $("#u-up-status").textContent = "";
+        btn.disabled = false;
+      });
+    } else {
+      $("#u-up-login").style.display = "";
+    }
+
+    // ================================================= SPRITE PACKS ====
+    let kOrder = "createdAt", kLast = null, kLoading = false;
+
+    function packCard(p) {
+      const c = el("div", "game-card uni-card");
+      c.title = packName(p);
+      c.append(packThumb(p), el("div", "game-title", packName(p)), el("div", "game-meta", packStat(p)));
+      c.append(el("div", "game-meta",
+        `${p.listed && p.price > 0 ? COIN + " " + p.price + " · " : ""}by ${p.owner || "?"} · ▲ ${p.likes || 0} · ⬇ ${p.downloads || 0}`));
+      c.addEventListener("click", () => openPack(p.id, p));
+      return c;
+    }
+
+    async function loadPackShelf(reset) {
+      if (kLoading) return;
+      kLoading = true;
+      const grid = $("#k-grid");
+      if (reset) { kLast = null; grid.innerHTML = '<p class="hint">Loading…</p>'; }
+      try {
+        const page = await listPacks(kOrder, kLast);
+        if (reset) grid.innerHTML = "";
+        page.items.forEach(p => grid.appendChild(packCard(p)));
+        kLast = page.last;
+        $("#k-more").style.display = page.more ? "" : "none";
+        if (reset && page.items.length === 0) grid.innerHTML = '<p class="hint">Nobody has shared a pack yet.</p>';
+      } catch (err) {
+        grid.innerHTML = "";
+        toast("Couldn't load packs: " + err.message, true);
+      }
+      kLoading = false;
+    }
+
+    document.querySelectorAll("#k-sort .tab").forEach(b => b.addEventListener("click", () => {
+      document.querySelectorAll("#k-sort .tab").forEach(x => x.classList.toggle("active", x === b));
+      kOrder = b.dataset.order;
+      loadPackShelf(true);
+    }));
+    $("#k-more").addEventListener("click", () => loadPackShelf(false));
+
+    async function openPack(id, known) {
+      const box = $("#k-detail");
+      box.style.display = "";
+      box.innerHTML = '<p class="hint">Loading…</p>';
+      history.replaceState(null, "", "emergence.html?pack=" + encodeURIComponent(id));
+      box.scrollIntoView({ behavior: "smooth", block: "start" });
+      let p = known;
+      try { p = await getPack(id); } catch (err) { if (!p) { box.innerHTML = ""; toast(err.message, true); return; } }
+      if (!p) { box.innerHTML = '<p class="hint">That pack isn\'t here anymore.</p>'; return; }
+
+      box.innerHTML = "";
+      const grid = el("div", "uni-detail");
+      const left = el("div");
+      left.append(packThumb(p));
+      const right = el("div");
+      right.append(el("h2", null, packName(p)));
+      const byLine = el("div", "game-meta");
+      byLine.append("shared by ");
+      const ownerLink = el("a", null, p.owner || "?");
+      ownerLink.href = "profile.html?u=" + encodeURIComponent(p.owner || "");
+      byLine.append(ownerLink);
+      if (p.owner) wireLevel(ownerLink, p.owner);
+      if (p.createdAt) byLine.append(" · " + fmtDate(p.createdAt));
+      right.append(byLine);
+
+      const stats = el("div", "uni-stats");
+      [["Price", priceOf(p)], ["Made by", p.author || "—"], ["Pictures", p.objects || 0], ["Ship looks", p.ships || 0],
+       ["Downloads", p.downloads || 0], ["Size", (Number(p.size || 0) / 1e3).toFixed(0) + " KB"]]
+        .forEach(([k, v]) => stats.append(el("span", null, k), el("span", null, String(v))));
+      right.append(stats);
+      if (p.description) right.append(el("div", "uni-desc", p.description));
+
+      await authReady;
+      const owned = await ownsPack(p);
+
+      const row = el("div", "uni-row");
+      if (p.listed && p.price > 0 && !owned) {
+        if (me) {
+          const buy = el("button", "btn", `Buy for ${COIN} ${p.price}`);
+          buy.addEventListener("click", async () => {
+            if (!confirm(`Buy "${packName(p)}" for ${COIN} ${p.price}? Coins go straight to ${p.owner}.`)) return;
+            buy.disabled = true;
+            try {
+              await buyPack(p, me);
+              toast("Yours! Downloading…");
+              getCoins(me).then(n => setNavCoins(n)).catch(() => {});
+              openPack(p.id);
+              loadPackInv();
+              await downloadPack(p);
+            } catch (err) { toast(err.message, true); }
+            buy.disabled = false;
+          });
+          row.append(buy);
+        } else {
+          const log = el("a", "btn", `Log in to buy · ${COIN} ${p.price}`);
+          log.href = "login.html";
+          row.append(log);
+        }
+      } else {
+        const dl = el("button", "btn", "Download ⬇");
+        dl.addEventListener("click", async () => {
+          dl.disabled = true; dl.textContent = "Downloading…";
+          try { await downloadPack(p); toast("Downloaded — drag the file onto the game window to install it."); }
+          catch (err) { toast(err.message, true); }
+          dl.disabled = false; dl.textContent = "Download ⬇";
+        });
+        row.append(dl);
+      }
+      const votes = el("div");
+      row.append(votes);
+      right.append(row);
+      renderVotes(votes, "packs", p.id, p, me);
+
+      const tools = el("div", "uni-row");
+      if (me && me !== p.owner) {
+        const rep = el("button", "btn btn-small btn-ghost", "⚑ Report");
+        rep.addEventListener("click", async () => {
+          const reason = prompt("What's wrong with this pack? (offensive pictures, name or description…)");
+          if (reason == null || !reason.trim()) return;
+          try { await reportPack(p, me, reason); toast("Reported — a moderator will look at it."); }
+          catch (err) { toast(err.message, true); }
+        });
+        tools.append(rep);
+      }
+      const mine = me && p.owner === me;
+      if (mine || await amIMod()) {
+        const del = el("button", "btn btn-small btn-ghost", mine ? "Delete my upload" : "🛡 Delete");
+        del.addEventListener("click", async () => {
+          if (!confirm(`Delete "${packName(p)}" from the shelf? This can't be undone.`)) return;
+          try { await deletePack(p); toast("Deleted."); box.style.display = "none"; clearAddr(); loadPackShelf(true); loadPackInv(); }
+          catch (err) { toast(err.message, true); }
+        });
+        tools.append(del);
+      }
+      const close = el("button", "btn btn-small btn-ghost", "Close ✕");
+      close.addEventListener("click", () => { box.style.display = "none"; clearAddr(); });
+      tools.append(close);
+      right.append(tools);
+
+      grid.append(left, right);
+      const comments = el("div");
+      comments.style.marginTop = "18px";
+      box.append(grid, comments);
+      renderComments(comments, "packs", p.id, me);
+    }
+
+    async function loadPackInv() {
+      if (!me) return;
+      $("#k-inv-panel").style.display = "";
+      const mount = $("#k-inv-list");
+      try {
+        await authReady;
+        const [mine, bought] = await Promise.all([myPacks(), boughtPacks()]);
+        mount.innerHTML = "";
+        if (!mine.length && !bought.length) {
+          mount.innerHTML = '<p class="hint">Nothing here yet — share a pack below, or buy one off the shelf.</p>';
+          return;
+        }
+        for (const p of mine) {
+          const row = el("div", "my-game-row");
+          const info = el("div");
+          info.append(el("strong", null, packName(p)),
+            el("span", "hint", `  ${p.ready === false ? "⚠ upload incomplete" : (p.listed && p.price > 0 ? "FOR SALE · " + COIN + " " + p.price : "free")} · ⬇ ${p.downloads || 0}`));
+          const actions = el("div");
+          actions.style.cssText = "display:flex;align-items:center;gap:6px";
+          const open = el("button", "blk-mini", "Open");
+          open.addEventListener("click", () => openPack(p.id, p));
+          actions.append(open);
+          if (p.ready !== false) {
+            const sell = el("button", "blk-mini", p.listed && p.price > 0 ? "Make free" : "Sell");
+            sell.addEventListener("click", async () => {
+              try {
+                if (p.listed && p.price > 0) {
+                  await setPackSale(p.id, 0, me);
+                  toast("Free again — anyone can download it.");
+                } else {
+                  const ans = prompt(`Price in coins for "${packName(p)}"? (max ${MAX_PRICE})`, String(p.price || 100));
+                  if (ans == null) return;
+                  const n = Math.floor(Number(ans) || 0);
+                  if (n <= 0) { toast("Type a price above 0 — or leave it free.", true); return; }
+                  await setPackSale(p.id, n, me);
+                  toast("On sale! Buyers' coins go straight to you.");
+                }
+                loadPackInv(); loadPackShelf(true);
+              } catch (err) { toast(err.message, true); }
+            });
+            actions.append(sell);
+          }
+          row.append(info, actions);
+          mount.appendChild(row);
+        }
+        for (const r of bought) {
+          const row = el("div", "my-game-row");
+          const info = el("div");
+          info.append(el("strong", null, "🧾 bought pack"),
+            el("span", "hint", `  paid ${COIN} ${r.price} · ${new Date(r.at).toLocaleDateString()}`));
+          const actions = el("div");
+          const open = el("button", "blk-mini", "Open");
+          open.addEventListener("click", () => openPack(r.item));
+          actions.append(open);
+          row.append(info, actions);
+          mount.appendChild(row);
+        }
+      } catch (err) {
+        mount.innerHTML = "";
+        toast("Couldn't load your packs: " + err.message, true);
+      }
+    }
+
+    let kPicked = null, kThumb = "";
+    if (me) {
+      $("#k-up-form").style.display = "";
+      $("#k-up-file").addEventListener("change", async (e) => {
+        kPicked = null;
+        $("#k-up-preview").style.display = "none";
+        const file = e.target.files[0];
+        if (!file) return;
+        $("#k-up-status").textContent = "";
+        try {
+          if (file.size > 7 * 1024 * 1024) throw new Error("That pack is too big to share here (6 MB max).");
+          kPicked = await checkPack(await file.text());
+          kThumb = drawThumb(kPicked.pack, $("#k-up-img"));
+          $("#k-up-name").textContent = packName(kPicked.pack);
+          $("#k-up-meta").textContent = `${packStat({ objects: ["objects", "creatures", "hand", "builds"].reduce((n, k) => n + (kPicked.pack[k] || []).length, 0), ships: (kPicked.pack.ships || []).length })} · seal ✓`;
+          $("#k-up-preview").style.display = "flex";
+        } catch (err) {
+          toast(err.message, true);
+          e.target.value = "";
+        }
+      });
+      $("#k-up-go").addEventListener("click", async () => {
+        if (!kPicked) return;
+        const btn = $("#k-up-go");
+        btn.disabled = true;
+        $("#k-up-status").textContent = "Uploading…";
+        try {
+          await authReady;
+          const id = await uploadPack(kPicked, kThumb, $("#k-up-desc").value, me);
+          toast("Shared! Everyone can download it now.");
+          kPicked = null;
+          $("#k-up-file").value = "";
+          $("#k-up-desc").value = "";
+          $("#k-up-preview").style.display = "none";
+          loadPackShelf(true);
+          loadPackInv();
+          openPack(id);
+        } catch (err) {
+          toast("Upload failed: " + err.message, true);
+        }
+        $("#k-up-status").textContent = "";
+        btn.disabled = false;
+      });
+    } else {
+      $("#k-up-login").style.display = "";
+    }
+
+    // ---------------------------------------------------------- the gallery
+    const SHOTS = [
+      ["01_jungle_spires", "Jungle spires"],
+      ["02_lava_mesas_dawn", "Lava mesas at dawn"],
+      ["03_lava_domes", "Lava domes"],
+      ["04_ice_cliffs_rings", "Ice cliffs under the rings"],
+      ["05_toxic_haze", "Toxic haze"],
+      ["06_toxic_canyons", "Toxic canyons"],
+      ["07_green_plateau", "Green plateau"],
+      ["08_spires_mushrooms", "Spires and mushrooms"],
+      ["09_desert_boulders", "Desert boulders"],
+      ["10_fjord", "A fjord"],
+      ["11_ringed_night", "Ringed night"],
+      ["12_medieval_village", "A village that grew"],
+      ["13_castle", "The castle"],
+      ["14_frontier_town", "Frontier town"],
+      ["15_steam_town", "Steam town"],
+      ["16_wasteland", "Wasteland"],
+      ["17_made_world_day", "A made world, by day"],
+      ["18_made_world_night", "The same world at night"],
+      ["19_neon_city_inside", "Inside the neon city"],
+      ["20_underground_city", "Underground city"],
+      ["21_cloud_city", "Cloud city"]
+    ];
+    let shotAt = 0;
+    const gal = $("#em-gal");
+    SHOTS.forEach(([f, cap], i) => {
+      const img = el("img");
+      img.src = "img/emergence/thumbs/" + f + ".jpg";
+      img.alt = cap;
+      img.loading = "lazy";
+      img.addEventListener("click", () => showShot(i));
+      gal.appendChild(img);
+    });
+    function showShot(i) {
+      shotAt = (i + SHOTS.length) % SHOTS.length;
+      const [f, cap] = SHOTS[shotAt];
+      $("#em-light-img").src = "img/emergence/" + f + ".jpg";
+      $("#em-light-img").alt = cap;
+      $("#em-light-cap").textContent = cap;
+      $("#em-light").classList.add("show");
+    }
+    const hideShot = () => $("#em-light").classList.remove("show");
+    $("#em-close").addEventListener("click", hideShot);
+    $("#em-prev").addEventListener("click", (e) => { e.stopPropagation(); showShot(shotAt - 1); });
+    $("#em-next").addEventListener("click", (e) => { e.stopPropagation(); showShot(shotAt + 1); });
+    $("#em-light").addEventListener("click", (e) => { if (e.target === $("#em-light") || e.target === $("#em-light-img")) hideShot(); });
+    document.addEventListener("keydown", (e) => {
+      if (!$("#em-light").classList.contains("show")) return;
+      if (e.key === "Escape") hideShot();
+      else if (e.key === "ArrowLeft") showShot(shotAt - 1);
+      else if (e.key === "ArrowRight") showShot(shotAt + 1);
+    });
+
+    // ---------------------------------------------------------- start
+    loadUniShelf(true);
+    loadPackShelf(true);
+    loadUniInv();
+    loadPackInv();
+    const q = new URLSearchParams(location.search);
+    if (q.get("uni")) openUni(q.get("uni"));
+    else if (q.get("pack")) openPack(q.get("pack"));
+    else if (q.get("id")) openUni(q.get("id"));   // an old universes.html?id= link
+  </script>
+  <script type="module" src="./js/downloads.js"></script>
+  <script type="module">import { footAd } from "./js/ads.js"; footAd();</script>
+</body>
+</html>

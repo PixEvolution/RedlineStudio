@@ -50,35 +50,21 @@
 
     <h2 style="margin:26px 0 10px">⬇ Downloads</h2>
     <div class="games-grid">
-      <a class="game-card" href="pcracer.html">
+      <a class="game-card" href="https://github.com/PixEvolution/RedlineStudio/releases" data-asset="PC_Racer.exe">
         <div class="game-title">PC RACER</div>
         <div class="game-desc full">The game that started Redline Digital. A drag racer where your PC is
           the car: it benchmarks your actual hardware and turns your machine's real horsepower into speed
-          on the strip. Race what you built — now with site leaderboards and a parts market.</div>
-        <div class="game-meta">Windows · free · log in from the game for leaderboards</div>
-        <div class="price-badge">BOARDS &amp; DOWNLOAD →</div>
+          on the strip. Race what you built.</div>
+        <div class="game-meta">Windows · ~56 MB · free</div>
+        <div class="price-badge">DOWNLOAD ⬇</div>
       </a>
-      <a class="game-card" data-dl="emergence" href="https://github.com/PixEvolution/RedlineStudio/releases/download/V1.0.3/Emergence.exe">
+      <a class="game-card" href="emergence.html">
         <div class="game-title">EMERGENCE</div>
         <div class="game-desc full">A universe sandbox where the laws of physics are random. Every universe starts
           as a single point with one law, and new laws appear on their own over time. Send ships, settle worlds,
-          mine matter and share the universes you find.</div>
-        <div class="game-meta">Windows · free</div>
-        <div class="price-badge">DOWNLOAD ⬇</div>
-      </a>
-      <a class="game-card" href="universes.html">
-        <div class="game-title">EMERGENCE UNIVERSES</div>
-        <div class="game-desc full">Universes other players found and shared. Download one into your game, or
-          upload your own.</div>
-        <div class="game-meta">Shared from the game's My Universes → EXPORT</div>
-        <div class="price-badge">BROWSE →</div>
-      </a>
-      <a class="game-card" href="packs.html">
-        <div class="game-title">EMERGENCE SPRITE PACKS</div>
-        <div class="game-desc full">Texture packs for Emergence: player-made pixel trees, rocks, plants and ship
-          looks. They change how planets and ships look, never how the game plays.</div>
-        <div class="game-meta">Made in the game's main menu → SPRITE PACKS</div>
-        <div class="price-badge">BROWSE →</div>
+          mine matter — then share or sell the universes you find and the sprite packs you make, all on one page.</div>
+        <div class="game-meta">Windows · free · universes &amp; sprite packs shared on the site</div>
+        <div class="price-badge">WORLDS, PACKS &amp; DOWNLOAD →</div>
       </a>
     </div>
     <p class="hint" style="margin-top:8px">Windows may warn about an unknown publisher the first time —
@@ -91,8 +77,8 @@
     import { addPanelSpeakers } from "./js/speech.js";
     renderNav("");
     addPanelSpeakers();
-    import("./js/downloads.js").then(m => m.wireDownloadLinks()).catch(() => {});
   </script>
+  <script type="module" src="./js/downloads.js"></script>
   <script type="module">import { footAd } from "./js/ads.js"; footAd();</script>
 </body>
 </html>

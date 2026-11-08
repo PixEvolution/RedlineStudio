@@ -102,8 +102,8 @@
           const isPack = String(r.game || "").startsWith("pack:");
           const isPcr = String(r.game || "").startsWith("pcrpart:");
           open.textContent = isUni ? "Open universe" : (isPack ? "Open sprite pack" : (isPcr ? "Open PC Racer part" : "Open game"));
-          open.href = isUni ? "universes.html?id=" + encodeURIComponent(String(r.game).slice(9))
-                    : isPack ? "packs.html?id=" + encodeURIComponent(String(r.game).slice(5))
+          open.href = isUni ? "emergence.html?uni=" + encodeURIComponent(String(r.game).slice(9))
+                    : isPack ? "emergence.html?pack=" + encodeURIComponent(String(r.game).slice(5))
                     : isPcr ? "pcracer.html?id=" + encodeURIComponent(String(r.game).slice(8))
                             : "play.html?id=" + encodeURIComponent(r.game);
           const done = document.createElement("button");
