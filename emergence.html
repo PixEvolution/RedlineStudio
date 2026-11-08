@@ -36,7 +36,6 @@
       align-items: center; justify-content: center; flex-direction: column; gap: 10px; padding: 18px; }
     .em-light.show { display: flex; }
     .em-light img { max-width: 96vw; max-height: 84vh; border-radius: 10px; }
-    .em-light .em-cap { color: #c7d0dc; font-size: 14px; }
     .em-light .em-nav { display: flex; gap: 10px; align-items: center; }
   </style>
   <script>(window.adsbygoogle = window.adsbygoogle || []).requestNonPersonalizedAds = 1;</script>
@@ -67,7 +66,6 @@
     </div>
     <div class="em-light" id="em-light">
       <img id="em-light-img" alt="">
-      <div class="em-cap" id="em-light-cap"></div>
       <div class="em-nav">
         <button class="btn btn-small btn-ghost" id="em-prev">← Previous</button>
         <button class="btn btn-small btn-ghost" id="em-next">Next →</button>
@@ -740,45 +738,29 @@
     }
 
     // ---------------------------------------------------------- the gallery
+    // No names, no captions — the pictures keep their mystery.
     const SHOTS = [
-      ["01_jungle_spires", "Jungle spires"],
-      ["02_lava_mesas_dawn", "Lava mesas at dawn"],
-      ["03_lava_domes", "Lava domes"],
-      ["04_ice_cliffs_rings", "Ice cliffs under the rings"],
-      ["05_toxic_haze", "Toxic haze"],
-      ["06_toxic_canyons", "Toxic canyons"],
-      ["07_green_plateau", "Green plateau"],
-      ["08_spires_mushrooms", "Spires and mushrooms"],
-      ["09_desert_boulders", "Desert boulders"],
-      ["10_fjord", "A fjord"],
-      ["11_ringed_night", "Ringed night"],
-      ["12_medieval_village", "A village that grew"],
-      ["13_castle", "The castle"],
-      ["14_frontier_town", "Frontier town"],
-      ["15_steam_town", "Steam town"],
-      ["16_wasteland", "Wasteland"],
-      ["17_made_world_day", "A made world, by day"],
-      ["18_made_world_night", "The same world at night"],
-      ["19_neon_city_inside", "Inside the neon city"],
-      ["20_underground_city", "Underground city"],
-      ["21_cloud_city", "Cloud city"]
+      "01_jungle_spires", "02_lava_mesas_dawn", "03_lava_domes", "04_ice_cliffs_rings",
+      "05_toxic_haze", "06_toxic_canyons", "07_green_plateau", "08_spires_mushrooms",
+      "09_desert_boulders", "10_fjord", "11_ringed_night", "12_medieval_village",
+      "13_castle", "14_frontier_town", "15_steam_town", "16_wasteland",
+      "17_made_world_day", "18_made_world_night", "19_neon_city_inside",
+      "20_underground_city", "21_cloud_city"
     ];
     let shotAt = 0;
     const gal = $("#em-gal");
-    SHOTS.forEach(([f, cap], i) => {
+    SHOTS.forEach((f, i) => {
       const img = el("img");
       img.src = "img/emergence/thumbs/" + f + ".jpg";
-      img.alt = cap;
+      img.alt = "Somewhere in an Emergence universe";
       img.loading = "lazy";
       img.addEventListener("click", () => showShot(i));
       gal.appendChild(img);
     });
     function showShot(i) {
       shotAt = (i + SHOTS.length) % SHOTS.length;
-      const [f, cap] = SHOTS[shotAt];
-      $("#em-light-img").src = "img/emergence/" + f + ".jpg";
-      $("#em-light-img").alt = cap;
-      $("#em-light-cap").textContent = cap;
+      $("#em-light-img").src = "img/emergence/" + SHOTS[shotAt] + ".jpg";
+      $("#em-light-img").alt = "Somewhere in an Emergence universe";
       $("#em-light").classList.add("show");
     }
     const hideShot = () => $("#em-light").classList.remove("show");
