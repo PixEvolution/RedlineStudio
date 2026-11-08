@@ -26,6 +26,17 @@
     #up-preview { display: none; gap: 14px; align-items: flex-start; margin-top: 12px; }
     #up-preview img { width: 200px; }
     @media (max-width: 760px) { .uni-detail { grid-template-columns: 1fr; } #up-preview { flex-direction: column; } }
+    /* ---- the gallery ---- */
+    .em-gal { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+    .em-gal img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; display: block;
+      cursor: pointer; background: #05050a; transition: transform .12s; }
+    .em-gal img:hover { transform: scale(1.03); }
+    .em-light { position: fixed; inset: 0; background: rgba(3, 4, 8, .94); z-index: 60; display: none;
+      align-items: center; justify-content: center; flex-direction: column; gap: 10px; padding: 18px; }
+    .em-light.show { display: flex; }
+    .em-light img { max-width: 96vw; max-height: 84vh; border-radius: 10px; }
+    .em-light .em-cap { color: #c7d0dc; font-size: 14px; }
+    .em-light .em-nav { display: flex; gap: 10px; align-items: center; }
   </style>
   <script>(window.adsbygoogle = window.adsbygoogle || []).requestNonPersonalizedAds = 1;</script>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2208639648972390"
@@ -79,6 +90,23 @@
       <a class="btn btn-small" href="https://github.com/PixEvolution/RedlineStudio/releases" data-asset="Emergence.exe">DOWNLOAD ⬇</a>
       <p class="hint">Windows may warn about an unknown publisher the first time — the file isn't code-signed.
         Click "More info → Run anyway."</p>
+    </div>
+
+    <!-- ------------------------------------------------ the gallery -->
+    <div class="panel" style="margin-bottom:18px">
+      <h2 style="margin-top:0">📸 From inside the universes</h2>
+      <p class="hint">Every one of these places grew on its own, or was built by players — nothing here was
+        hand-placed by us. Click a picture to see it full size.</p>
+      <div class="em-gal" id="em-gal"></div>
+    </div>
+    <div class="em-light" id="em-light">
+      <img id="em-light-img" alt="">
+      <div class="em-cap" id="em-light-cap"></div>
+      <div class="em-nav">
+        <button class="btn btn-small btn-ghost" id="em-prev">← Previous</button>
+        <button class="btn btn-small btn-ghost" id="em-next">Next →</button>
+        <button class="btn btn-small btn-ghost" id="em-close">Close ✕</button>
+      </div>
     </div>
 
     <h2>Shared universes</h2>
@@ -385,6 +413,60 @@
     } else {
       $("#up-login").style.display = "";
     }
+
+    // ---------------------------------------------------------- the gallery
+    const SHOTS = [
+      ["01_jungle_spires", "Jungle spires"],
+      ["02_lava_mesas_dawn", "Lava mesas at dawn"],
+      ["03_lava_domes", "Lava domes"],
+      ["04_ice_cliffs_rings", "Ice cliffs under the rings"],
+      ["05_toxic_haze", "Toxic haze"],
+      ["06_toxic_canyons", "Toxic canyons"],
+      ["07_green_plateau", "Green plateau"],
+      ["08_spires_mushrooms", "Spires and mushrooms"],
+      ["09_desert_boulders", "Desert boulders"],
+      ["10_fjord", "A fjord"],
+      ["11_ringed_night", "Ringed night"],
+      ["12_medieval_village", "A village that grew"],
+      ["13_castle", "The castle"],
+      ["14_frontier_town", "Frontier town"],
+      ["15_steam_town", "Steam town"],
+      ["16_wasteland", "Wasteland"],
+      ["17_made_world_day", "A made world, by day"],
+      ["18_made_world_night", "The same world at night"],
+      ["19_neon_city_inside", "Inside the neon city"],
+      ["20_underground_city", "Underground city"],
+      ["21_cloud_city", "Cloud city"]
+    ];
+    let shotAt = 0;
+    const gal = $("#em-gal");
+    SHOTS.forEach(([f, cap], i) => {
+      const img = el("img");
+      img.src = "img/emergence/thumbs/" + f + ".jpg";
+      img.alt = cap;
+      img.loading = "lazy";
+      img.addEventListener("click", () => showShot(i));
+      gal.appendChild(img);
+    });
+    function showShot(i) {
+      shotAt = (i + SHOTS.length) % SHOTS.length;
+      const [f, cap] = SHOTS[shotAt];
+      $("#em-light-img").src = "img/emergence/" + f + ".jpg";
+      $("#em-light-img").alt = cap;
+      $("#em-light-cap").textContent = cap;
+      $("#em-light").classList.add("show");
+    }
+    const hideShot = () => $("#em-light").classList.remove("show");
+    $("#em-close").addEventListener("click", hideShot);
+    $("#em-prev").addEventListener("click", (e) => { e.stopPropagation(); showShot(shotAt - 1); });
+    $("#em-next").addEventListener("click", (e) => { e.stopPropagation(); showShot(shotAt + 1); });
+    $("#em-light").addEventListener("click", (e) => { if (e.target === $("#em-light") || e.target === $("#em-light-img")) hideShot(); });
+    document.addEventListener("keydown", (e) => {
+      if (!$("#em-light").classList.contains("show")) return;
+      if (e.key === "Escape") hideShot();
+      else if (e.key === "ArrowLeft") showShot(shotAt - 1);
+      else if (e.key === "ArrowRight") showShot(shotAt + 1);
+    });
 
     loadShelf(true);
     loadInventory();
